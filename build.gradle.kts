@@ -130,9 +130,18 @@ kotlin {
                 name = "xmpcore"
                 directory = File("$buildDir/js/")
             }
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
         }
 
         binaries.executable()
+    }
+
+    tasks.named("jsBrowserTest") {
+        dependsOn("jsBrowserDistribution")
     }
 
     @OptIn(ExperimentalWasmDsl::class)
