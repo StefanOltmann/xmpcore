@@ -117,7 +117,23 @@ kotlin {
         }
     }
 
-    js()
+    js {
+
+        browser {
+            commonWebpackConfig {
+                outputFileName = "xmpcore.js"
+            }
+            webpackTask {
+                outputFileName = "xmpcore.js"
+            }
+            distribution {
+                name = "xmpcore"
+                directory = File("$buildDir/js/")
+            }
+        }
+
+        binaries.executable()
+    }
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs()

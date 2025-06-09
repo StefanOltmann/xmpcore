@@ -51,6 +51,8 @@ Check out the [Kotlin JVM example project](examples/xmpcore-kotlin-jvm-sample).
 
 For usage in Java projects check out the [Java example project](examples/xmpcore-java-sample).
 
+For usage in JavaScript projects check out the [JavaScript example project](examples/xmpcore-js-sample).
+
 Also see the unit tests `ReadXmpTest` and `WriteXmpTest` to learn more about reading and manipulating data.
 
 ### Migration hint
