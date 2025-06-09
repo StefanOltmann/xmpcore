@@ -31,28 +31,28 @@ Include the XMP Core library in your HTML file:
 
 ### 2. Access the Library
 
-The library is accessible through the `com.ashampoo.xmp` namespace:
+The library is accessible through the `xmpcore` object:
 
 ```javascript
 // Create serialize options
-const serializeOptions = new com.ashampoo.xmp.options.SerializeOptions()
+const serializeOptions = new xmpcore.com.ashampoo.xmp.options.SerializeOptions()
     .setOmitXmpMetaElement(false)
     .setOmitPacketWrapper(false)
     .setUseCompactFormat(true)
     .setSort(true);
 
 // Create a new XMP metadata object
-const xmpMeta = com.ashampoo.xmp.XMPMetaFactory.create();
+const xmpMeta = xmpcore.com.ashampoo.xmp.XMPMetaFactory.create();
 
 // Set properties
 xmpMeta.setPropertyInteger(
-    com.ashampoo.xmp.XMPConst.NS_XMP,
+    xmpcore.com.ashampoo.xmp.XMPConst.NS_XMP,
     "Rating",
     3
 );
 
 // Serialize to XMP string
-const xmpString = com.ashampoo.xmp.XMPMetaFactory.serializeToString(
+const xmpString = xmpcore.com.ashampoo.xmp.XMPMetaFactory.serializeToString(
     xmpMeta,
     serializeOptions
 );
@@ -62,18 +62,19 @@ const xmpString = com.ashampoo.xmp.XMPMetaFactory.serializeToString(
 
 ```javascript
 // Create parse options
-const parseOptions = new com.ashampoo.xmp.options.ParseOptions()
+const parseOptions = new xmpcore.com.ashampoo.xmp.options.ParseOptions()
     .setRequireXMPMeta(false);
 
 // Parse XMP string
-const xmpMeta = com.ashampoo.xmp.XMPMetaFactory.parseFromString(xmpString, parseOptions);
+const xmpMeta = xmpcore.com.ashampoo.xmp.XMPMetaFactory.parseFromString(xmpString, parseOptions);
 
 // Read properties
-const rating = xmpMeta.getPropertyInteger(com.ashampoo.xmp.XMPConst.NS_XMP, "Rating");
+const rating = xmpMeta.getPropertyInteger(xmpcore.com.ashampoo.xmp.XMPConst.NS_XMP, "Rating");
 const keywords = xmpMeta.getKeywords();
 ```
 
 ## Notes
 
-- The actual namespace might be different depending on how the JS is compiled. Check the console for the correct namespace if you encounter issues.
+- The library is exported as the global `xmpcore` object, and the Kotlin package structure is preserved under this object (e.g., `xmpcore.com.ashampoo.xmp`).
+- You can use `console.log(xmpcore)` to inspect the available classes and methods.
 - Error handling is important when working with XMP data, as shown in the example code.

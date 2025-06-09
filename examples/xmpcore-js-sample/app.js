@@ -6,11 +6,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     try {
         // Access the XMP Core library
-        // Note: The actual namespace might be different depending on how the JS is compiled
-        // It could be 'com.ashampoo.xmp' or just 'xmpcore'
+        // The library is exported as 'xmpcore'
+        console.log("XMP Core library loaded:", xmpcore);
 
         // Create serialize options
-        const serializeOptions = new com.ashampoo.xmp.options.SerializeOptions()
+        const serializeOptions = new xmpcore.com.ashampoo.xmp.options.SerializeOptions()
             .setOmitXmpMetaElement(false)
             .setOmitPacketWrapper(false)
             .setUseCompactFormat(true)
@@ -18,18 +18,18 @@ document.addEventListener('DOMContentLoaded', function () {
             .setSort(true);
 
         // Create parse options
-        const parseOptions = new com.ashampoo.xmp.options.ParseOptions()
+        const parseOptions = new xmpcore.com.ashampoo.xmp.options.ParseOptions()
             .setRequireXMPMeta(false);
 
         // Example 1: Create new XMP metadata
         outputDiv.innerHTML += '<h2>Example 1: Creating new XMP metadata</h2>';
 
         // Create a new XMP metadata object
-        const newXmpMeta = com.ashampoo.xmp.XMPMetaFactory.create();
+        const newXmpMeta = xmpcore.com.ashampoo.xmp.XMPMetaFactory.create();
 
         // Set a rating property
         newXmpMeta.setPropertyInteger(
-            com.ashampoo.xmp.XMPConst.NS_XMP,
+            xmpcore.com.ashampoo.xmp.XMPConst.NS_XMP,
             "Rating",
             3
         );
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
         );
 
         // Serialize to XMP string
-        const newXmp = com.ashampoo.xmp.XMPMetaFactory.serializeToString(
+        const newXmp = xmpcore.com.ashampoo.xmp.XMPMetaFactory.serializeToString(
             newXmpMeta,
             serializeOptions
         );
@@ -70,10 +70,10 @@ document.addEventListener('DOMContentLoaded', function () {
             </x:xmpmeta>`;
 
         // Parse the XMP string
-        const oldXmpMeta = com.ashampoo.xmp.XMPMetaFactory.parseFromString(oldXmp, parseOptions);
+        const oldXmpMeta = xmpcore.com.ashampoo.xmp.XMPMetaFactory.parseFromString(oldXmp, parseOptions);
 
         // Get properties from the parsed XMP
-        const rating = oldXmpMeta.getPropertyInteger(com.ashampoo.xmp.XMPConst.NS_XMP, "Rating");
+        const rating = oldXmpMeta.getPropertyInteger(xmpcore.com.ashampoo.xmp.XMPConst.NS_XMP, "Rating");
         const keywords = oldXmpMeta.getKeywords();
 
         // Display the results
