@@ -1,8 +1,8 @@
-import com.ashampoo.xmp.XMPConst;
-import com.ashampoo.xmp.XMPException;
-import com.ashampoo.xmp.XMPMeta;
-import com.ashampoo.xmp.XMPMetaFactory;
-import com.ashampoo.xmp.options.SerializeOptions;
+import de.stefan_oltmann.xmp.XMPConst;
+import de.stefan_oltmann.xmp.XMPException;
+import de.stefan_oltmann.xmp.XMPMeta;
+import de.stefan_oltmann.xmp.XMPMetaFactory;
+import de.stefan_oltmann.xmp.options.SerializeOptions;
 
 import java.util.Set;
 
@@ -30,7 +30,7 @@ public class Main {
             3
         );
 
-        /* Ashampoo XMP Core convenience method. */
+        /* Convenience method. */
         newXmpMeta.setKeywords(
             Set.of("cat", "cute", "animal")
         );

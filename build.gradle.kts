@@ -20,10 +20,10 @@ repositories {
     mavenCentral()
 }
 
-val productName = "Ashampoo XMP Core"
+val productName = "XMP Core for Kotlin Multiplatform"
 
 description = productName
-group = "com.ashampoo"
+group = "de.stefan-oltmann"
 version = "0.0.0"
 
 gitVersioning.apply {
@@ -83,7 +83,7 @@ kotlin {
     mingwX64("win") {
         binaries {
             executable(setOf(NativeBuildType.RELEASE)) {
-                entryPoint = "com.ashampoo.xmp.main"
+                entryPoint = "de.stefan_oltmann.xmp.main"
             }
         }
     }
@@ -91,7 +91,7 @@ kotlin {
     linuxX64 {
         binaries {
             executable(setOf(NativeBuildType.RELEASE)) {
-                entryPoint = "com.ashampoo.xmp.main"
+                entryPoint = "de.stefan_oltmann.xmp.main"
             }
         }
     }
@@ -99,7 +99,7 @@ kotlin {
     linuxArm64 {
         binaries {
             executable(setOf(NativeBuildType.RELEASE)) {
-                entryPoint = "com.ashampoo.xmp.main"
+                entryPoint = "de.stefan_oltmann.xmp.main"
             }
         }
     }
@@ -116,9 +116,6 @@ kotlin {
 
     @OptIn(ExperimentalWasmDsl::class)
     wasmJs()
-
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmWasi()
 
     @Suppress("UnusedPrivateMember") // False positive
     val commonMain by sourceSets.getting {
@@ -139,6 +136,9 @@ kotlin {
 
             /* Multiplatform file access */
             implementation(libs.kotlinx.io.core)
+
+            /* Test resources */
+            implementation(libs.resources)
         }
     }
 
@@ -162,13 +162,12 @@ kotlin {
         /* Apple Silicon iOS Simulator */
         iosSimulatorArm64(),
         /* macOS Devices */
-        macosX64(),
         macosArm64()
     ).forEach {
 
         it.binaries.executable(setOf(NativeBuildType.RELEASE)) {
             baseName = "xmpcore"
-            entryPoint = "com.ashampoo.xmp.main"
+            entryPoint = "de.stefan_oltmann.xmp.main"
         }
 
         it.binaries.framework(setOf(NativeBuildType.RELEASE)) {
@@ -203,7 +202,6 @@ kotlin {
     val iosArm64Main by sourceSets.getting
     val iosX64Main by sourceSets.getting
     val iosSimulatorArm64Main by sourceSets.getting
-    val macosX64Main by sourceSets.getting
     val macosArm64Main by sourceSets.getting
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
@@ -215,14 +213,12 @@ kotlin {
         iosArm64Main.dependsOn(this)
         iosX64Main.dependsOn(this)
         iosSimulatorArm64Main.dependsOn(this)
-        macosX64Main.dependsOn(this)
         macosArm64Main.dependsOn(this)
     }
 
     val iosArm64Test by sourceSets.getting
     val iosX64Test by sourceSets.getting
     val iosSimulatorArm64Test by sourceSets.getting
-    val macosX64Test by sourceSets.getting
     val macosArm64Test by sourceSets.getting
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
@@ -233,7 +229,6 @@ kotlin {
         iosArm64Test.dependsOn(this)
         iosX64Test.dependsOn(this)
         iosSimulatorArm64Test.dependsOn(this)
-        macosX64Test.dependsOn(this)
         macosArm64Test.dependsOn(this)
     }
 }
@@ -251,7 +246,7 @@ tasks.getByPath("build").finalizedBy(writeVersion)
 // region Android setup
 android {
 
-    namespace = "com.ashampoo.xmpcore"
+    namespace = "de.stefan_oltmann.xmp"
 
     compileSdk = libs.versions.android.compile.sdk.get().toInt()
 
@@ -291,7 +286,7 @@ mavenPublishing {
         signAllPublications()
 
     coordinates(
-        groupId = "com.ashampoo",
+        groupId = "de.stefan-oltmann",
         artifactId = "xmpcore",
         version = version.toString()
     )
@@ -300,12 +295,12 @@ mavenPublishing {
 
         name = productName
         description = "XMP Core for Kotlin Multiplatform"
-        url = "https://github.com/Software-Rangers/xmpcore"
+        url = "https://github.com/StefanOltmann/xmpcore"
 
         licenses {
             license {
                 name = "The BSD License"
-                url = "https://github.com/Software-Rangers/xmpcore/blob/main/original_source/original_license.txt"
+                url = "https://github.com/StefanOltmann/xmpcore/blob/main/original_source/original_license.txt"
             }
         }
 
@@ -313,16 +308,14 @@ mavenPublishing {
             developer {
                 name = "Stefan Oltmann"
                 url = "https://stefan-oltmann.de/"
-                organization = "Software Rangers GmbH"
-                organizationUrl = "https://software-rangers.com/"
                 roles = listOf("maintainer", "developer")
                 properties = mapOf("github" to "StefanOltmann")
             }
         }
 
         scm {
-            url = "https://github.com/Software-Rangers/xmpcore"
-            connection = "scm:git:git://github.com/Software-Rangers/xmpcore.git"
+            url = "https://github.com/StefanOltmann/xmpcore"
+            connection = "scm:git:git://github.com/StefanOltmann/xmpcore.git"
         }
     }
 }

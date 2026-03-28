@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group = 'com.ashampoo'
+group = 'de.stefan-oltmann'
 version = '1.0-SNAPSHOT'
 
 repositories {
@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.ashampoo:xmpcore:1.4.0'
+    implementation 'de.stefan-oltmann:xmpcore:1.7.0'
 }
 
 // Needed to make it work for the Gradle java plugin

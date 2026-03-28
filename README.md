@@ -1,6 +1,6 @@
 # XMP Core for Kotlin Multiplatform
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.2.0-blue.svg?logo=kotlin)](httpw://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.3.20-blue.svg?logo=kotlin)](httpw://kotlinlang.org)
 ![JVM](https://img.shields.io/badge/-JVM-gray.svg?style=flat)
 ![Android](https://img.shields.io/badge/-Android-gray.svg?style=flat)
 ![iOS](https://img.shields.io/badge/-iOS-gray.svg?style=flat)
@@ -9,25 +9,22 @@
 ![macOS](https://img.shields.io/badge/-macOS-gray.svg?style=flat)
 ![JS](https://img.shields.io/badge/-JS-gray.svg?style=flat)
 ![WASM](https://img.shields.io/badge/-WASM-gray.svg?style=flat)
-![WASI](https://img.shields.io/badge/-WASI-gray.svg?style=flat)
 
-This library is a port of Adobe's XMP SDK to Kotlin Multiplatform by Ashampoo.
-
-It's part of [Ashampoo Photo Organizer](https://ashampoo.com/photo-organizer).
+This library is a port of Adobe's XMP SDK to Kotlin Multiplatform.
 
 ## Installation
 
 ```
-implementation("com.ashampoo:xmpcore:1.6.1")
+implementation("de.stefan-oltmann:xmpcore:1.7.0")
 ```
 
 ## How to use
 
 The library has been designed as a drop-in replacement for users who previously
-employed XMP Core Java. Therefore, all the documentation applicable to the
+used XMP Core Java. Therefore, all the documentation applicable to the
 Java SDK also pertains to this library.
 However, please note that we have made the decision to remove the functionality for reading
-from and writing to ByteArray and InputStreams, as we believe it is unnecessary.
+from and writing to ByteArray and InputStreams, as I believe it is unnecessary.
 
 ### Sample code
 
@@ -54,9 +51,9 @@ Also see the unit tests `ReadXmpTest` and `WriteXmpTest` to learn more about rea
 
 ### Migration hint
 
-If you have previously utilized the official XMP Core Java library available on
+If you have previously used the official XMP Core Java library available on
 Maven Central, please make sure to update your imports from `com.adobe.internal.xmp`
-to `com.ashampoo.xmp`.
+to `de.stefan_oltmann.xmp`.
 
 ## Contributions
 

@@ -1,7 +1,7 @@
-import com.ashampoo.xmp.XMPConst
-import com.ashampoo.xmp.XMPMetaFactory
-import com.ashampoo.xmp.options.ParseOptions
-import com.ashampoo.xmp.options.SerializeOptions
+import de.stefan_oltmann.xmp.XMPConst
+import de.stefan_oltmann.xmp.XMPMetaFactory
+import de.stefan_oltmann.xmp.options.ParseOptions
+import de.stefan_oltmann.xmp.options.SerializeOptions
 
 private val xmpSerializeOptionsCompact = SerializeOptions()
     .setOmitXmpMetaElement(false)
@@ -27,7 +27,7 @@ fun main() {
         3
     )
 
-    /* Ashampoo XMP Core convenience method. */
+    /* Convenience method. */
     newXmpMeta.setKeywords(
         setOf("cat", "cute", "animal")
     )
