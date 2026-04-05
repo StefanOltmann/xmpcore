@@ -71,6 +71,14 @@ kotlin {
 
     explicitApi()
 
+    compilerOptions {
+
+        /* Make the code safer */
+        progressiveMode = true
+        extraWarnings = true
+        allWarningsAsErrors = true
+    }
+
     androidTarget {
 
         compilerOptions {
@@ -114,7 +122,6 @@ kotlin {
 
     js()
 
-    @OptIn(ExperimentalWasmDsl::class)
     wasmJs()
 
     @Suppress("UnusedPrivateMember") // False positive
