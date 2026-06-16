@@ -1,6 +1,6 @@
 [versions]
 # Kotlin and Android
-kotlin = "2.3.20"
+kotlin = "2.4.0"
 android-gradle-plugin = "8.13.2"
 android-compile-sdk = "36"
 android-min-sdk = "21"
@@ -10,14 +10,14 @@ detekt = "1.23.8"
 kover = "0.9.8"
 build-time-tracker = "5.0.1"
 git-versioning = "6.4.4"
-gradle-versions = "0.52.0"
+gradle-versions = "0.54.0"
 maven-publish = "0.36.0"
 
 # Resources
 resources = "0.15.0"
 
 # Libraries
-xmlutil = "0.91.3"
+xmlutil = "0.91.3" # new: "1.0.0-rc3"
 kotlinx-io = "0.9.0"
 
 [libraries]

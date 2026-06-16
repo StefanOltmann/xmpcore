@@ -68,7 +68,11 @@ internal object DomParser {
 
         try {
 
-            val document = xmlStreaming.genericDomImplementation.createDocument()
+            val document = xmlStreaming.genericDomImplementation.createDocument(
+                namespace = null,
+                qualifiedName = null,
+                documentType = null
+            )
 
             val writer = xmlStreaming.newWriter(document)
 
