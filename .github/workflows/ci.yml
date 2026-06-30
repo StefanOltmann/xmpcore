@@ -80,7 +80,7 @@ jobs:
         with:
           if-no-files-found: error
           name: xmpcore.aar
-          path: build/outputs/aar/xmpcore-release.aar
+          path: build/outputs/aar/xmpcore.aar
       - name: Upload xmpcore.xcframework
         uses: actions/upload-artifact@v4
         with:
