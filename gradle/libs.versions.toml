@@ -11,7 +11,7 @@ kover = "0.9.8"
 build-time-tracker = "5.0.1"
 git-versioning = "6.4.4"
 gradle-versions = "0.54.0"
-maven-publish = "0.36.0"
+maven-publish = "0.37.0"
 
 # Resources
 resources = "0.15.0"
