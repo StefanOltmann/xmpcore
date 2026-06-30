@@ -17,8 +17,8 @@ maven-publish = "0.36.0"
 resources = "0.15.0"
 
 # Libraries
-xmlutil = "1.0.0-rc2" # current: "1.0.0-rc3"
-kotlinx-io = "0.9.0"
+xmlutil = "1.0.0"
+kotlinx-io = "0.9.1"
 
 [libraries]
 # XML Processing
