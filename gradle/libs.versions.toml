@@ -1,8 +1,8 @@
 [versions]
 # Kotlin and Android
 kotlin = "2.4.0"
-android-gradle-plugin = "8.13.2"
-android-compile-sdk = "36"
+android-gradle-plugin = "9.2.0"
+android-compile-sdk = "37"
 android-min-sdk = "21"
 
 # Build and Analysis Tools
@@ -37,7 +37,7 @@ resources = { module = "com.goncalossilva:resources", version.ref = "resources" 
 kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 
 # Android
-android-library = { id = "com.android.library", version.ref = "android-gradle-plugin" }
+android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "android-gradle-plugin" }
 
 # Code Analysis and Quality
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

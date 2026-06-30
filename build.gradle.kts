@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.detekt)
     alias(libs.plugins.kover)
     alias(libs.plugins.build.time.tracker)
@@ -71,13 +71,23 @@ kotlin {
 
     explicitApi()
 
-    androidTarget {
+    android {
+
+        namespace = "de.stefan_oltmann.xmp"
+
+        compileSdk = libs.versions.android.compile.sdk.get().toInt()
+
+        minSdk = libs.versions.android.min.sdk.get().toInt()
 
         compilerOptions {
-            jvmTarget = JvmTarget.JVM_11
+            jvmTarget.set(JvmTarget.JVM_11)
         }
 
-        publishLibraryVariants("release")
+        androidResources {
+            enable = true
+        }
+
+        withHostTest {}
     }
 
     mingwX64("win") {
@@ -241,33 +251,6 @@ val writeVersion = tasks.register("writeVersion") {
 }
 
 tasks.getByPath("build").finalizedBy(writeVersion)
-// endregion
-
-// region Android setup
-android {
-
-    namespace = "de.stefan_oltmann.xmp"
-
-    compileSdk = libs.versions.android.compile.sdk.get().toInt()
-
-    sourceSets["main"].res.srcDirs("src/commonMain/resources")
-
-    defaultConfig {
-        minSdk = libs.versions.android.min.sdk.get().toInt()
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    publishing {
-        singleVariant("release") {
-            withSourcesJar()
-            withJavadocJar()
-        }
-    }
-}
 // endregion
 
 // region Maven publish
