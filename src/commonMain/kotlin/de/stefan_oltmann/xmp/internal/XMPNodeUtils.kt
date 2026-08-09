@@ -227,8 +227,6 @@ internal object XMPNodeUtils {
             /* Set options only if a node has been successful created */
             if (leafOptions != null)
                 currNode.options.mergeWith(leafOptions)
-
-            currNode.options = currNode.options
         }
 
         return currNode
