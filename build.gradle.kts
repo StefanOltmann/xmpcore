@@ -128,7 +128,7 @@ kotlin {
     wasmJs()
 
     @Suppress("UnusedPrivateMember") // False positive
-    val commonMain by sourceSets.getting {
+    val commonMain = sourceSets.getByName("commonMain") {
 
         dependencies {
 
@@ -138,7 +138,7 @@ kotlin {
     }
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val commonTest by sourceSets.getting {
+    val commonTest = sourceSets.getByName("commonTest") {
         dependencies {
 
             /* Kotlin Test */
@@ -153,10 +153,10 @@ kotlin {
     }
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val jvmMain by sourceSets.getting
+    val jvmMain = sourceSets.getByName("jvmMain")
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val jvmTest by sourceSets.getting {
+    val jvmTest = sourceSets.getByName("jvmTest") {
         dependencies {
             implementation(kotlin("test-junit"))
         }
@@ -188,34 +188,34 @@ kotlin {
     }
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val androidMain by sourceSets.getting
+    val androidMain = sourceSets.getByName("androidMain")
 
-    val posixMain by sourceSets.creating {
+    val posixMain = sourceSets.create("posixMain") {
         dependsOn(commonMain)
     }
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val winMain by sourceSets.getting {
+    val winMain = sourceSets.getByName("winMain") {
         dependsOn(posixMain)
     }
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val linuxX64Main by sourceSets.getting {
+    val linuxX64Main = sourceSets.getByName("linuxX64Main") {
         dependsOn(posixMain)
     }
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val linuxArm64Main by sourceSets.getting {
+    val linuxArm64Main = sourceSets.getByName("linuxArm64Main") {
         dependsOn(posixMain)
     }
 
-    val iosArm64Main by sourceSets.getting
-    val iosX64Main by sourceSets.getting
-    val iosSimulatorArm64Main by sourceSets.getting
-    val macosArm64Main by sourceSets.getting
+    val iosArm64Main = sourceSets.getByName("iosArm64Main")
+    val iosX64Main = sourceSets.getByName("iosX64Main")
+    val iosSimulatorArm64Main = sourceSets.getByName("iosSimulatorArm64Main")
+    val macosArm64Main = sourceSets.getByName("macosArm64Main")
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val appleMain by sourceSets.creating {
+    val appleMain = sourceSets.create("appleMain") {
 
         dependsOn(commonMain)
         dependsOn(posixMain)
@@ -226,13 +226,13 @@ kotlin {
         macosArm64Main.dependsOn(this)
     }
 
-    val iosArm64Test by sourceSets.getting
-    val iosX64Test by sourceSets.getting
-    val iosSimulatorArm64Test by sourceSets.getting
-    val macosArm64Test by sourceSets.getting
+    val iosArm64Test = sourceSets.getByName("iosArm64Test")
+    val iosX64Test = sourceSets.getByName("iosX64Test")
+    val iosSimulatorArm64Test = sourceSets.getByName("iosSimulatorArm64Test")
+    val macosArm64Test = sourceSets.getByName("macosArm64Test")
 
     @Suppress("UnusedPrivateMember", "UNUSED_VARIABLE") // False positive
-    val appleTest by sourceSets.creating {
+    val appleTest = sourceSets.create("appleTest") {
 
         dependsOn(commonTest)
 
@@ -255,7 +255,7 @@ tasks.getByPath("build").finalizedBy(writeVersion)
 
 // region Maven publish
 
-val javadocJar by tasks.registering(Jar::class) {
+val javadocJar = tasks.register<Jar>("javadocJar") {
     archiveClassifier.set("javadoc")
 }
 

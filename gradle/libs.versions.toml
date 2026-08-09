@@ -46,7 +46,7 @@ kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 # Build Tools
 build-time-tracker = { id = "com.asarkar.gradle.build-time-tracker", version.ref = "build-time-tracker" }
 git-versioning = { id = "me.qoomon.git-versioning", version.ref = "git-versioning" }
-gradle-versions = { id = "com.github.ben-manes.versions", version.ref = "gradle-versions" }
+gradle-versions = { id = "io.github.ben-manes.versions", version.ref = "gradle-versions" }
 
 # Resources and Publishing
 resources = { id = "com.goncalossilva.resources", version.ref = "resources" }
