@@ -57,7 +57,7 @@ internal object XMPNodeUtils {
         createNodes: Boolean
     ): XMPNode? {
 
-        // make sure that its the root
+        /* make sure that its the root */
         require(tree.parent == null)
 
         var schemaNode = tree.findChildByName(namespaceURI)
@@ -72,7 +72,7 @@ internal object XMPNodeUtils {
 
             schemaNode.isImplicit = true
 
-            // only previously registered schema namespaces are allowed in the XMP tree.
+            /* only previously registered schema namespaces are allowed in the XMP tree. */
             var prefix = XMPSchemaRegistry.getNamespacePrefix(namespaceURI!!)
 
             if (prefix == null) {
@@ -154,8 +154,10 @@ internal object XMPNodeUtils {
         if (xpath == null || xpath.size() == 0)
             throw XMPException("Empty XMPPath", XMPErrorConst.BADXPATH)
 
-        // Root of implicitly created subtree to possible delete it later.
-        // Valid only if leaf is new.
+        /*
+         * Root of implicitly created subtree to possible delete it later.
+         * Valid only if leaf is new.
+         */
         var rootImplicitNode: XMPNode? = null
 
         var currNode: XMPNode? =
@@ -170,7 +172,7 @@ internal object XMPNodeUtils {
             rootImplicitNode = currNode // Save the top most implicit node.
         }
 
-        // Now follow the remaining steps of the original XMPPath.
+        /* Now follow the remaining steps of the original XMPPath. */
         try {
 
             for (index in 1 until xpath.size()) {
@@ -179,7 +181,7 @@ internal object XMPNodeUtils {
 
                 if (currNode == null) {
 
-                    // delete implicitly created nodes
+                    /* delete implicitly created nodes */
                     if (createNodes)
                         deleteNode(rootImplicitNode!!)
 
@@ -187,11 +189,13 @@ internal object XMPNodeUtils {
 
                 } else if (currNode.isImplicit) {
 
-                    // clear the implicit node flag
+                    /* clear the implicit node flag */
                     currNode.isImplicit = false
 
-                    // if node is an ALIAS (can be only in root step, auto-create array
-                    // when the path has been resolved from a not simple alias type
+                    /*
+                     * if node is an ALIAS (can be only in root step, auto-create array
+                     * when the path has been resolved from a not simple alias type
+                     */
                     if (index == 1 &&
                         xpath.getSegment(index).isAlias && xpath.getSegment(index).aliasForm != 0
                     ) {
@@ -211,7 +215,7 @@ internal object XMPNodeUtils {
 
         } catch (ex: XMPException) {
 
-            // if new notes have been created prior to the error, delete them
+            /* if new notes have been created prior to the error, delete them */
             if (rootImplicitNode != null)
                 deleteNode(rootImplicitNode)
 
@@ -220,7 +224,7 @@ internal object XMPNodeUtils {
 
         if (rootImplicitNode != null) {
 
-            // set options only if a node has been successful created
+            /* set options only if a node has been successful created */
             if (leafOptions != null)
                 currNode.options.mergeWith(leafOptions)
 
@@ -246,7 +250,7 @@ internal object XMPNodeUtils {
         else
             parent!!.removeChild(node)
 
-        // delete empty Schema nodes
+        /* delete empty Schema nodes */
         if (!parent.hasChildren() && parent.options.isSchemaNode())
             parent.parent!!.removeChild(parent)
     }
@@ -348,7 +352,7 @@ internal object XMPNodeUtils {
             nextNode = findQualifierNode(parentNode, nextStep.name!!.substring(1), createNodes)
         } else {
 
-            // This is an array indexing step. First get the index, then get the node.
+            /* This is an array indexing step. First get the index, then get the node. */
             if (!parentNode.options.isArray())
                 throw XMPException("Indexing applied to non-array", XMPErrorConst.BADXPATH)
 
@@ -439,7 +443,7 @@ internal object XMPNodeUtils {
 
         if (createNodes && index == arrayNode.getChildrenLength() + 1) {
 
-            // Append a new last + 1 node.
+            /* Append a new last + 1 node. */
             val newItem = XMPNode(XMPConst.ARRAY_ITEM_NAME, null)
 
             newItem.isImplicit = true
@@ -555,14 +559,14 @@ internal object XMPNodeUtils {
         if (!arrayNode.options.isArrayAltText())
             return
 
-        // check if node with x-default qual is first place
+        /* check if node with x-default qual is first place */
         for (index in 2..arrayNode.getChildrenLength()) {
 
             val child = arrayNode.getChild(index)
 
             if (child.hasQualifier() && XMPConst.X_DEFAULT == child.getQualifier(1).value) {
 
-                // move node to first place
+                /* move node to first place */
                 arrayNode.removeChild(index)
                 arrayNode.addChild(1, child)
 
@@ -626,7 +630,7 @@ internal object XMPNodeUtils {
     @kotlin.jvm.JvmStatic
     fun chooseLocalizedText(arrayNode: XMPNode, genericLang: String?, specificLang: String): Array<Any?> {
 
-        // See if the array has the right form. Allow empty alt arrays, that is what parsing returns.
+        /* See if the array has the right form. Allow empty alt arrays, that is what parsing returns. */
 
         if (!arrayNode.options.isArrayAltText())
             throw XMPException("Localized text array is not alt-text", XMPErrorConst.BADXPATH)
@@ -637,14 +641,14 @@ internal object XMPNodeUtils {
         var resultNode: XMPNode? = null
         var xDefault: XMPNode? = null
 
-        // Look for the first partial match with the generic language.
+        /* Look for the first partial match with the generic language. */
         val it = arrayNode.iterateChildren()
 
         while (it.hasNext()) {
 
             val currItem = it.next()
 
-            // perform some checks on the current item
+            /* perform some checks on the current item */
             if (currItem.options.isCompositeProperty())
                 throw XMPException("Alt-text array item is not simple", XMPErrorConst.BADXPATH)
             else if (!currItem.hasQualifier() || XMPConst.XML_LANG != currItem.getQualifier(1).name)
@@ -652,7 +656,7 @@ internal object XMPNodeUtils {
 
             val currLang = currItem.getQualifier(1).value
 
-            // Look for an exact match with the specific language.
+            /* Look for an exact match with the specific language. */
             when {
 
                 specificLang == currLang ->
@@ -663,7 +667,7 @@ internal object XMPNodeUtils {
                     if (resultNode == null)
                         resultNode = currItem
 
-                    // ! Don't return/break, need to look for other matches.
+                    /* ! Don't return/break, need to look for other matches. */
                     foundGenericMatches++
                 }
 
@@ -672,7 +676,7 @@ internal object XMPNodeUtils {
             }
         }
 
-        // evaluate loop
+        /* evaluate loop */
         return when {
 
             foundGenericMatches == 1 ->

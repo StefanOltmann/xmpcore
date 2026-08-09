@@ -151,7 +151,7 @@ public object XMPConst {
      */
     public const val NS_SWF: String = "http://ns.adobe.com/swf/1.0/"
 
-    // XMP namespaces that are Adobe private
+    /* XMP namespaces that are Adobe private */
 
     public const val NS_DM: String = "http://ns.adobe.com/xmp/1.0/DynamicMedia/"
 
@@ -162,7 +162,7 @@ public object XMPConst {
      */
     public const val NS_DC_DEPRECATED: String = "http://purl.org/dc/1.1/"
 
-    // Namespaces of products
+    /* Namespaces of products */
     public const val NS_ACDSEE: String = "http://ns.acdsee.com/iptc/1.0/"
     public const val NS_DIGIKAM: String = "http://www.digikam.org/ns/1.0/"
     public const val NS_MYLIO: String = "http://ns.mylollc.com/MyloEdit/"
@@ -171,7 +171,7 @@ public object XMPConst {
     public const val NS_LIGHTROOM: String = "http://ns.adobe.com/lightroom/1.0/"
     public const val NS_PHOTOSHOP: String = "http://ns.adobe.com/photoshop/1.0/"
 
-    // XML namespace constants for qualifiers and structured property fields.
+    /* XML namespace constants for qualifiers and structured property fields. */
 
     /**
      * The XML namespace for qualifiers of the xmp:Identifier property.
@@ -220,8 +220,10 @@ public object XMPConst {
 
     public const val TYPE_MANIFEST_ITEM: String = "http://ns.adobe.com/xap/1.0/sType/ManifestItem#"
 
-    // ---------------------------------------------------------------------------------------------
-    // Basic types and constants
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Basic types and constants
+     */
 
     /**
      * The canonical true string value for Booleans in serialized XMP. Code that converts from the

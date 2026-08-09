@@ -56,8 +56,10 @@ public class XMPMeta internal constructor() {
 
     private val arrayOptions = PropertyOptions().setArray(true)
 
-    // ---------------------------------------------------------------------------------------------
-    // Basic property manipulation functions
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Basic property manipulation functions
+     */
 
     /**
      * The property value getter-methods all take a property specification: the first two parameters
@@ -290,7 +292,7 @@ public class XMPMeta internal constructor() {
         qualName: String
     ): XMPProperty? {
 
-        // qualNS and qualName are checked inside composeQualfierPath
+        /* qualNS and qualName are checked inside composeQualfierPath */
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
 
@@ -302,8 +304,10 @@ public class XMPMeta internal constructor() {
         return getProperty(schemaNS, qualPath)
     }
 
-// ---------------------------------------------------------------------------------------------
-// Functions for setting property values
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Functions for setting property values
+     */
 
     /**
      * The property value `setters` all take a property specification, their
@@ -373,12 +377,12 @@ public class XMPMeta internal constructor() {
         if (deleteExisting)
             node.clear()
 
-        // its checked by setOptions(), if the merged result is a valid options set
+        /* its checked by setOptions(), if the merged result is a valid options set */
         node.options.mergeWith(newOptions)
 
         if (node.options.getOptions() and compositeMask == 0) {
 
-            // This is setting the value of a leaf node.
+            /* This is setting the value of a leaf node. */
             setNodeValue(node, value)
 
         } else {
@@ -386,7 +390,7 @@ public class XMPMeta internal constructor() {
             if (value != null && value.toString().isNotEmpty())
                 throw XMPException("Composite nodes can't have values", XMPErrorConst.BADXPATH)
 
-            // Can't change an array to a struct, or vice versa.
+            /* Can't change an array to a struct, or vice versa. */
             if (node.options.getOptions() and compositeMask != 0 &&
                 newOptions.getOptions() and compositeMask != node.options.getOptions() and compositeMask
             )
@@ -428,7 +432,7 @@ public class XMPMeta internal constructor() {
         if (arrayName.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_ARRAY_NAME_TEXT, XMPErrorConst.BADPARAM)
 
-        // Just lookup, don't try to create.
+        /* Just lookup, don't try to create. */
         val arrayPath = expandXPath(schemaNS, arrayName)
         val arrayNode = findNode(this.root, arrayPath, false, null)
 
@@ -469,7 +473,7 @@ public class XMPMeta internal constructor() {
         if (arrayName.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_ARRAY_NAME_TEXT, XMPErrorConst.BADPARAM)
 
-        // Just lookup, don't try to create.
+        /* Just lookup, don't try to create. */
         val arrayPath = expandXPath(schemaNS, arrayName)
         val arrayNode = findNode(this.root, arrayPath, false, null)
 
@@ -521,25 +525,27 @@ public class XMPMeta internal constructor() {
         if (!arrayOptions.isOnlyArrayOptions())
             throw XMPException("Only array form flags allowed for arrayOptions", XMPErrorConst.BADOPTIONS)
 
-        // Check if array options are set correctly.
+        /* Check if array options are set correctly. */
         val verifiedArrayOptions = verifySetOptions(arrayOptions, null)
 
-        // Locate or create the array. If it already exists, make sure the array form from the options
-        // parameter is compatible with the current state.
+        /*
+         * Locate or create the array. If it already exists, make sure the array form from the options
+         * parameter is compatible with the current state.
+         */
         val arrayPath = expandXPath(schemaNS, arrayName)
 
-        // Just lookup, don't try to create.
+        /* Just lookup, don't try to create. */
         var arrayNode = findNode(this.root, arrayPath, false, null)
 
         if (arrayNode != null) {
 
-            // The array exists, make sure the form is compatible. Zero arrayForm means take what exists.
+            /* The array exists, make sure the form is compatible. Zero arrayForm means take what exists. */
             if (!arrayNode.options.isArray())
                 throw XMPException("The named property is not an array", XMPErrorConst.BADXPATH)
 
         } else {
 
-            // The array does not exist, try to create it.
+            /* The array does not exist, try to create it. */
             if (verifiedArrayOptions.isArray()) {
 
                 arrayNode = findNode(this.root, arrayPath, true, verifiedArrayOptions)
@@ -549,7 +555,7 @@ public class XMPMeta internal constructor() {
 
             } else {
 
-                // array options missing
+                /* array options missing */
                 throw XMPException(
                     "Explicit arrayOptions required to create new array",
                     XMPErrorConst.BADOPTIONS
@@ -579,8 +585,10 @@ public class XMPMeta internal constructor() {
 
         val verifiedItemOptions = verifySetOptions(itemOptions, itemValue)
 
-        // in insert mode the index after the last is allowed,
-        // even ARRAY_LAST_ITEM points to the index *after* the last.
+        /*
+         * in insert mode the index after the last is allowed,
+         * even ARRAY_LAST_ITEM points to the index *after* the last.
+         */
         val maxIndex = if (insert)
             arrayNode.getChildrenLength() + 1
         else
@@ -690,9 +698,11 @@ public class XMPMeta internal constructor() {
         setProperty(schemaNS, qualPath, qualValue, options)
     }
 
-// ---------------------------------------------------------------------------------------------
-// Functions for deleting and detecting properties.
-// These should be obvious from the descriptions of the getters and setters.
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Functions for deleting and detecting properties.
+     * These should be obvious from the descriptions of the getters and setters.
+     */
 
     /**
      * Deletes the given XMP subtree rooted at the given property.
@@ -765,7 +775,7 @@ public class XMPMeta internal constructor() {
         fieldName: String
     ) {
 
-        // fieldNS and fieldName are checked inside composeStructFieldPath
+        /* fieldNS and fieldName are checked inside composeStructFieldPath */
 
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
@@ -793,7 +803,7 @@ public class XMPMeta internal constructor() {
      */
     public fun deleteQualifier(schemaNS: String, propName: String, qualNS: String, qualName: String) {
 
-        // Note: qualNS and qualName are checked inside composeQualfierPath
+        /* Note: qualNS and qualName are checked inside composeQualfierPath */
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
 
@@ -876,7 +886,7 @@ public class XMPMeta internal constructor() {
         fieldName: String
     ): Boolean {
 
-        // fieldNS and fieldName are checked inside composeStructFieldPath()
+        /* fieldNS and fieldName are checked inside composeStructFieldPath() */
 
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
@@ -909,7 +919,7 @@ public class XMPMeta internal constructor() {
         qualName: String
     ): Boolean {
 
-        // qualNS and qualName are checked inside composeQualifierPath()
+        /* qualNS and qualName are checked inside composeQualifierPath() */
 
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
@@ -922,8 +932,10 @@ public class XMPMeta internal constructor() {
         return doesPropertyExist(schemaNS, propName + path)
     }
 
-// ---------------------------------------------------------------------------------------------
-// Specialized Get and Set functions
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Specialized Get and Set functions
+     */
 
     /**
      * These functions provide convenient support for localized text properties, including a number
@@ -1003,7 +1015,7 @@ public class XMPMeta internal constructor() {
 
         val arrayPath = expandXPath(schemaNS, altTextName)
 
-        // *** This expand/find idiom is used in 3 Getters.
+        /* *** This expand/find idiom is used in 3 Getters. */
         val arrayNode = findNode(this.root, arrayPath, false, null) ?: return null
         val result = chooseLocalizedText(arrayNode, normalizedGenericLang, normalizedSpecificLang)
         val match = result[0] as Int
@@ -1081,7 +1093,7 @@ public class XMPMeta internal constructor() {
 
         val arrayPath = expandXPath(schemaNS, altTextName)
 
-        // Find the array node and set the options if it was just created.
+        /* Find the array node and set the options if it was just created. */
         val arrayNode = findNode(
             this.root, arrayPath, true,
             PropertyOptions(
@@ -1102,7 +1114,7 @@ public class XMPMeta internal constructor() {
                 throw XMPException("Specified property is no alt-text array", XMPErrorConst.BADXPATH)
         }
 
-        // Make sure the x-default item, if any, is first.
+        /* Make sure the x-default item, if any, is first. */
         var haveXDefault = false
         var xdItem: XMPNode? = null
 
@@ -1118,15 +1130,17 @@ public class XMPMeta internal constructor() {
             }
         }
 
-        // Moves x-default to the beginning of the array
+        /* Moves x-default to the beginning of the array */
         if (xdItem != null && arrayNode.getChildrenLength() > 1) {
 
             arrayNode.removeChild(xdItem)
             arrayNode.addChild(1, xdItem)
         }
 
-        // Find the appropriate item.
-        // chooseLocalizedText will make sure the array is a language alternative.
+        /*
+         * Find the appropriate item.
+         * chooseLocalizedText will make sure the array is a language alternative.
+         */
         val result = chooseLocalizedText(arrayNode, normalizedGenericLang, normalizedSpecificLang)
         val match = result[0] as Int
         val itemNode = result[1] as? XMPNode
@@ -1137,7 +1151,7 @@ public class XMPMeta internal constructor() {
 
             XMPNodeUtils.CLT_NO_VALUES -> {
 
-                // Create the array items for the specificLang and x-default, with x-default first.
+                /* Create the array items for the specificLang and x-default, with x-default first. */
                 appendLangItem(arrayNode, XMPConst.X_DEFAULT, itemValue)
 
                 haveXDefault = true
@@ -1148,16 +1162,16 @@ public class XMPMeta internal constructor() {
 
             XMPNodeUtils.CLT_SPECIFIC_MATCH -> if (!specificXDefault) {
 
-                // Update the specific item, update x-default if it matches the old value.
+                /* Update the specific item, update x-default if it matches the old value. */
                 if (haveXDefault && xdItem != itemNode && xdItem != null && xdItem.value == itemNode!!.value)
                     xdItem.value = itemValue
 
-                // ! Do this after the x-default check!
+                /* ! Do this after the x-default check! */
                 itemNode!!.value = itemValue
 
             } else {
 
-                // Update all items whose values match the old x-default value.
+                /* Update all items whose values match the old x-default value. */
                 check(haveXDefault && xdItem == itemNode)
 
                 val it = arrayNode.iterateChildren()
@@ -1172,24 +1186,24 @@ public class XMPMeta internal constructor() {
                     currItem.value = itemValue
                 }
 
-                // And finally do the x-default item.
+                /* And finally do the x-default item. */
                 if (xdItem != null)
                     xdItem.value = itemValue
             }
 
             XMPNodeUtils.CLT_SINGLE_GENERIC -> {
 
-                // Update the generic item, update x-default if it matches the old value.
+                /* Update the generic item, update x-default if it matches the old value. */
                 if (haveXDefault && xdItem != itemNode && xdItem != null && xdItem.value == itemNode!!.value)
                     xdItem.value = itemValue
 
-                // ! Do this after the x-default check!
+                /* ! Do this after the x-default check! */
                 itemNode!!.value = itemValue
             }
 
             XMPNodeUtils.CLT_FIRST_ITEM, XMPNodeUtils.CLT_MULTIPLE_GENERIC -> {
 
-                // Create the specific language, ignore x-default.
+                /* Create the specific language, ignore x-default. */
                 appendLangItem(arrayNode, normalizedSpecificLang, itemValue)
 
                 if (specificXDefault) haveXDefault = true
@@ -1197,7 +1211,7 @@ public class XMPMeta internal constructor() {
 
             XMPNodeUtils.CLT_XDEFAULT -> {
 
-                // Create the specific language, update x-default if it was the only item.
+                /* Create the specific language, update x-default if it was the only item. */
                 if (xdItem != null && arrayNode.getChildrenLength() == 1)
                     xdItem.value = itemValue
 
@@ -1211,13 +1225,15 @@ public class XMPMeta internal constructor() {
                 )
         }
 
-        // Add an x-default at the front if needed.
+        /* Add an x-default at the front if needed. */
         if (!haveXDefault && arrayNode.getChildrenLength() == 1)
             appendLangItem(arrayNode, XMPConst.X_DEFAULT, itemValue)
     }
 
-// ---------------------------------------------------------------------------------------------
-// Functions accessing properties as binary values.
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Functions accessing properties as binary values.
+     */
 
     /**
      * These are very similar to `getProperty()` and `SetProperty()` above,

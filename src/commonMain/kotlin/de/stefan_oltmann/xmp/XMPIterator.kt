@@ -109,10 +109,10 @@ public class XMPIterator(
      */
     init {
 
-        // make sure that options is defined at least with defaults
+        /* make sure that options is defined at least with defaults */
         this.options = options ?: IteratorOptions()
 
-        // the start node of the iteration depending on the schema and property filter
+        /* the start node of the iteration depending on the schema and property filter */
         var startNode: XMPNode?
         var initialPath: String? = null
         val baseSchema = !schemaNS.isNullOrEmpty()
@@ -122,17 +122,17 @@ public class XMPIterator(
 
             !baseSchema && !baseProperty -> {
 
-                // complete tree will be iterated
+                /* complete tree will be iterated */
                 startNode = xmp.root
             }
 
             baseSchema && baseProperty -> {
 
-                // Schema and property node provided
+                /* Schema and property node provided */
 
                 val path = expandXPath(schemaNS, propPath)
 
-                // base path is the prop path without the property leaf
+                /* base path is the prop path without the property leaf */
                 val basePath = XMPPath()
 
                 for (i in 0 until path.size() - 1)
@@ -145,19 +145,21 @@ public class XMPIterator(
 
             baseSchema && !baseProperty -> {
 
-                // Only Schema provided
+                /* Only Schema provided */
                 startNode = findSchemaNode(xmp.root, schemaNS, false)
             }
 
             else -> {
 
-                // !baseSchema  &&  baseProperty
-                // No schema but property provided -> error
+                /*
+                 * !baseSchema  &&  baseProperty
+                 * No schema but property provided -> error
+                 */
                 throw XMPException("Schema namespace URI is required", XMPErrorConst.BADSCHEMA)
             }
         }
 
-        // create iterator
+        /* create iterator */
         if (startNode != null) {
 
             if (!this.options.isJustChildren())
@@ -255,7 +257,7 @@ public class XMPIterator(
             if (visitedNode.options.isSchemaNode())
                 baseNS = visitedNode.name
 
-            // for all but the root node and schema nodes
+            /* for all but the root node and schema nodes */
             path = accumulatePath(visitedNode, parentPath, index)
         }
 
@@ -269,7 +271,7 @@ public class XMPIterator(
             if (returnProperty != null)
                 return true // hasNext has been called before
 
-            // find next node
+            /* find next node */
             return if (state == ITERATE_NODE) {
 
                 reportNode()
@@ -509,7 +511,7 @@ public class XMPIterator(
          */
         override fun hasNext(): Boolean {
 
-            // hasNext has been called before
+            /* hasNext has been called before */
             if (returnProperty != null)
                 return true
 

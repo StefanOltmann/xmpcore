@@ -80,8 +80,10 @@ public object XMPSchemaRegistry {
         }
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Namespace Functions
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Namespace Functions
+     */
 
     /**
      * Register a namespace URI with a suggested prefix. It is not an error if
@@ -118,14 +120,16 @@ public object XMPSchemaRegistry {
         val registeredPrefix = namespaceToPrefixMap[namespaceURI]
         val registeredNS = prefixToNamespaceMap[actualSuggestedPrefix]
 
-        // Return the actual prefix
+        /* Return the actual prefix */
         if (registeredPrefix != null)
             return registeredPrefix
 
         if (registeredNS != null) {
 
-            // the namespace is new, but the prefix is already engaged,
-            // we generate a new prefix out of the suggested
+            /*
+             * the namespace is new, but the prefix is already engaged,
+             * we generate a new prefix out of the suggested
+             */
             var generatedPrefix = actualSuggestedPrefix
 
             var i = 1
@@ -142,7 +146,7 @@ public object XMPSchemaRegistry {
         prefixToNamespaceMap[actualSuggestedPrefix] = namespaceURI
         namespaceToPrefixMap[namespaceURI] = actualSuggestedPrefix
 
-        // Return the suggested prefix
+        /* Return the suggested prefix */
         return actualSuggestedPrefix
     }
 
@@ -208,7 +212,7 @@ public object XMPSchemaRegistry {
      */
     private fun registerStandardNamespaces() {
 
-        // register standard namespaces
+        /* register standard namespaces */
         registerNamespace(XMPConst.NS_XML, "xml")
         registerNamespace(XMPConst.NS_RDF, "rdf")
         registerNamespace(XMPConst.NS_DC, "dc")
@@ -217,10 +221,10 @@ public object XMPSchemaRegistry {
         registerNamespace(XMPConst.NS_DICOM, "DICOM")
         registerNamespace(XMPConst.NS_PLUS, "plus")
 
-        // register other common schemas
+        /* register other common schemas */
         registerNamespace(XMPConst.NS_MWG_RS, "mwg-rs")
 
-        // register product specific schemas
+        /* register product specific schemas */
         registerNamespace(XMPConst.NS_ACDSEE, "acdsee")
         registerNamespace(XMPConst.NS_DIGIKAM, "digiKam")
         registerNamespace(XMPConst.NS_MYLIO, "MY")
@@ -229,7 +233,7 @@ public object XMPSchemaRegistry {
         registerNamespace(XMPConst.NS_LIGHTROOM, "lr")
         registerNamespace(XMPConst.NS_PHOTOSHOP, "photoshop")
 
-        // register Adobe standard namespaces
+        /* register Adobe standard namespaces */
         registerNamespace(XMPConst.NS_X, "x")
         registerNamespace(XMPConst.NS_IX, "iX")
         registerNamespace(XMPConst.NS_XMP, "xmp")
@@ -265,11 +269,11 @@ public object XMPSchemaRegistry {
         registerNamespace(XMPConst.NS_TRANSFORM_XMP, "txmp")
         registerNamespace(XMPConst.NS_SWF, "swf")
 
-        // register Adobe private namespaces
+        /* register Adobe private namespaces */
         registerNamespace(XMPConst.NS_DM, "xmpDM")
         registerNamespace(XMPConst.NS_TRANSIENT, "xmpx")
 
-        // register Adobe standard type namespaces
+        /* register Adobe standard type namespaces */
         registerNamespace(XMPConst.TYPE_TEXT, "xmpT")
         registerNamespace(XMPConst.TYPE_PAGED_FILE, "xmpTPg")
         registerNamespace(XMPConst.TYPE_GRAPHICS, "xmpG")
@@ -285,8 +289,10 @@ public object XMPSchemaRegistry {
         registerNamespace(XMPConst.TYPE_IDENTIFIERQUAL, "xmpidq")
     }
 
-    // ---------------------------------------------------------------------------------------------
-    // Alias Functions
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Alias Functions
+     */
 
     /**
      * Determines if a name is an alias, and what it is aliased to.
@@ -393,7 +399,7 @@ public object XMPSchemaRegistry {
         if (actualProp.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_PROPERTY_NAME_TEXT, XMPErrorConst.BADPARAM)
 
-        // Fix the alias options
+        /* Fix the alias options */
         val aliasOpts = if (aliasForm != null)
             AliasOptions(
                 XMPNodeUtils.verifySetOptions(
@@ -407,7 +413,7 @@ public object XMPSchemaRegistry {
         if (simpleProperyPattern.matches(aliasProp) || simpleProperyPattern.matches(actualProp))
             throw XMPException("Alias and actual property names must be simple", XMPErrorConst.BADXPATH)
 
-        // check if both namespaces are registered
+        /* check if both namespaces are registered */
         val aliasPrefix = getNamespacePrefix(aliasNS)
         val actualPrefix = getNamespacePrefix(actualNS)
 
@@ -418,7 +424,7 @@ public object XMPSchemaRegistry {
 
         val key = aliasPrefix + aliasProp
 
-        // check if alias is already existing
+        /* check if alias is already existing */
         if (aliasMap.containsKey(key))
             throw XMPException("Alias is already existing", XMPErrorConst.BADPARAM)
         else if (aliasMap.containsKey(actualPrefix + actualProp))
@@ -460,7 +466,7 @@ public object XMPSchemaRegistry {
         val aliasToArrayOrdered = AliasOptions().setArrayOrdered(true)
         val aliasToArrayAltText = AliasOptions().setArrayAltText(true)
 
-        // Aliases from XMP to DC.
+        /* Aliases from XMP to DC. */
         registerAlias(
             XMPConst.NS_XMP,
             "Author",
@@ -518,7 +524,7 @@ public object XMPSchemaRegistry {
             null
         )
 
-        // Aliases from PDF to DC and XMP.
+        /* Aliases from PDF to DC and XMP. */
         registerAlias(
             XMPConst.NS_PDF,
             "Author",
@@ -569,7 +575,7 @@ public object XMPSchemaRegistry {
             aliasToArrayAltText
         )
 
-        // Aliases from PHOTOSHOP to DC and XMP.
+        /* Aliases from PHOTOSHOP to DC and XMP. */
         registerAlias(
             XMPConst.NS_PHOTOSHOP,
             "Author",
@@ -620,7 +626,7 @@ public object XMPSchemaRegistry {
             null
         )
 
-        // Aliases from TIFF and EXIF to DC and XMP.
+        /* Aliases from TIFF and EXIF to DC and XMP. */
         registerAlias(
             XMPConst.NS_TIFF,
             "Artist",
@@ -664,7 +670,7 @@ public object XMPSchemaRegistry {
             null
         )
 
-        // Aliases from PNG (Acrobat ImageCapture) to DC and XMP.
+        /* Aliases from PNG (Acrobat ImageCapture) to DC and XMP. */
         registerAlias(
             XMPConst.NS_PNG,
             "Author",

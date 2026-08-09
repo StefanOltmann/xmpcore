@@ -203,15 +203,17 @@ internal object XMPRDFParser {
         isTopLevel: Boolean
     ) {
 
-        // Used to detect attributes that are mutually exclusive.
+        /* Used to detect attributes that are mutually exclusive. */
         var exclusiveAttrs = 0
 
         for (index in 0 until xmlNode.attributes.getLength()) {
 
             val attribute = xmlNode.attributes.item(index) as Attr
 
-            // quick hack, ns declarations do not appear in C++
-            // ignore "ID" without namespace
+            /*
+             * quick hack, ns declarations do not appear in C++
+             * ignore "ID" without namespace
+             */
             if (XMLNS == attribute.prefix || attribute.prefix == null && XMLNS == attribute.nodeName)
                 continue
 
@@ -231,10 +233,12 @@ internal object XMPRDFParser {
 
                     if (isTopLevel && attrTerm == RDFTERM_ABOUT) {
 
-                        // This is the rdf:about attribute on a top level node. Set
-                        // the XMP tree name if
-                        // it doesn't have a name yet. Make sure this name matches
-                        // the XMP tree name.
+                        /*
+                         * This is the rdf:about attribute on a top level node. Set
+                         * the XMP tree name if
+                         * it doesn't have a name yet. Make sure this name matches
+                         * the XMP tree name.
+                         */
                         if (xmpParent.name != null && xmpParent.name!!.isNotEmpty()) {
 
                             if (xmpParent.name != attribute.value)
@@ -370,7 +374,7 @@ internal object XMPRDFParser {
         if (!isPropertyElementName(nodeTerm))
             throw XMPException("Invalid property element name", XMPErrorConst.BADRDF)
 
-        // remove the namespace-definitions from the list
+        /* remove the namespace-definitions from the list */
         val attributes = xmlNode.attributes
 
         var nsAttrs: MutableList<String>? = null
@@ -489,13 +493,13 @@ internal object XMPRDFParser {
         options: ParseOptions
     ) {
 
-        // Strip old "punchcard" chaff which has on the prefix "iX:".
+        /* Strip old "punchcard" chaff which has on the prefix "iX:". */
         if (isTopLevel && "iX:changes" == xmlNode.nodeName)
             return
 
         val newCompound = addChildNode(xmp, xmpParent, xmlNode, "", isTopLevel)
 
-        // walk through the attributes
+        /* walk through the attributes */
         @Suppress("LoopWithTooManyJumpStatements")
         for (index in 0 until xmlNode.attributes.getLength()) {
 
@@ -512,7 +516,7 @@ internal object XMPRDFParser {
                 throw XMPException("Invalid attribute for resource property element", XMPErrorConst.BADRDF)
         }
 
-        // walk through the children
+        /* walk through the children */
         var found = false
 
         for (index in 0 until xmlNode.childNodes.length) {
@@ -568,7 +572,7 @@ internal object XMPRDFParser {
                     found = true
 
                 } else if (found) {
-                    // found second child element
+                    /* found second child element */
                     throw XMPException("Invalid child of resource property element", XMPErrorConst.BADRDF)
                 } else {
                     throw XMPException(
@@ -818,11 +822,13 @@ internal object XMPRDFParser {
             }
         }
 
-        // Create the right kind of child node and visit the attributes again
-        // to add the fields or qualifiers.
-        // ! Because of implementation vagaries,
-        //   the xmpParent is the tree root for top level properties.
-        // ! The schema is found, created if necessary, by addChildNode.
+        /*
+         * Create the right kind of child node and visit the attributes again
+         * to add the fields or qualifiers.
+         * ! Because of implementation vagaries,
+         * the xmpParent is the tree root for top level properties.
+         * ! The schema is found, created if necessary, by addChildNode.
+         */
         val childNode = addChildNode(xmp, xmpParent, xmlNode, "", isTopLevel)
 
         var childIsStruct = false
@@ -837,7 +843,7 @@ internal object XMPRDFParser {
 
             childNode.value = valueNodeValue ?: ""
 
-            // ! Might have both rdf:value and rdf:resource.
+            /* ! Might have both rdf:value and rdf:resource. */
             if (!hasValueAttr)
                 childNode.options.setURI(true)
 
@@ -940,7 +946,7 @@ internal object XMPRDFParser {
 
         val childName = prefix + xmlNodeLocalName
 
-        // create schema node if not already there
+        /* create schema node if not already there */
         val childOptions = PropertyOptions()
 
         var isAlias = false
@@ -949,8 +955,10 @@ internal object XMPRDFParser {
 
         if (isTopLevel) {
 
-            // Lookup the schema node, adjust the XMP parent pointer.
-            // Incoming parent must be the tree root.
+            /*
+             * Lookup the schema node, adjust the XMP parent pointer.
+             * Incoming parent must be the tree root.
+             */
             val schemaNode = XMPNodeUtils.findSchemaNode(
                 xmp.root, namespace,
                 DEFAULT_PREFIX, true
@@ -960,12 +968,16 @@ internal object XMPRDFParser {
 
             schemaNode.isImplicit = false // Clear the implicit node bit.
 
-            // *** Should use "opt &= ~flag" (no conditional),
-            // need runtime check for proper 32 bit code.
+            /*
+             * *** Should use "opt &= ~flag" (no conditional),
+             * need runtime check for proper 32 bit code.
+             */
             actualXmpParent = schemaNode
 
-            // If this is an alias set the alias flag in the node
-            // and the hasAliases flag in the tree.
+            /*
+             * If this is an alias set the alias flag in the node
+             * and the hasAliases flag in the tree.
+             */
             if (XMPSchemaRegistry.findAlias(childName) != null) {
                 isAlias = true
                 xmp.root.hasAliases = true
@@ -973,16 +985,16 @@ internal object XMPRDFParser {
             }
         }
 
-        // Make sure that this is not a duplicate of a named node.
+        /* Make sure that this is not a duplicate of a named node. */
         val isArrayItem = isNumberedArrayItemName(childName)
         val isValueNode = "rdf:value" == childName
 
-        // Create XMP node and so some checks
+        /* Create XMP node and so some checks */
         val newChild = XMPNode(childName, value, childOptions)
 
         newChild.isAlias = isAlias
 
-        // Add the new child to the XMP parent node, a value node first.
+        /* Add the new child to the XMP parent node, a value node first. */
         if (!isValueNode)
             actualXmpParent.addChild(newChild)
         else
@@ -1017,7 +1029,7 @@ internal object XMPRDFParser {
 
         val isLang = XMPConst.XML_LANG == name
 
-        // normalize value of language qualifiers
+        /* normalize value of language qualifiers */
         val normalizedValue = if (isLang)
             Utils.normalizeLangValue(value)
         else
@@ -1045,11 +1057,13 @@ internal object XMPRDFParser {
 
         require("rdf:value" == valueNode.name)
 
-        // Move the qualifiers on the value node to the parent.
-        // Make sure an xml:lang qualifier stays at the front.
-        // Check for duplicate names between the value node's qualifiers and the parent's children.
-        // The parent's children are about to become qualifiers. Check here, between the groups.
-        // Intra-group duplicates are caught by XMPNode#addChild(...).
+        /*
+         * Move the qualifiers on the value node to the parent.
+         * Make sure an xml:lang qualifier stays at the front.
+         * Check for duplicate names between the value node's qualifiers and the parent's children.
+         * The parent's children are about to become qualifiers. Check here, between the groups.
+         * Intra-group duplicates are caught by XMPNode#addChild(...).
+         */
 
         if (valueNode.options.hasLanguage()) {
 
@@ -1063,7 +1077,7 @@ internal object XMPRDFParser {
             xmpParent.addQualifier(langQual)
         }
 
-        // Start the remaining copy after the xml:lang qualifier.
+        /* Start the remaining copy after the xml:lang qualifier. */
         for (index in 1..valueNode.getQualifierLength()) {
 
             val qualifier = valueNode.getQualifier(index)
@@ -1071,8 +1085,10 @@ internal object XMPRDFParser {
             xmpParent.addQualifier(qualifier)
         }
 
-        // Change the parent's other children into qualifiers.
-        // This loop starts at 1, child 0 is the rdf:value node.
+        /*
+         * Change the parent's other children into qualifiers.
+         * This loop starts at 1, child 0 is the rdf:value node.
+         */
         for (index in 2..xmpParent.getChildrenLength()) {
 
             val qualifier = xmpParent.getChild(index)

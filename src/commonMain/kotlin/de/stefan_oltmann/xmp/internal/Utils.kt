@@ -114,7 +114,7 @@ internal object Utils {
     @kotlin.jvm.JvmStatic
     fun splitNameAndValue(selector: String): Array<String> {
 
-        // get the name
+        /* get the name */
         val eq = selector.indexOf('=')
 
         var pos = 1
@@ -124,7 +124,7 @@ internal object Utils {
 
         val name = selector.substring(pos, eq)
 
-        // get the value
+        /* get the value */
         pos = eq + 1
 
         val quote = selector[pos]
@@ -142,7 +142,7 @@ internal object Utils {
             pos++
 
             if (selector[pos] == quote) {
-                // skip one quote in value
+                /* skip one quote in value */
                 pos++
             }
         }
@@ -244,7 +244,7 @@ internal object Utils {
     @Suppress("ComplexCondition", "kotlin:S3776")
     fun escapeXML(value: String, forAttribute: Boolean, escapeWhitespaces: Boolean): String {
 
-        // quick check if character are contained that need special treatment
+        /* quick check if character are contained that need special treatment */
         var needsEscaping = false
 
         for (index in 0 until value.length) {
@@ -265,7 +265,7 @@ internal object Utils {
         if (!needsEscaping)
             return value
 
-        // slow path with escaping
+        /* slow path with escaping */
         val buffer = StringBuilder(value.length * 4 / 3)
 
         @Suppress("LoopWithTooManyJumpStatements")
@@ -305,8 +305,10 @@ internal object Utils {
 
             } else {
 
-                // write control chars escaped,
-                // if there are others than tab, LF and CR the xml will become invalid.
+                /*
+                 * write control chars escaped,
+                 * if there are others than tab, LF and CR the xml will become invalid.
+                 */
                 buffer.append("&#x")
                 buffer.append(char.code.toString(HEX_RADIX).uppercase())
                 buffer.append(';')
