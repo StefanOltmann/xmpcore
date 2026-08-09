@@ -16,17 +16,12 @@ internal object DomParser {
         """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>"""
 
     @OptIn(XmlUtilInternal::class, ExperimentalXmlUtilApi::class)
-    fun parseDocumentFromString(input: String): Document {
-
-        return try {
-
+    fun parseDocumentFromString(input: String): Document =
+        try {
             parseDocumentFromStringInternal(input)
-
         } catch (ex: Exception) {
-
             parseCorruptedDocument(input, ex)
         }
-    }
 
     /**
      * Parses a document that failed the full parse, tolerating junk around the RDF part.
