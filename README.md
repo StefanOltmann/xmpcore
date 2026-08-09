@@ -15,7 +15,7 @@ This library is a port of Adobe's XMP SDK to Kotlin Multiplatform.
 ## Installation
 
 ```
-implementation("de.stefan-oltmann:xmpcore:<version>")
+implementation("de.stefan-oltmann:xmpcore:1.7.2")
 ```
 
 ## How to use
