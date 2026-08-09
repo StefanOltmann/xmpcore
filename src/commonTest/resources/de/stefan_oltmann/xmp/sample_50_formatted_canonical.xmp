@@ -61,11 +61,7 @@
       <xmp:MetadataDate>2013-05-24T14:08:48+03:00</xmp:MetadataDate>
       <xmp:ModifyDate>2013-05-24T14:08:48+03:00</xmp:ModifyDate>
       <xmp:Rating>0</xmp:Rating>
-      <xmpMM:DocumentID>
-        <rdf:Description>
-          <rdf:resource>xmp.did:E2D0CB145FC4E211AD7DCE11772AE6CC</rdf:resource>
-        </rdf:Description>
-      </xmpMM:DocumentID>
+      <xmpMM:DocumentID rdf:resource="xmp.did:E2D0CB145FC4E211AD7DCE11772AE6CC"/>
       <xmpMM:History>
         <rdf:Seq/>
       </xmpMM:History>

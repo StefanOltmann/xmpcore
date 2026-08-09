@@ -126,13 +126,13 @@ internal object XMPRDFParser {
     @Suppress("ThrowsCount", "UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
     fun parseRdfRoot(xmp: XMPMeta, rdfRdfNode: Node, options: ParseOptions) {
 
-        if (rdfRdfNode.nodeName != "rdf:RDF")
-            throw XMPException("Root node should be of type rdf:RDF", XMPErrorConst.BADRDF)
-
         if (rdfRdfNode.nodeType != NodeConsts.ELEMENT_NODE)
             throw XMPException("Root node must be of element type.", XMPErrorConst.BADRDF)
 
         rdfRdfNode as Element
+
+        if (XMPConst.NS_RDF != rdfRdfNode.namespaceURI || "RDF" != rdfRdfNode.localName)
+            throw XMPException("Root node should be of type rdf:RDF", XMPErrorConst.BADRDF)
 
         if (rdfRdfNode.attributes.getLength() == 0)
             throw XMPException("Illegal: rdf:RDF node has no attributes", XMPErrorConst.BADRDF)
@@ -986,7 +986,7 @@ internal object XMPRDFParser {
         }
 
         /* Make sure that this is not a duplicate of a named node. */
-        val isArrayItem = isNumberedArrayItemName(childName)
+        val isArrayItem = isNumberedArrayItemName(xmlNode)
         val isValueNode = "rdf:value" == childName
 
         /* Create XMP node and so some checks */
@@ -1178,6 +1178,12 @@ internal object XMPRDFParser {
             else -> throw XMPException("Unknown Node ${node.nodeType}", XMPErrorConst.BADXMP)
         }
 
+        val localName = when {
+            node.nodeType == NodeConsts.ELEMENT_NODE -> (node as Element).localName
+            node.nodeType == NodeConsts.ATTRIBUTE_NODE -> (node as Attr).localName
+            else -> throw XMPException("Unknown Node ${node.nodeType}", XMPErrorConst.BADXMP)
+        }
+
         /*
          * This code handles the fact that sometimes "rdf:about" and "rdf:ID"
          * come without the prefix.
@@ -1193,27 +1199,27 @@ internal object XMPRDFParser {
 
         if (mustBeRdfNamespace || namespace == XMPConst.NS_RDF) {
 
-            when (node.nodeName) {
+            when (localName) {
 
-                "rdf:li" ->
+                "li" ->
                     return RDFTERM_LI
 
                 "parseType" ->
                     return RDFTERM_PARSE_TYPE
 
-                "rdf:Description" ->
+                "Description" ->
                     return RDFTERM_DESCRIPTION
 
-                "rdf:about", "about" ->
+                "about" ->
                     return RDFTERM_ABOUT
 
                 "resource" ->
                     return RDFTERM_RESOURCE
 
-                "rdf:RDF" ->
+                "RDF" ->
                     return RDFTERM_RDF
 
-                "rdf:ID", "ID" ->
+                "ID" ->
                     return RDFTERM_ID
 
                 "nodeID" ->
@@ -1236,18 +1242,37 @@ internal object XMPRDFParser {
         return RDFTERM_OTHER
     }
 
-    private fun isNumberedArrayItemName(nodeName: String): Boolean {
+    /**
+     * Checks if a node is an RDF array item, i.e. an element of type `rdf:li` or
+     * `rdf:_N` in the RDF namespace, regardless of the used prefix.
+     */
+    private fun isNumberedArrayItemName(xmlNode: Node): Boolean {
 
-        var result = "rdf:li" == nodeName
-
-        if (nodeName.startsWith("rdf:_")) {
-
-            result = true
-
-            for (i in 5 until nodeName.length)
-                result = result && nodeName[i] >= '0' && nodeName[i] <= '9'
+        val namespace = when {
+            xmlNode.nodeType == NodeConsts.ELEMENT_NODE -> (xmlNode as Element).namespaceURI
+            xmlNode.nodeType == NodeConsts.ATTRIBUTE_NODE -> (xmlNode as Attr).namespaceURI
+            else -> null
         }
 
-        return result
+        if (XMPConst.NS_RDF != namespace)
+            return false
+
+        val localName = when {
+            xmlNode.nodeType == NodeConsts.ELEMENT_NODE -> (xmlNode as Element).localName
+            xmlNode.nodeType == NodeConsts.ATTRIBUTE_NODE -> (xmlNode as Attr).localName
+            else -> null
+        } ?: return false
+
+        if ("li" == localName)
+            return true
+
+        if (!localName.startsWith("_"))
+            return false
+
+        for (i in 1 until localName.length)
+            if (localName[i] !in '0'..'9')
+                return false
+
+        return true
     }
 }

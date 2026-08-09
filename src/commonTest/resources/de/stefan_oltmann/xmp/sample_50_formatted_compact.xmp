@@ -63,8 +63,7 @@
           <rdf:li>100</rdf:li>
         </rdf:Seq>
       </exif:ISOSpeedRatings>
-      <xmpMM:DocumentID
-        rdf:resource="xmp.did:E2D0CB145FC4E211AD7DCE11772AE6CC"/>
+      <xmpMM:DocumentID rdf:resource="xmp.did:E2D0CB145FC4E211AD7DCE11772AE6CC"/>
       <xmpMM:History>
         <rdf:Seq/>
       </xmpMM:History>
