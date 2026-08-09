@@ -6,7 +6,7 @@ android-compile-sdk = "37"
 android-min-sdk = "21"
 
 # Build and Analysis Tools
-detekt = "1.23.8"
+detekt = "2.0.0-alpha.6"
 kover = "0.9.9"
 build-time-tracker = "5.0.2"
 git-versioning = "6.4.4"
@@ -27,9 +27,6 @@ xmlutil-core = { module = "io.github.pdvrieze.xmlutil:core", version.ref = "xmlu
 # Kotlin Extensions
 kotlinx-io-core = { module = "org.jetbrains.kotlinx:kotlinx-io-core", version.ref = "kotlinx-io" }
 
-# Code Analysis
-detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
-
 resources = { module = "com.goncalossilva:resources", version.ref = "resources" }
 
 [plugins]
@@ -40,7 +37,7 @@ kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref 
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "android-gradle-plugin" }
 
 # Code Analysis and Quality
-detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 
 # Build Tools

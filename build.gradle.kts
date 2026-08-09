@@ -45,26 +45,19 @@ gitVersioning.apply {
     }
 }
 
-apply(plugin = "io.gitlab.arturbosch.detekt")
-
 buildTimeTracker {
     sortBy.set(com.asarkar.gradle.buildtimetracker.Sort.DESC)
 }
 
 detekt {
     source.from("src", "build.gradle.kts")
+    config.setFrom("detekt.yml")
     allRules = true
-    config.setFrom("$projectDir/detekt.yml")
     parallel = true
     ignoreFailures = true
-    autoCorrect = true
 }
 
 kover {
-}
-
-dependencies {
-    detektPlugins(libs.detekt.formatting)
 }
 
 kotlin {
