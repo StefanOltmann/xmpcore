@@ -1822,14 +1822,6 @@ public class XMPMeta internal constructor() {
                     NS_MWG_RS,
                     structNameArea,
                     XMPConst.TYPE_AREA,
-                    "x",
-                    face.value.xPos.toString()
-                )
-
-                setStructField(
-                    NS_MWG_RS,
-                    structNameArea,
-                    XMPConst.TYPE_AREA,
                     "y",
                     face.value.yPos.toString()
                 )
