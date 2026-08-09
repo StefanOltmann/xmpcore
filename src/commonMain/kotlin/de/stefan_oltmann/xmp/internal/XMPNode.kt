@@ -119,7 +119,7 @@ internal class XMPNode(
      */
     private fun cleanupChildren() {
 
-        if (children?.isEmpty() == null)
+        if (children?.isEmpty() == true)
             children = null
     }
 
