@@ -67,7 +67,7 @@ public object XMPMetaFactory {
 
             val actualOptions = options ?: SerializeOptions()
 
-            /* sort the internal data model on demand */
+            /* Sort the internal data model on demand */
             if (actualOptions.getSort())
                 xmp.sort()
 

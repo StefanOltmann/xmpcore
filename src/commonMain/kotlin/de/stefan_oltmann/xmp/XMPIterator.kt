@@ -109,10 +109,10 @@ public class XMPIterator(
      */
     init {
 
-        /* make sure that options is defined at least with defaults */
+        /* Make sure that options is defined at least with defaults */
         this.options = options ?: IteratorOptions()
 
-        /* the start node of the iteration depending on the schema and property filter */
+        /* The start node of the iteration depending on the schema and property filter */
         var startNode: XMPNode?
         var initialPath: String? = null
         val baseSchema = !schemaNS.isNullOrEmpty()
@@ -122,7 +122,7 @@ public class XMPIterator(
 
             !baseSchema && !baseProperty -> {
 
-                /* complete tree will be iterated */
+                /* Complete tree will be iterated */
                 startNode = xmp.root
             }
 
@@ -132,7 +132,7 @@ public class XMPIterator(
 
                 val path = expandXPath(schemaNS, propPath)
 
-                /* base path is the prop path without the property leaf */
+                /* Base path is the prop path without the property leaf */
                 val basePath = XMPPath()
 
                 for (i in 0 until path.size() - 1)
@@ -159,7 +159,7 @@ public class XMPIterator(
             }
         }
 
-        /* create iterator */
+        /* Create iterator */
         if (startNode != null) {
 
             if (!this.options.isJustChildren())
@@ -257,7 +257,7 @@ public class XMPIterator(
             if (visitedNode.options.isSchemaNode())
                 baseNS = visitedNode.name
 
-            /* for all but the root node and schema nodes */
+            /* For all but the root node and schema nodes */
             path = accumulatePath(visitedNode, parentPath, index)
         }
 
@@ -269,9 +269,9 @@ public class XMPIterator(
         override fun hasNext(): Boolean {
 
             if (returnProperty != null)
-                return true // hasNext has been called before
+                return true // HasNext has been called before
 
-            /* find next node */
+            /* Find next node */
             return if (state == ITERATE_NODE) {
 
                 reportNode()
@@ -407,7 +407,7 @@ public class XMPIterator(
                 if (!segmentName!!.startsWith("?"))
                     segmentName
                 else
-                    segmentName.substring(1) // qualifier
+                    segmentName.substring(1) // Qualifier
 
             } else {
 
@@ -441,7 +441,7 @@ public class XMPIterator(
                     if (node.options.isSchemaNode())
                         return baseNS ?: ""
 
-                    /* determine namespace of leaf node */
+                    /* Determine namespace of leaf node */
                     val name = node.name
 
                     if (name != null) {
@@ -469,7 +469,7 @@ public class XMPIterator(
                 override fun getOptions(): PropertyOptions =
                     node.options
 
-                /* the language is not reported */
+                /* The language is not reported */
                 override fun getLanguage(): String? =
                     null
             }
@@ -511,7 +511,7 @@ public class XMPIterator(
          */
         override fun hasNext(): Boolean {
 
-            /* hasNext has been called before */
+            /* HasNext has been called before */
             if (returnProperty != null)
                 return true
 

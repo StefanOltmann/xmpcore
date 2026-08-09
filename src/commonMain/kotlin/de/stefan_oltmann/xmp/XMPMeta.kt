@@ -292,7 +292,7 @@ public class XMPMeta internal constructor() {
         qualName: String
     ): XMPProperty? {
 
-        /* qualNS and qualName are checked inside composeQualfierPath */
+        /* QualNS and qualName are checked inside composeQualfierPath */
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
 
@@ -377,7 +377,7 @@ public class XMPMeta internal constructor() {
         if (deleteExisting)
             node.clear()
 
-        /* its checked by setOptions(), if the merged result is a valid options set */
+        /* Its checked by setOptions(), if the merged result is a valid options set */
         node.options.mergeWith(newOptions)
 
         if (node.options.getOptions() and compositeMask == 0) {
@@ -555,7 +555,7 @@ public class XMPMeta internal constructor() {
 
             } else {
 
-                /* array options missing */
+                /* Array options missing */
                 throw XMPException(
                     "Explicit arrayOptions required to create new array",
                     XMPErrorConst.BADOPTIONS
@@ -586,7 +586,7 @@ public class XMPMeta internal constructor() {
         val verifiedItemOptions = verifySetOptions(itemOptions, itemValue)
 
         /*
-         * in insert mode the index after the last is allowed,
+         * In insert mode the index after the last is allowed,
          * even ARRAY_LAST_ITEM points to the index *after* the last.
          */
         val maxIndex = if (insert)
@@ -775,7 +775,7 @@ public class XMPMeta internal constructor() {
         fieldName: String
     ) {
 
-        /* fieldNS and fieldName are checked inside composeStructFieldPath */
+        /* FieldNS and fieldName are checked inside composeStructFieldPath */
 
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
@@ -886,7 +886,7 @@ public class XMPMeta internal constructor() {
         fieldName: String
     ): Boolean {
 
-        /* fieldNS and fieldName are checked inside composeStructFieldPath() */
+        /* FieldNS and fieldName are checked inside composeStructFieldPath() */
 
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
@@ -919,7 +919,7 @@ public class XMPMeta internal constructor() {
         qualName: String
     ): Boolean {
 
-        /* qualNS and qualName are checked inside composeQualifierPath() */
+        /* QualNS and qualName are checked inside composeQualifierPath() */
 
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
@@ -1218,7 +1218,7 @@ public class XMPMeta internal constructor() {
                 appendLangItem(arrayNode, normalizedSpecificLang, itemValue)
             }
 
-            else -> // does not happen under normal circumstances
+            else -> // Does not happen under normal circumstances
                 throw XMPException(
                     "Unexpected result from ChooseLocalizedText",
                     XMPErrorConst.INTERNALFAILURE

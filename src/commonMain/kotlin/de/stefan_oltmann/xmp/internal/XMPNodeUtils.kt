@@ -57,7 +57,7 @@ internal object XMPNodeUtils {
         createNodes: Boolean
     ): XMPNode? {
 
-        /* make sure that its the root */
+        /* Make sure that its the root */
         require(tree.parent == null)
 
         var schemaNode = tree.findChildByName(namespaceURI)
@@ -72,7 +72,7 @@ internal object XMPNodeUtils {
 
             schemaNode.isImplicit = true
 
-            /* only previously registered schema namespaces are allowed in the XMP tree. */
+            /* Only previously registered schema namespaces are allowed in the XMP tree. */
             var prefix = XMPSchemaRegistry.getNamespacePrefix(namespaceURI!!)
 
             if (prefix == null) {
@@ -181,7 +181,7 @@ internal object XMPNodeUtils {
 
                 if (currNode == null) {
 
-                    /* delete implicitly created nodes */
+                    /* Delete implicitly created nodes */
                     if (createNodes)
                         deleteNode(rootImplicitNode!!)
 
@@ -189,11 +189,11 @@ internal object XMPNodeUtils {
 
                 } else if (currNode.isImplicit) {
 
-                    /* clear the implicit node flag */
+                    /* Clear the implicit node flag */
                     currNode.isImplicit = false
 
                     /*
-                     * if node is an ALIAS (can be only in root step, auto-create array
+                     * If node is an ALIAS (can be only in root step, auto-create array
                      * when the path has been resolved from a not simple alias type
                      */
                     if (index == 1 &&
@@ -215,7 +215,7 @@ internal object XMPNodeUtils {
 
         } catch (ex: XMPException) {
 
-            /* if new notes have been created prior to the error, delete them */
+            /* If new notes have been created prior to the error, delete them */
             if (rootImplicitNode != null)
                 deleteNode(rootImplicitNode)
 
@@ -224,7 +224,7 @@ internal object XMPNodeUtils {
 
         if (rootImplicitNode != null) {
 
-            /* set options only if a node has been successful created */
+            /* Set options only if a node has been successful created */
             if (leafOptions != null)
                 currNode.options.mergeWith(leafOptions)
 
@@ -250,7 +250,7 @@ internal object XMPNodeUtils {
         else
             parent!!.removeChild(node)
 
-        /* delete empty Schema nodes */
+        /* Delete empty Schema nodes */
         if (!parent.hasChildren() && parent.options.isSchemaNode())
             parent.parent!!.removeChild(parent)
     }
@@ -559,14 +559,14 @@ internal object XMPNodeUtils {
         if (!arrayNode.options.isArrayAltText())
             return
 
-        /* check if node with x-default qual is first place */
+        /* Check if node with x-default qual is first place */
         for (index in 2..arrayNode.getChildrenLength()) {
 
             val child = arrayNode.getChild(index)
 
             if (child.hasQualifier() && XMPConst.X_DEFAULT == child.getQualifier(1).value) {
 
-                /* move node to first place */
+                /* Move node to first place */
                 arrayNode.removeChild(index)
                 arrayNode.addChild(1, child)
 
@@ -648,7 +648,7 @@ internal object XMPNodeUtils {
 
             val currItem = it.next()
 
-            /* perform some checks on the current item */
+            /* Perform some checks on the current item */
             if (currItem.options.isCompositeProperty())
                 throw XMPException("Alt-text array item is not simple", XMPErrorConst.BADXPATH)
             else if (!currItem.hasQualifier() || XMPConst.XML_LANG != currItem.getQualifier(1).name)
@@ -676,7 +676,7 @@ internal object XMPNodeUtils {
             }
         }
 
-        /* evaluate loop */
+        /* Evaluate loop */
         return when {
 
             foundGenericMatches == 1 ->

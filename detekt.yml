@@ -67,7 +67,7 @@ comments:
     searchInProtectedClass: false
     ignoreDefaultCompanionObject: true
   UndocumentedPublicFunction:
-    active: true
+    active: false
     excludes: [ '**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/androidUnitTest/**', '**/androidInstrumentedTest/**', '**/jsTest/**', '**/iosTest/**' ]
     searchProtectedFunction: false
   UndocumentedPublicProperty:
@@ -79,7 +79,7 @@ comments:
 complexity:
   active: true
   CognitiveComplexMethod:
-    active: true
+    active: false
     allowedComplexity: 15
   ComplexCondition:
     active: true

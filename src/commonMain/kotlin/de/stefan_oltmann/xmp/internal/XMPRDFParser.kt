@@ -211,7 +211,7 @@ internal object XMPRDFParser {
             val attribute = xmlNode.attributes.item(index) as Attr
 
             /*
-             * quick hack, ns declarations do not appear in C++
+             * Quick hack, ns declarations do not appear in C++
              * ignore "ID" without namespace
              */
             if (XMLNS == attribute.prefix || attribute.prefix == null && XMLNS == attribute.nodeName)
@@ -374,7 +374,7 @@ internal object XMPRDFParser {
         if (!isPropertyElementName(nodeTerm))
             throw XMPException("Invalid property element name", XMPErrorConst.BADRDF)
 
-        /* remove the namespace-definitions from the list */
+        /* Remove the namespace-definitions from the list */
         val attributes = xmlNode.attributes
 
         var nsAttrs: MutableList<String>? = null
@@ -499,7 +499,7 @@ internal object XMPRDFParser {
 
         val newCompound = addChildNode(xmp, xmpParent, xmlNode, "", isTopLevel)
 
-        /* walk through the attributes */
+        /* Walk through the attributes */
         @Suppress("LoopWithTooManyJumpStatements")
         for (index in 0 until xmlNode.attributes.getLength()) {
 
@@ -516,7 +516,7 @@ internal object XMPRDFParser {
                 throw XMPException("Invalid attribute for resource property element", XMPErrorConst.BADRDF)
         }
 
-        /* walk through the children */
+        /* Walk through the children */
         var found = false
 
         for (index in 0 until xmlNode.childNodes.length) {
@@ -572,7 +572,7 @@ internal object XMPRDFParser {
                     found = true
 
                 } else if (found) {
-                    /* found second child element */
+                    /* Found second child element */
                     throw XMPException("Invalid child of resource property element", XMPErrorConst.BADRDF)
                 } else {
                     throw XMPException(
@@ -757,7 +757,7 @@ internal object XMPRDFParser {
                 RDFTERM_ID -> continue
 
                 /*
-                 * sample_52.xmp has an <rdf:li rdf:about=''/> we want to skip.
+                 * Sample_52.xmp has an <rdf:li rdf:about=''/> we want to skip.
                  */
                 RDFTERM_ABOUT -> continue
 
@@ -870,7 +870,7 @@ internal object XMPRDFParser {
                 RDFTERM_ID, RDFTERM_NODE_ID -> continue
 
                 /*
-                 * sample_52.xmp has an <rdf:li rdf:about=''/> we want to skip.
+                 * Sample_52.xmp has an <rdf:li rdf:about=''/> we want to skip.
                  */
                 RDFTERM_ABOUT -> continue
 
@@ -946,7 +946,7 @@ internal object XMPRDFParser {
 
         val childName = prefix + xmlNodeLocalName
 
-        /* create schema node if not already there */
+        /* Create schema node if not already there */
         val childOptions = PropertyOptions()
 
         var isAlias = false
@@ -1029,7 +1029,7 @@ internal object XMPRDFParser {
 
         val isLang = XMPConst.XML_LANG == name
 
-        /* normalize value of language qualifiers */
+        /* Normalize value of language qualifiers */
         val normalizedValue = if (isLang)
             Utils.normalizeLangValue(value)
         else
@@ -1130,7 +1130,7 @@ internal object XMPRDFParser {
     }
 
     /**
-     * 7.2.6 propertyElementURIs
+     * 7.2.6 propertyElementURIs.
      * anyURI - ( coreSyntaxTerms | rdf:Description | oldTerms )
      */
     private fun isPropertyElementName(term: Int): Boolean {

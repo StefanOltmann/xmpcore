@@ -99,7 +99,7 @@ public abstract class Options {
      * @param options the bitmask to check.
      *
      */
-    protected open fun assertConsistency(options: Int): Unit = Unit // empty, no checks
+    protected open fun assertConsistency(options: Int): Unit = Unit // Empty, no checks
 
     /**
      * Checks options before they are set.

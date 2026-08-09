@@ -291,7 +291,7 @@ public object XMPConst {
     public const val XMP_MWG_RS_REGION_LIST: String = "Regions/mwg-rs:RegionList"
     public const val XMP_MWG_RS_APPLIED_TO_DIMENSIONS: String = "Regions/mwg-rs:AppliedToDimensions"
 
-    /* xmpDM:pick="1" or xmpDM:pick="0" */
+    /* XmpDM:pick="1" or xmpDM:pick="0" */
     public const val FLAGGED_TAG_ADOBE_NAME: String = "pick"
     public const val FLAGGED_TAG_ADOBE_TRUE: String = "1"
     public const val FLAGGED_TAG_ADOBE_FALSE: String = "0"
@@ -306,7 +306,7 @@ public object XMPConst {
     public const val FLAGGED_TAG_MYLIO_TRUE: String = "true"
     public const val FLAGGED_TAG_MYLIO_FALSE: String = "false"
 
-    /* narrative:Tagged="True" or narrative:Tagged="False" */
+    /* Narrative:Tagged="True" or narrative:Tagged="False" */
     public const val FLAGGED_TAG_NARRATIVE_NAME: String = "Tagged"
     public const val FLAGGED_TAG_NARRATIVE_TRUE: String = TRUE_STRING
     public const val FLAGGED_TAG_NARRATIVE_FALSE: String = FALSE_STRING

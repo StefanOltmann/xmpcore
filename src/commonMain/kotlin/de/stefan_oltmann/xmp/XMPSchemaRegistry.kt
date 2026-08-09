@@ -127,7 +127,7 @@ public object XMPSchemaRegistry {
         if (registeredNS != null) {
 
             /*
-             * the namespace is new, but the prefix is already engaged,
+             * The namespace is new, but the prefix is already engaged,
              * we generate a new prefix out of the suggested
              */
             var generatedPrefix = actualSuggestedPrefix
@@ -212,7 +212,7 @@ public object XMPSchemaRegistry {
      */
     private fun registerStandardNamespaces() {
 
-        /* register standard namespaces */
+        /* Register standard namespaces */
         registerNamespace(XMPConst.NS_XML, "xml")
         registerNamespace(XMPConst.NS_RDF, "rdf")
         registerNamespace(XMPConst.NS_DC, "dc")
@@ -221,10 +221,10 @@ public object XMPSchemaRegistry {
         registerNamespace(XMPConst.NS_DICOM, "DICOM")
         registerNamespace(XMPConst.NS_PLUS, "plus")
 
-        /* register other common schemas */
+        /* Register other common schemas */
         registerNamespace(XMPConst.NS_MWG_RS, "mwg-rs")
 
-        /* register product specific schemas */
+        /* Register product specific schemas */
         registerNamespace(XMPConst.NS_ACDSEE, "acdsee")
         registerNamespace(XMPConst.NS_DIGIKAM, "digiKam")
         registerNamespace(XMPConst.NS_MYLIO, "MY")
@@ -233,7 +233,7 @@ public object XMPSchemaRegistry {
         registerNamespace(XMPConst.NS_LIGHTROOM, "lr")
         registerNamespace(XMPConst.NS_PHOTOSHOP, "photoshop")
 
-        /* register Adobe standard namespaces */
+        /* Register Adobe standard namespaces */
         registerNamespace(XMPConst.NS_X, "x")
         registerNamespace(XMPConst.NS_IX, "iX")
         registerNamespace(XMPConst.NS_XMP, "xmp")
@@ -269,11 +269,11 @@ public object XMPSchemaRegistry {
         registerNamespace(XMPConst.NS_TRANSFORM_XMP, "txmp")
         registerNamespace(XMPConst.NS_SWF, "swf")
 
-        /* register Adobe private namespaces */
+        /* Register Adobe private namespaces */
         registerNamespace(XMPConst.NS_DM, "xmpDM")
         registerNamespace(XMPConst.NS_TRANSIENT, "xmpx")
 
-        /* register Adobe standard type namespaces */
+        /* Register Adobe standard type namespaces */
         registerNamespace(XMPConst.TYPE_TEXT, "xmpT")
         registerNamespace(XMPConst.TYPE_PAGED_FILE, "xmpTPg")
         registerNamespace(XMPConst.TYPE_GRAPHICS, "xmpG")
@@ -413,7 +413,7 @@ public object XMPSchemaRegistry {
         if (simpleProperyPattern.matches(aliasProp) || simpleProperyPattern.matches(actualProp))
             throw XMPException("Alias and actual property names must be simple", XMPErrorConst.BADXPATH)
 
-        /* check if both namespaces are registered */
+        /* Check if both namespaces are registered */
         val aliasPrefix = getNamespacePrefix(aliasNS)
         val actualPrefix = getNamespacePrefix(actualNS)
 
@@ -424,7 +424,7 @@ public object XMPSchemaRegistry {
 
         val key = aliasPrefix + aliasProp
 
-        /* check if alias is already existing */
+        /* Check if alias is already existing */
         if (aliasMap.containsKey(key))
             throw XMPException("Alias is already existing", XMPErrorConst.BADPARAM)
         else if (aliasMap.containsKey(actualPrefix + actualProp))

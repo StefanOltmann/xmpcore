@@ -23,13 +23,13 @@ import de.stefan_oltmann.xmp.options.SerializeOptions
 @Suppress("TooManyFunctions")
 internal object XMPRDFWriter {
 
-    /** linefeed (U+000A) is the standard XML line terminator. XMP defaults to it. */
+    /** Linefeed (U+000A) is the standard XML line terminator. XMP defaults to it. */
     const val XMP_DEFAULT_NEWLINE = "\n"
 
     /** Two ASCII spaces (U+0020) are the default indent for XMP files. */
     const val XMP_DEFAULT_INDENT = "  "
 
-    private const val PACKET_HEADER = "<?xpacket begin=\"\uFEFF\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>"
+    private const val PACKET_HEADER = """<?xpacket begin="""" + "\uFEFF\"" + """ id="W5M0MpCehiHzreSzNTczkc9d"?>"""
 
     /**
      * The w/r is missing inbetween.
@@ -38,7 +38,7 @@ internal object XMPRDFWriter {
 
     private const val PACKET_TRAILER2 = "\"?>"
 
-    private const val RDF_XMPMETA_START = "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\""
+    private const val RDF_XMPMETA_START = """<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk=""""
 
     private const val RDF_XMPMETA_END = "</x:xmpmeta>"
 
@@ -657,7 +657,7 @@ internal object XMPRDFWriter {
 
         if (actualNamespace == null) {
 
-            /* prefix contains qname, extract prefix and lookup namespace with prefix */
+            /* Prefix contains qname, extract prefix and lookup namespace with prefix */
             val qname = QName.parse(actualPrefix)
 
             if (!qname.hasPrefix)
@@ -665,10 +665,10 @@ internal object XMPRDFWriter {
 
             actualPrefix = qname.prefix!!
 
-            /* add colon for lookup */
+            /* Add colon for lookup */
             actualNamespace = XMPSchemaRegistry.getNamespaceURI("$actualPrefix:")
 
-            /* prefix w/o colon */
+            /* Prefix w/o colon */
             declareNamespace(sb, actualPrefix, actualNamespace, usedPrefixes, indent)
         }
 

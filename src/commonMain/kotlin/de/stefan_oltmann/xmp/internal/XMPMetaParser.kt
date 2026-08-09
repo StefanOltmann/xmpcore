@@ -143,7 +143,7 @@ internal object XMPMetaParser {
                         XMPConst.NS_X == rootNS
                     ) {
 
-                        /* by not passing the RequireXMPMeta-option, the rdf-Node will be valid */
+                        /* By not passing the RequireXMPMeta-option, the rdf-Node will be valid */
                         return findRootNode(child, false, result)
                     }
 
@@ -155,7 +155,7 @@ internal object XMPMetaParser {
                         return result
                     }
 
-                    /* continue searching */
+                    /* Continue searching */
                     val newResult = findRootNode(child, xmpMetaRequired, result)
 
                     return newResult ?: continue

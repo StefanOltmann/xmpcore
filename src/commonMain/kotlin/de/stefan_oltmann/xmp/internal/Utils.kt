@@ -41,7 +41,7 @@ internal object Utils {
 
     private val controlCharRegex = Regex("[\\p{Cntrl}]")
 
-    /** init char tables. */
+    /** Init char tables. */
     init {
         initCharTables()
     }
@@ -114,7 +114,7 @@ internal object Utils {
     @kotlin.jvm.JvmStatic
     fun splitNameAndValue(selector: String): Array<String> {
 
-        /* get the name */
+        /* Get the name */
         val eq = selector.indexOf('=')
 
         var pos = 1
@@ -124,14 +124,14 @@ internal object Utils {
 
         val name = selector.substring(pos, eq)
 
-        /* get the value */
+        /* Get the value */
         pos = eq + 1
 
         val quote = selector[pos]
 
         pos++
 
-        val end = selector.length - 2 // quote and ]
+        val end = selector.length - 2 // Quote and ]
 
         val value = StringBuilder(end - eq)
 
@@ -142,7 +142,7 @@ internal object Utils {
             pos++
 
             if (selector[pos] == quote) {
-                /* skip one quote in value */
+                /* Skip one quote in value */
                 pos++
             }
         }
@@ -244,7 +244,7 @@ internal object Utils {
     @Suppress("ComplexCondition", "kotlin:S3776")
     fun escapeXML(value: String, forAttribute: Boolean, escapeWhitespaces: Boolean): String {
 
-        /* quick check if character are contained that need special treatment */
+        /* Quick check if character are contained that need special treatment */
         var needsEscaping = false
 
         for (index in 0 until value.length) {
@@ -265,7 +265,7 @@ internal object Utils {
         if (!needsEscaping)
             return value
 
-        /* slow path with escaping */
+        /* Slow path with escaping */
         val buffer = StringBuilder(value.length * 4 / 3)
 
         @Suppress("LoopWithTooManyJumpStatements")
@@ -306,7 +306,7 @@ internal object Utils {
             } else {
 
                 /*
-                 * write control chars escaped,
+                 * Write control chars escaped,
                  * if there are others than tab, LF and CR the xml will become invalid.
                  */
                 buffer.append("&#x")
