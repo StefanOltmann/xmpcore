@@ -307,14 +307,14 @@ public class XMPIterator(
 
             state = ITERATE_CHILDREN
 
-            return if (visitedNode!!.parent != null &&
-                (!options.isJustLeafnodes() || !visitedNode!!.hasChildren())
-            ) {
-                returnProperty = createPropertyInfo(visitedNode, baseNS!!, path!!)
-                true
-            } else {
-                hasNext()
-            }
+            val node = visitedNode
+
+            if (node == null || node.parent == null || options.isJustLeafnodes() && node.hasChildren())
+                return hasNext()
+
+            returnProperty = createPropertyInfo(node, baseNS, path)
+
+            return true
         }
 
         /**
@@ -422,12 +422,12 @@ public class XMPIterator(
          * @return Returns a `XMPProperty`-object that serves representation of the node.
          */
         protected fun createPropertyInfo(
-            node: XMPNode?,
-            baseNS: String,
-            path: String
+            node: XMPNode,
+            baseNS: String?,
+            path: String?
         ): XMPPropertyInfo {
 
-            val value = if (node!!.options.isSchemaNode())
+            val value = if (node.options.isSchemaNode())
                 null
             else
                 node.value
@@ -437,22 +437,39 @@ public class XMPIterator(
                 override fun getNamespace(): String {
 
                     if (node.options.isSchemaNode())
-                        return baseNS
+                        return baseNS ?: ""
 
                     /* determine namespace of leaf node */
-                    val qname = QName.parse(node.name!!)
+                    val name = node.name
 
-                    return XMPSchemaRegistry.getNamespaceURI(qname.prefix!!)!!
+                    if (name != null) {
+
+                        val prefix = QName.parse(name).prefix
+
+                        if (prefix != null) {
+
+                            val namespace = XMPSchemaRegistry.getNamespaceURI(prefix)
+
+                            if (namespace != null)
+                                return namespace
+                        }
+                    }
+
+                    return baseNS ?: ""
                 }
 
-                override fun getPath(): String = path
+                override fun getPath(): String =
+                    path ?: ""
 
-                override fun getValue(): String = value!!
+                override fun getValue(): String =
+                    value ?: ""
 
-                override fun getOptions(): PropertyOptions = node.options
+                override fun getOptions(): PropertyOptions =
+                    node.options
 
                 /* the language is not reported */
-                override fun getLanguage(): String? = null
+                override fun getLanguage(): String? =
+                    null
             }
         }
     }
@@ -463,7 +480,7 @@ public class XMPIterator(
      */
     private inner class NodeIteratorChildren(parentNode: XMPNode, parentPath: String?) : NodeIterator() {
 
-        private val parentPath: String
+        private val parentPath: String?
 
         private val nodeChildrenIterator: Iterator<XMPNode>
 
@@ -480,7 +497,7 @@ public class XMPIterator(
             if (parentNode.options.isSchemaNode())
                 baseNS = parentNode.name
 
-            this.parentPath = accumulatePath(parentNode, parentPath, 1)!!
+            this.parentPath = accumulatePath(parentNode, parentPath, 1)
 
             nodeChildrenIterator = parentNode.iterateChildren()
         }
@@ -513,9 +530,11 @@ public class XMPIterator(
             else if (child.parent != null)
                 path = accumulatePath(child, parentPath, index)
 
-            // report next property, skip not-leaf nodes in case options is set
+            /* Report next property, skip not-leaf nodes in case options is set */
             if (!options.isJustLeafnodes() || !child.hasChildren()) {
-                returnProperty = createPropertyInfo(child, baseNS!!, path!!)
+
+                returnProperty = createPropertyInfo(child, baseNS, path)
+
                 return true
             }
 
