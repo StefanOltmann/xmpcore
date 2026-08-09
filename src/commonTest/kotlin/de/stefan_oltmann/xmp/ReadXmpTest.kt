@@ -315,4 +315,53 @@ class ReadXmpTest {
             actual = xmpMeta.getTitle()
         )
     }
+
+    /**
+     * An rdf:ID attribute on a literal property element must not prevent parsing.
+     */
+    @Test
+    fun testParseWithRdfIdAttributeOnLiteralProperty() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title rdf:ID="title1">Some title</dc:title>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            expected = "Some title",
+            actual = xmpMeta.getTitle()
+        )
+    }
+
+    /**
+     * An rdf:ID attribute combined with xml:lang on a literal property element must not
+     * prevent parsing.
+     */
+    @Test
+    fun testParseWithRdfIdAndLangOnLiteralProperty() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title xml:lang="en" rdf:ID="title1">Some title</dc:title>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            expected = "Some title",
+            actual = xmpMeta.getTitle()
+        )
+    }
 }

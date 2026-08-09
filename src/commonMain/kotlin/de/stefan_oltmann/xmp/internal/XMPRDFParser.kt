@@ -418,8 +418,8 @@ internal object XMPRDFParser {
 
                 val attrValue = attribute.value
 
-                val condition = XMPConst.XML_LANG == attribute.nodeName &&
-                    !("ID" == attribute.localName && XMPConst.NS_RDF == attribute.namespaceURI)
+                val condition = XMPConst.XML_LANG == attribute.nodeName ||
+                    "ID" == attribute.localName && XMPConst.NS_RDF == attribute.namespaceURI
 
                 if (!condition) {
 
