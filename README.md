@@ -1,6 +1,6 @@
 # XMP Core for Kotlin Multiplatform
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.4.0-blue.svg?logo=kotlin)](httpw://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.4.10-blue.svg?logo=kotlin)](httpw://kotlinlang.org)
 ![JVM](https://img.shields.io/badge/-JVM-gray.svg?style=flat)
 ![Android](https://img.shields.io/badge/-Android-gray.svg?style=flat)
 ![iOS](https://img.shields.io/badge/-iOS-gray.svg?style=flat)
@@ -15,16 +15,15 @@ This library is a port of Adobe's XMP SDK to Kotlin Multiplatform.
 ## Installation
 
 ```
-implementation("de.stefan-oltmann:xmpcore:1.7.1")
+implementation("de.stefan-oltmann:xmpcore:<version>")
 ```
 
 ## How to use
 
-The library has been designed as a drop-in replacement for users who previously
-used XMP Core Java. Therefore, all the documentation applicable to the
-Java SDK also pertains to this library.
-However, please note that we have made the decision to remove the functionality for reading
-from and writing to ByteArray and InputStreams, as I believe it is unnecessary.
+The library has been designed as a drop-in replacement for users who previously used XMP Core Java. Therefore, all the
+documentation applicable to the Java SDK also pertains to this library. However, please note that we have made the
+decision to remove the functionality for reading from and writing to ByteArray and InputStreams, as I believe it is
+unnecessary.
 
 ### Sample code
 
@@ -51,15 +50,14 @@ Also see the unit tests `ReadXmpTest` and `WriteXmpTest` to learn more about rea
 
 ### Migration hint
 
-If you have previously used the official XMP Core Java library available on
-Maven Central, please make sure to update your imports from `com.adobe.internal.xmp`
+If you have previously used the official XMP Core Java library available on Maven Central, please make sure to update
+your imports from `com.adobe.internal.xmp`
 to `de.stefan_oltmann.xmp`.
 
 ## Contributions
 
-Contributions to this project are welcome! If you encounter any issues,
-have suggestions for improvements, or would like to contribute new features,
-please feel free to submit a pull request.
+Contributions to this project are welcome! If you encounter any issues, have suggestions for improvements, or would like
+to contribute new features, please feel free to submit a pull request.
 
 ## Acknowledgements
 
