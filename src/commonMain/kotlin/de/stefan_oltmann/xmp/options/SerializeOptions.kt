@@ -122,7 +122,9 @@ public class SerializeOptions : Options {
      * @see Options.getValidOptions
      */
     override fun getValidOptions(): Int =
-        OMIT_PACKET_WRAPPER or READONLY_PACKET or USE_COMPACT_FORMAT or OMIT_XMPMETA_ELEMENT or SORT
+        OMIT_PACKET_WRAPPER or READONLY_PACKET or
+            USE_COMPACT_FORMAT or USE_CANONICAL_FORMAT or
+            OMIT_XMPMETA_ELEMENT or SORT
 
     internal companion object {
 
