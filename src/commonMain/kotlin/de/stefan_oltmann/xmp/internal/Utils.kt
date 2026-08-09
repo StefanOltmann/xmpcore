@@ -16,12 +16,12 @@ import de.stefan_oltmann.xmp.XMPConst
 internal object Utils {
 
     /**
-     * segments of a UUID
+     * segments of a UUID.
      */
     const val UUID_SEGMENT_COUNT = 4
 
     /**
-     * length of a UUID
+     * length of a UUID.
      */
     const val UUID_LENGTH = 32 + UUID_SEGMENT_COUNT
 
@@ -30,18 +30,18 @@ internal object Utils {
     private const val XML_NAME_LENGTH = 0x0100
 
     /**
-     * table of XML name start chars (<= 0xFF)
+     * table of XML name start chars (<= 0xFF).
      */
     private val xmlNameStartChars = BooleanArray(XML_NAME_LENGTH)
 
     /**
-     * table of XML name chars (<= 0xFF)
+     * table of XML name chars (<= 0xFF).
      */
     private val xmlNameChars = BooleanArray(XML_NAME_LENGTH)
 
     private val controlCharRegex = Regex("[\\p{Cntrl}]")
 
-    /** init char tables  */
+    /** init char tables. */
     init {
         initCharTables()
     }
@@ -151,7 +151,7 @@ internal object Utils {
     }
 
     /**
-     * Check some requirements for an UUID:
+     * Check some requirements for an UUID.
      *
      *  * Length of the UUID is 32
      *  * The Delimiter count is 4 and all the 4 delimiter are on their right position (8, 13, 18, 23)

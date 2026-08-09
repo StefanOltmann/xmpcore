@@ -18,7 +18,7 @@ import de.stefan_oltmann.xmp.internal.XMPErrorConst
 public abstract class Options {
 
     /**
-     * the internal int containing all options
+     * the internal int containing all options.
      */
     private var valueBits = 0
 

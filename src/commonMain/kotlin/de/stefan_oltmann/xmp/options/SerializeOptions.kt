@@ -19,7 +19,7 @@ public class SerializeOptions : Options {
     public constructor()
 
     /**
-     * Constructor using inital options
+     * Constructor using inital options.
      *
      * @param options the inital options
      *
@@ -150,12 +150,12 @@ public class SerializeOptions : Options {
         const val USE_CANONICAL_FORMAT = 0x0080
 
         /**
-         * Omit the &lt;x:xmpmeta&gt;-tag
+         * Omit the &lt;x:xmpmeta&gt;-tag.
          */
         const val OMIT_XMPMETA_ELEMENT = 0x1000
 
         /**
-         * Sort the struct properties and qualifier before serializing
+         * Sort the struct properties and qualifier before serializing.
          */
         const val SORT = 0x2000
     }

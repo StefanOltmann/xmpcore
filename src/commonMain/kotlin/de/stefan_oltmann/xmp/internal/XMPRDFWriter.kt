@@ -32,7 +32,7 @@ internal object XMPRDFWriter {
     private const val PACKET_HEADER = "<?xpacket begin=\"\uFEFF\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>"
 
     /**
-     * The w/r is missing inbetween
+     * The w/r is missing inbetween.
      */
     private const val PACKET_TRAILER = "<?xpacket end=\""
 
@@ -58,7 +58,7 @@ internal object XMPRDFWriter {
     private const val RDF_EMPTY_STRUCT = "<rdf:Description/>"
 
     /**
-     * a set of all rdf attribute qualifier
+     * a set of all rdf attribute qualifier.
      */
     val RDF_ATTR_QUALIFIER: Set<String> = setOf(
         XMPConst.XML_LANG, "rdf:resource", "rdf:ID", "rdf:bagID", "rdf:nodeID"
@@ -1066,7 +1066,7 @@ internal object XMPRDFWriter {
         sb.append(escapeXML(value ?: "", forAttribute, true))
 
     /**
-     * A node can be serialized as RDF-Attribute, if it meets the following conditions:
+     * A node can be serialized as RDF-Attribute, if it meets the following conditions.
      *
      *  * is not array item
      *  * don't has qualifier

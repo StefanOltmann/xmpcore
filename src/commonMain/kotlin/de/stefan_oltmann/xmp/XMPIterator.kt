@@ -78,7 +78,7 @@ public class XMPIterator(
     private val options: IteratorOptions
 
     /**
-     * the base namespace of the property path, will be changed during the iteration
+     * the base namespace of the property path, will be changed during the iteration.
      */
     private var baseNS: String? = null
 
@@ -93,7 +93,7 @@ public class XMPIterator(
     private var skipSubtree = false
 
     /**
-     * the node iterator doing the work
+     * the node iterator doing the work.
      */
     private var nodeIterator: Iterator<XMPPropertyInfo>? = null
 
@@ -203,42 +203,42 @@ public class XMPIterator(
     private open inner class NodeIterator : Iterator<XMPPropertyInfo> {
 
         /**
-         * the state of the iteration
+         * the state of the iteration.
          */
         private var state = ITERATE_NODE
 
         /**
-         * the currently visited node
+         * the currently visited node.
          */
         private var visitedNode: XMPNode? = null
 
         /**
-         * the recursively accumulated path
+         * the recursively accumulated path.
          */
         private var path: String? = null
 
         /**
-         * the iterator that goes through the children and qualifier list
+         * the iterator that goes through the children and qualifier list.
          */
         protected var childrenIterator: Iterator<XMPNode>? = null
 
         /**
-         * index of node with parent, only interesting for arrays
+         * index of node with parent, only interesting for arrays.
          */
         private var index = 0
 
         /**
-         * the iterator for each child
+         * the iterator for each child.
          */
         private var subIterator = emptySequence<XMPPropertyInfo>().iterator()
 
         /**
-         * the cached `PropertyInfo` to return
+         * the cached `PropertyInfo` to return.
          */
         protected var returnProperty: XMPPropertyInfo? = null
 
         /**
-         * Default constructor
+         * Default constructor.
          */
         constructor()
 
@@ -320,7 +320,7 @@ public class XMPIterator(
         }
 
         /**
-         * Handles the iteration of the children or qualfier
+         * Handles the iteration of the children or qualfier.
          *
          * @return Returns if there are more elements available.
          */
@@ -489,7 +489,7 @@ public class XMPIterator(
         private var index = 0
 
         /**
-         * Constructor
+         * Constructor.
          *
          * @param parentNode the node which children shall be iterated.
          * @param parentPath the full path of the former node without the leaf node.
@@ -547,17 +547,17 @@ public class XMPIterator(
     private companion object {
 
         /**
-         * iteration state
+         * iteration state.
          */
         const val ITERATE_NODE = 0
 
         /**
-         * iteration state
+         * iteration state.
          */
         const val ITERATE_CHILDREN = 1
 
         /**
-         * iteration state
+         * iteration state.
          */
         const val ITERATE_QUALIFIER = 2
     }

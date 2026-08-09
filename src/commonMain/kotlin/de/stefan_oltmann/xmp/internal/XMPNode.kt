@@ -18,17 +18,17 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
 internal class XMPNode(
 
     /**
-     * name of the node, contains different information depending of the node kind
+     * name of the node, contains different information depending of the node kind.
      */
     var name: String?,
 
     /**
-     * value of the node, contains different information depending of the node kind
+     * value of the node, contains different information depending of the node kind.
      */
     var value: String?,
 
     /**
-     * options describing the kind of the node
+     * options describing the kind of the node.
      */
     var options: PropertyOptions = PropertyOptions()
 

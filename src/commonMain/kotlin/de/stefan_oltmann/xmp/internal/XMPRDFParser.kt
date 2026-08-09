@@ -55,7 +55,7 @@ internal object XMPRDFParser {
     const val RDFTERM_NODE_ID = 6
 
     /**
-     * End of coreSyntaxTerms
+     * End of coreSyntaxTerms.
      */
     const val RDFTERM_DATATYPE = 7
 
@@ -97,7 +97,7 @@ internal object XMPRDFParser {
     const val RDFTERM_LAST_OLD = RDFTERM_BAG_ID
 
     /**
-     * this prefix is used for default namespaces
+     * this prefix is used for default namespaces.
      */
     const val DEFAULT_PREFIX = "_dflt"
 
@@ -262,7 +262,7 @@ internal object XMPRDFParser {
     }
 
     /**
-     * 7.2.13 propertyEltList
+     * 7.2.13 propertyEltList.
      * ws* ( propertyElt ws* )*
      *
      * @param xmp        the xmp metadata object that is generated
@@ -1142,7 +1142,7 @@ internal object XMPRDFParser {
     }
 
     /**
-     * 7.2.4 oldTerms<br></br>
+     * 7.2.4 oldTerms.<br></br>
      * rdf:aboutEach | rdf:aboutEachPrefix | rdf:bagID
      *
      * @param term the term id
@@ -1152,7 +1152,7 @@ internal object XMPRDFParser {
         RDFTERM_FIRST_OLD <= term && term <= RDFTERM_LAST_OLD
 
     /**
-     * 7.2.2 coreSyntaxTerms<br></br>
+     * 7.2.2 coreSyntaxTerms.<br></br>
      * rdf:RDF | rdf:ID | rdf:about | rdf:parseType | rdf:resource | rdf:nodeID |
      * rdf:datatype
      *

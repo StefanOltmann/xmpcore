@@ -44,13 +44,13 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
 public class XMPMeta internal constructor() {
 
     /**
-     * root of the metadata tree
+     * root of the metadata tree.
      */
     internal var root: XMPNode = XMPNode(null, null, PropertyOptions())
         private set
 
     /**
-     * the xpacket processing instructions content
+     * the xpacket processing instructions content.
      */
     private var packetHeader: String? = null
 
@@ -1524,7 +1524,7 @@ public class XMPMeta internal constructor() {
      * Note that these are not standard API for XMP Core.
      */
 
-    /** Returns the ISO date string */
+    /** Returns the ISO date string. */
     public fun getDateTimeOriginal(): String? =
         getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal")
 

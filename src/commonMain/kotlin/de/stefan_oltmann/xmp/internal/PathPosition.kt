@@ -14,27 +14,27 @@ package de.stefan_oltmann.xmp.internal
 internal class PathPosition {
 
     /**
-     * the complete path
+     * the complete path.
      */
     var path: String? = null
 
     /**
-     * the start of a segment name
+     * the start of a segment name.
      */
     var nameStart = 0
 
     /**
-     * the end of a segment name
+     * the end of a segment name.
      */
     var nameEnd = 0
 
     /**
-     * the begin of a step
+     * the begin of a step.
      */
     var stepBegin = 0
 
     /**
-     * the end of a step
+     * the end of a step.
      */
     var stepEnd = 0
 

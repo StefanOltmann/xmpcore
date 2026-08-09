@@ -20,12 +20,12 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
 internal object XMPNormalizer {
 
     /**
-     * caches the correct dc-property array forms
+     * caches the correct dc-property array forms.
      */
     private val dcArrayForms = createDCArrays()
 
     /**
-     * Normalizes a raw parsed XMPMeta-Object
+     * Normalizes a raw parsed XMPMeta-Object.
      *
      * @param xmp     the raw metadata object
      * @param options the parsing options
@@ -363,7 +363,7 @@ internal object XMPNormalizer {
     }
 
     /**
-     * Moves an alias node of array form to another schema into an array
+     * Moves an alias node of array form to another schema into an array.
      *
      * @param childNode  the node to be moved
      * @param baseArray  the base array for the array item

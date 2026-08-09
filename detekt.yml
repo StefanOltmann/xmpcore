@@ -562,7 +562,7 @@ style:
     singleLine: 'never'
     multiLine: 'consistent'
   BracesOnWhenStatements:
-    active: true
+    active: false
     singleLine: 'necessary'
     multiLine: 'necessary'
   CanBeNonNullable:

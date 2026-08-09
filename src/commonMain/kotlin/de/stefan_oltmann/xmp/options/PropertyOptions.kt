@@ -18,12 +18,12 @@ import de.stefan_oltmann.xmp.internal.XMPErrorConst
 public class PropertyOptions : Options {
 
     /**
-     * Default constructor
+     * Default constructor.
      */
     public constructor()
 
     /**
-     * Intialization constructor
+     * Intialization constructor.
      *
      * @param options the initialization options
      *
@@ -353,7 +353,7 @@ public class PropertyOptions : Options {
         const val SCHEMA_NODE = -0x80000000
 
         /**
-         * may be used in the future
+         * may be used in the future.
          */
         const val DELETE_EXISTING = 0x20000000
     }

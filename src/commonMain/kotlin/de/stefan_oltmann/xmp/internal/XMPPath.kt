@@ -60,7 +60,7 @@ internal class XMPPath {
         const val QUALIFIER_STEP = 0x02
 
         /**
-         * Marks an array index step
+         * Marks an array index step.
          */
         const val ARRAY_INDEX_STEP = 0x03
 

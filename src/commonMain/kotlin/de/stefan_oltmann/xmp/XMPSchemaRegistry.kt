@@ -45,12 +45,12 @@ import de.stefan_oltmann.xmp.options.AliasOptions
 public object XMPSchemaRegistry {
 
     /**
-     * a map from a namespace URI to its registered prefix
+     * a map from a namespace URI to its registered prefix.
      */
     private val namespaceToPrefixMap: MutableMap<String, String> = mutableMapOf()
 
     /**
-     * a map from a prefix to the associated namespace URI
+     * a map from a prefix to the associated namespace URI.
      */
     private val prefixToNamespaceMap: MutableMap<String, String> = mutableMapOf()
 
@@ -61,7 +61,7 @@ public object XMPSchemaRegistry {
     private val aliasMap: MutableMap<String, XMPAliasInfo> = mutableMapOf()
 
     /**
-     * The pattern that must not be contained in simple properties
+     * The pattern that must not be contained in simple properties.
      */
     private val simpleProperyPattern = Regex("[/*?\\[\\]]")
 

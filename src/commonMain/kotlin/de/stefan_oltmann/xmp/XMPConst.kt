@@ -105,7 +105,7 @@ public object XMPConst {
     public const val NS_EXIF: String = "http://ns.adobe.com/exif/1.0/"
 
     /**
-     * NS for the CIPA XMP for Exif document v1.1
+     * NS for the CIPA XMP for Exif document v1.1.
      */
     public const val NS_EXIF_CIPA: String = "http://cipa.jp/exif/1.0/"
 
@@ -130,24 +130,24 @@ public object XMPConst {
     public const val NS_WAV: String = "http://ns.adobe.com/xmp/wav/1.0/"
 
     /**
-     * BExt Schema
+     * BExt Schema.
      */
     public const val NS_BWF: String = "http://ns.adobe.com/bwf/bext/1.0/"
 
     /**
-     * RIFF Info Schema
+     * RIFF Info Schema.
      */
     public const val NS_RIFF_INFO: String = "http://ns.adobe.com/riff/info/"
 
     public const val NS_SCRIPT: String = "http://ns.adobe.com/xmp/1.0/Script/"
 
     /**
-     * Transform XMP
+     * Transform XMP.
      */
     public const val NS_TRANSFORM_XMP: String = "http://ns.adobe.com/TransformXMP/"
 
     /**
-     * Adobe Flash SWF
+     * Adobe Flash SWF.
      */
     public const val NS_SWF: String = "http://ns.adobe.com/swf/1.0/"
 
@@ -158,7 +158,7 @@ public object XMPConst {
     public const val NS_TRANSIENT: String = "http://ns.adobe.com/xmp/transient/1.0/"
 
     /**
-     * legacy Dublin Core NS, will be converted to NS_DC
+     * legacy Dublin Core NS, will be converted to NS_DC.
      */
     public const val NS_DC_DEPRECATED: String = "http://purl.org/dc/1.1/"
 
@@ -248,32 +248,32 @@ public object XMPConst {
     public const val ARRAY_ITEM_NAME: String = "[]"
 
     /**
-     * The x-default string for localized properties
+     * The x-default string for localized properties.
      */
     public const val X_DEFAULT: String = "x-default"
 
     /**
-     * xml:lang qualfifier
+     * xml:lang qualfifier.
      */
     public const val XML_LANG: String = "xml:lang"
 
     /**
-     * rdf:type qualfifier
+     * rdf:type qualfifier.
      */
     public const val RDF_TYPE: String = "rdf:type"
 
     /**
-     * Processing Instruction (PI) for xmp packet
+     * Processing Instruction (PI) for xmp packet.
      */
     public const val XMP_PI: String = "xpacket"
 
     /**
-     * XMP meta tag version new
+     * XMP meta tag version new.
      */
     public const val TAG_XMPMETA: String = "xmpmeta"
 
     /**
-     * XMP meta tag version old
+     * XMP meta tag version old.
      */
     public const val TAG_XAPMETA: String = "xapmeta"
 
