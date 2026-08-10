@@ -181,9 +181,9 @@ internal object XMPNodeUtils {
 
                 if (currNode == null) {
 
-                    /* Delete implicitly created nodes */
-                    if (createNodes)
-                        deleteNode(rootImplicitNode!!)
+                    /* Delete implicitly created nodes, if any */
+                    if (createNodes && rootImplicitNode != null)
+                        deleteNode(rootImplicitNode)
 
                     return null
 
