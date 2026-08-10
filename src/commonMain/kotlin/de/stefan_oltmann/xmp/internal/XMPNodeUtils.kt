@@ -527,7 +527,7 @@ internal object XMPNodeUtils {
 
         } else {
 
-            for (index in 1 until arrayNode.getChildrenLength()) {
+            for (index in 1..arrayNode.getChildrenLength()) {
 
                 val currItem = arrayNode.getChild(index)
 
