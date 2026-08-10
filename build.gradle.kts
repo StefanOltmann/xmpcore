@@ -54,7 +54,6 @@ detekt {
     config.setFrom("detekt.yml")
     allRules = true
     parallel = true
-    ignoreFailures = true
 }
 
 kover {
