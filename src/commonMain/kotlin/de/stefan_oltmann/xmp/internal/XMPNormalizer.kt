@@ -20,6 +20,11 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
 internal object XMPNormalizer {
 
     /**
+     * The prefix of an instance ID stored in the rdf:about attribute.
+     */
+    private const val UUID_PREFIX = "uuid:"
+
+    /**
      * caches the correct dc-property array forms.
      */
     private val dcArrayForms = createDCArrays()
@@ -62,8 +67,8 @@ internal object XMPNormalizer {
 
             var nameStr = tree.name!!.lowercase()
 
-            if (nameStr.startsWith("uuid:"))
-                nameStr = nameStr.substring(5)
+            if (nameStr.startsWith(UUID_PREFIX))
+                nameStr = nameStr.removePrefix(UUID_PREFIX)
 
             if (checkUUIDFormat(nameStr)) {
 
@@ -76,7 +81,7 @@ internal object XMPNormalizer {
 
                 /* Clobber any existing xmpMM:InstanceID */
                 idNode.options = PropertyOptions()
-                idNode.value = "uuid:$nameStr"
+                idNode.value = "$UUID_PREFIX$nameStr"
                 idNode.removeChildren()
                 idNode.removeQualifiers()
 
@@ -252,113 +257,133 @@ internal object XMPNormalizer {
 
                 currProp.isAlias = false
 
-                /* Find the base path, look for the base schema and root node. */
-                val info = XMPSchemaRegistry.findAlias(currProp.name!!)
-
-                if (info != null) {
-
-                    /* Find or create schema */
-                    val baseSchema = XMPNodeUtils.findSchemaNode(
-                        tree, info.getNamespace(), null, true
-                    )
-
-                    checkNotNull(baseSchema) { "SchemaNode should have been created." }
-
-                    baseSchema.isImplicit = false
-
-                    var baseNode = XMPNodeUtils.findChildNode(
-                        baseSchema,
-                        info.getPrefix() + info.getPropName(), false
-                    )
-
-                    if (baseNode == null) {
-
-                        if (info.getAliasForm().isSimple()) {
-
-                            /*
-                             * A top-to-top alias, transplant the property.
-                             * change the alias property name to the base name
-                             */
-                            val qname = info.getPrefix() + info.getPropName()
-
-                            currProp.name = qname
-
-                            baseSchema.addChild(currProp)
-
-                            /* Remove the alias property */
-
-                            currSchema.removeChild(currProp)
-
-                        } else {
-
-                            /*
-                             * An alias to an array item,
-                             * create the array and transplant the property.
-                             */
-                            baseNode = XMPNode(
-                                name = info.getPrefix() + info.getPropName(),
-                                value = null,
-                                options = info.getAliasForm().toPropertyOptions()
-                            )
-
-                            baseSchema.addChild(baseNode)
-
-                            transplantArrayItemAlias(currProp, baseNode) {
-                                currSchema.removeChild(currProp)
-                            }
-                        }
-
-                    } else if (info.getAliasForm().isSimple()) {
-
-                        /*
-                         * The base node does exist and this is a top-to-top alias.
-                         * Check for conflicts if strict aliasing is on.
-                         * Remove and delete the alias subtree.
-                         */
-                        if (strictAliasing)
-                            compareAliasedSubtrees(currProp, baseNode, true)
-
-                        currSchema.removeChild(currProp)
-
-                    } else {
-
-                        /*
-                         * This is an alias to an array item and the array exists.
-                         * Look for the aliased item.
-                         * Then transplant or check & delete as appropriate.
-                         */
-                        var itemNode: XMPNode? = null
-
-                        if (info.getAliasForm().isArrayAltText()) {
-
-                            val xdIndex = XMPNodeUtils.lookupLanguageItem(baseNode, XMPConst.X_DEFAULT)
-
-                            if (xdIndex != -1)
-                                itemNode = baseNode.getChild(xdIndex)
-
-                        } else if (baseNode.hasChildren()) {
-
-                            itemNode = baseNode.getChild(1)
-                        }
-
-                        if (itemNode == null) {
-
-                            transplantArrayItemAlias(currProp, baseNode) {
-                                currSchema.removeChild(currProp)
-                            }
-
-                        } else {
-
-                            if (strictAliasing)
-                                compareAliasedSubtrees(currProp, itemNode, true)
-
-                            currSchema.removeChild(currProp)
-                        }
-                    }
-                }
+                moveExplicitAlias(tree, currSchema, currProp, strictAliasing)
             }
 
             currSchema.hasAliases = false
+        }
+    }
+
+    /**
+     * Moves an explicit alias property to its base property or, if the base
+     * node exists, checks the alias subtree against the base subtree when
+     * strict aliasing is on.
+     *
+     * @param tree           the root of the metadata tree
+     * @param currSchema     the schema containing the alias property
+     * @param currProp       the alias property to move or check
+     * @param strictAliasing true if the alias and base subtrees shall match
+     */
+    private fun moveExplicitAlias(
+        tree: XMPNode,
+        currSchema: XMPNode,
+        currProp: XMPNode,
+        strictAliasing: Boolean
+    ) {
+
+        /* Find the base path, look for the base schema and root node. */
+        val info = XMPSchemaRegistry.findAlias(currProp.name!!)
+
+        if (info != null) {
+
+            /* Find or create schema */
+            val baseSchema = XMPNodeUtils.findSchemaNode(
+                tree, info.getNamespace(), null, true
+            )
+
+            checkNotNull(baseSchema) { "SchemaNode should have been created." }
+
+            baseSchema.isImplicit = false
+
+            var baseNode = XMPNodeUtils.findChildNode(
+                baseSchema,
+                info.getPrefix() + info.getPropName(), false
+            )
+
+            if (baseNode == null) {
+
+                if (info.getAliasForm().isSimple()) {
+
+                    /*
+                     * A top-to-top alias, transplant the property.
+                     * change the alias property name to the base name
+                     */
+                    val qname = info.getPrefix() + info.getPropName()
+
+                    currProp.name = qname
+
+                    baseSchema.addChild(currProp)
+
+                    /* Remove the alias property */
+
+                    currSchema.removeChild(currProp)
+
+                } else {
+
+                    /*
+                     * An alias to an array item,
+                     * create the array and transplant the property.
+                     */
+                    baseNode = XMPNode(
+                        name = info.getPrefix() + info.getPropName(),
+                        value = null,
+                        options = info.getAliasForm().toPropertyOptions()
+                    )
+
+                    baseSchema.addChild(baseNode)
+
+                    transplantArrayItemAlias(currProp, baseNode) {
+                        currSchema.removeChild(currProp)
+                    }
+                }
+
+            } else if (info.getAliasForm().isSimple()) {
+
+                /*
+                 * The base node does exist and this is a top-to-top alias.
+                 * Check for conflicts if strict aliasing is on.
+                 * Remove and delete the alias subtree.
+                 */
+                if (strictAliasing)
+                    compareAliasedSubtrees(currProp, baseNode, true)
+
+                currSchema.removeChild(currProp)
+
+            } else {
+
+                /*
+                 * This is an alias to an array item and the array exists.
+                 * Look for the aliased item.
+                 * Then transplant or check & delete as appropriate.
+                 */
+                var itemNode: XMPNode? = null
+
+                if (info.getAliasForm().isArrayAltText()) {
+
+                    val xdIndex = XMPNodeUtils.lookupLanguageItem(baseNode, XMPConst.X_DEFAULT)
+
+                    if (xdIndex != -1)
+                        itemNode = baseNode.getChild(xdIndex)
+
+                } else if (baseNode.hasChildren()) {
+
+                    itemNode = baseNode.getChild(1)
+                }
+
+                if (itemNode == null) {
+
+                    transplantArrayItemAlias(currProp, baseNode) {
+                        currSchema.removeChild(currProp)
+                    }
+
+                } else {
+
+                    if (strictAliasing)
+                        compareAliasedSubtrees(currProp, itemNode, true)
+
+                    currSchema.removeChild(currProp)
+                }
+            }
         }
     }
 
@@ -435,13 +460,11 @@ internal object XMPNormalizer {
         if (aliasNode.value != baseNode.value || aliasNode.getChildrenLength() != baseNode.getChildrenLength())
             throw XMPException("Mismatch between alias and base nodes", XMPErrorConst.BADXMP)
 
-        if (!outerCall &&
-            (
-                aliasNode.name != baseNode.name ||
-                    aliasNode.options != baseNode.options ||
-                    aliasNode.getQualifierLength() != baseNode.getQualifierLength()
-                )
-        )
+        val nodeMismatch = aliasNode.name != baseNode.name ||
+            aliasNode.options != baseNode.options ||
+            aliasNode.getQualifierLength() != baseNode.getQualifierLength()
+
+        if (!outerCall && nodeMismatch)
             throw XMPException("Mismatch between alias and base nodes", XMPErrorConst.BADXMP)
 
         run {

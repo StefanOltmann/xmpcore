@@ -9,6 +9,7 @@
 package de.stefan_oltmann.xmp.options
 
 import de.stefan_oltmann.xmp.XMPException
+import de.stefan_oltmann.xmp.internal.Utils
 import de.stefan_oltmann.xmp.internal.XMPErrorConst
 
 /**
@@ -75,10 +76,40 @@ public abstract class Options {
     override fun hashCode(): Int = getOptions()
 
     /**
+     * Creates a human readable string from the set options. *Note:* This method is quite
+     * expensive and should only be used within tests or as debug output.
+     *
+     * @return Returns a string listing all options that are set to `true` by their name,
+     * like "option1 | option4".
+     */
+    public fun getOptionsString(): String {
+
+        if (valueBits == 0)
+            return "<none>"
+
+        val sb = StringBuilder()
+        var remainingBits = valueBits
+
+        while (remainingBits != 0) {
+
+            /* Isolate the rightmost set bit and clear it from the remainder. */
+            val singleBit = remainingBits xor (remainingBits and (remainingBits - 1))
+            sb.append(getOptionName(singleBit))
+
+            remainingBits = remainingBits and (remainingBits - 1)
+
+            if (remainingBits != 0)
+                sb.append(" | ")
+        }
+
+        return sb.toString()
+    }
+
+    /**
      * @return Returns the options as hex bitmask.
      */
     override fun toString(): String =
-        "0x" + valueBits.toString(16)
+        "0x" + valueBits.toString(Utils.HEX_RADIX)
 
     /**
      * To be implemeted by inheritants.
@@ -87,6 +118,16 @@ public abstract class Options {
      * @return Returns a human-readable name for an option bit.
      */
     protected abstract fun defineOptionName(option: Int): String?
+
+    /**
+     * Looks up the name of a single option bit via [Options.defineOptionName],
+     * with a fallback for bits without a defined name.
+     *
+     * @param option a single option bit
+     * @return Returns the option name or `"<option name not defined>"`.
+     */
+    private fun getOptionName(option: Int): String =
+        defineOptionName(option) ?: "<option name not defined>"
 
     /**
      * The inheriting option class can do additional checks on the options.
@@ -112,7 +153,7 @@ public abstract class Options {
 
         if (invalidOptions != 0)
             throw XMPException(
-                "The option bit(s) 0x" + invalidOptions.toString(16) + " + are invalid!",
+                "The option bit(s) 0x" + invalidOptions.toString(Utils.HEX_RADIX) + " + are invalid!",
                 XMPErrorConst.BADOPTIONS
             )
 

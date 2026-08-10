@@ -191,10 +191,17 @@ public class XMPIterator(
     }
 
     override fun hasNext(): Boolean =
-        nodeIterator!!.hasNext()
+        nodeIterator?.hasNext() ?: false
 
-    override fun next(): XMPPropertyInfo =
-        nodeIterator!!.next()
+    override fun next(): XMPPropertyInfo {
+
+        val iterator = nodeIterator
+
+        if (iterator == null || !iterator.hasNext())
+            throw NoSuchElementException("There are no more nodes to return")
+
+        return iterator.next()
+    }
 
     /**
      * The `XMPIterator` implementation.
@@ -278,6 +285,18 @@ public class XMPIterator(
 
             } else if (state == ITERATE_CHILDREN) {
 
+                /* Only the iterator of the node returned by the last call to next() has not
+                 * started its children iteration yet, so the subtree skip belongs to it. The
+                 * terminal state keeps the subtree skipped when the parent polls again. */
+                if (skipSubtree && childrenIterator == null) {
+
+                    skipSubtree = false
+
+                    state = ITERATE_DONE
+
+                    return false
+                }
+
                 if (childrenIterator == null)
                     childrenIterator = visitedNode!!.iterateChildren()
 
@@ -290,6 +309,10 @@ public class XMPIterator(
                 }
 
                 hasNext
+
+            } else if (state == ITERATE_DONE) {
+
+                false
 
             } else {
 
@@ -311,7 +334,11 @@ public class XMPIterator(
 
             val node = visitedNode
 
-            if (node == null || node.parent == null || options.isJustLeafnodes() && node.hasChildren())
+            if (node == null || node.parent == null)
+                return hasNext()
+
+            /* Skip non-leaf nodes in case JUST_LEAFNODES is set */
+            if (options.isJustLeafnodes() && node.hasChildren())
                 return hasNext()
 
             returnProperty = createPropertyInfo(node, baseNS, path)
@@ -329,6 +356,10 @@ public class XMPIterator(
             if (skipSiblings) {
 
                 skipSiblings = false
+
+                /* skipSiblings() also sets the subtree flag; it must not leak into the subtree
+                 * of the node the iteration continues with. */
+                skipSubtree = false
 
                 subIterator = emptySequence<XMPPropertyInfo>().iterator()
             }
@@ -560,5 +591,10 @@ public class XMPIterator(
          * iteration state.
          */
         const val ITERATE_QUALIFIER = 2
+
+        /**
+         * iteration state; reached when the subtree below the visited node was skipped.
+         */
+        const val ITERATE_DONE = 3
     }
 }

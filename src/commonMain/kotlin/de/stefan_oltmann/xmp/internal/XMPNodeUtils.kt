@@ -181,9 +181,9 @@ internal object XMPNodeUtils {
 
                 if (currNode == null) {
 
-                    /* Delete implicitly created nodes */
-                    if (createNodes)
-                        deleteNode(rootImplicitNode!!)
+                    /* Delete implicitly created nodes, if any */
+                    if (createNodes && rootImplicitNode != null)
+                        deleteNode(rootImplicitNode)
 
                     return null
 
@@ -222,12 +222,9 @@ internal object XMPNodeUtils {
             throw ex
         }
 
-        if (rootImplicitNode != null) {
-
-            /* Set options only if a node has been successful created */
-            if (leafOptions != null)
-                currNode.options.mergeWith(leafOptions)
-        }
+        /* Set options only if a node has been successful created */
+        if (rootImplicitNode != null && leafOptions != null)
+            currNode.options.mergeWith(leafOptions)
 
         return currNode
     }
@@ -530,7 +527,7 @@ internal object XMPNodeUtils {
 
         } else {
 
-            for (index in 1 until arrayNode.getChildrenLength()) {
+            for (index in 1..arrayNode.getChildrenLength()) {
 
                 val currItem = arrayNode.getChild(index)
 

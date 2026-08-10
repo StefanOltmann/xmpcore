@@ -216,19 +216,7 @@ internal object XMPPathParser {
                 /* Absorb the leading quote */
                 pos.stepEnd++
 
-                while (pos.stepEnd < pos.path!!.length) {
-
-                    if (pos.path!![pos.stepEnd] == quote) {
-
-                        /* Check for escaped quote */
-                        if (pos.stepEnd + 1 >= pos.path!!.length || pos.path!![pos.stepEnd + 1] != quote)
-                            break
-
-                        pos.stepEnd++
-                    }
-
-                    pos.stepEnd++
-                }
+                skipQuotedSelectorValue(pos, quote)
 
                 if (pos.stepEnd >= pos.path!!.length)
                     throw XMPException("No terminating quote for array selector", XMPErrorConst.BADXPATH)
@@ -249,6 +237,29 @@ internal object XMPPathParser {
         segment.name = pos.path!!.substring(pos.stepBegin, pos.stepEnd)
 
         return segment
+    }
+
+    /**
+     * Skips the quoted value of an array selector, handling escaped quotes.
+     *
+     * @param pos   the current path parsing position
+     * @param quote the quote character of the selector
+     */
+    private fun skipQuotedSelectorValue(pos: PathPosition, quote: Char) {
+
+        while (pos.stepEnd < pos.path!!.length) {
+
+            if (pos.path!![pos.stepEnd] == quote) {
+
+                /* Check for escaped quote */
+                if (pos.stepEnd + 1 >= pos.path!!.length || pos.path!![pos.stepEnd + 1] != quote)
+                    break
+
+                pos.stepEnd++
+            }
+
+            pos.stepEnd++
+        }
     }
 
     /**

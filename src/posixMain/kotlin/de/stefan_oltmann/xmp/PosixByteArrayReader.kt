@@ -28,7 +28,12 @@ internal fun readFileAsByteArray(filePath: String): ByteArray? = memScoped {
 
     /* Move the cursor to the end of the file. */
     fseek(file, 0, SEEK_END)
-    val fileSize = ftell(file)
+
+    /*
+     * ftell returns Int on Windows and Long on Unix. Normalize to ULong so
+     * the buffer size and the expected read count share one portable type.
+     */
+    val fileSize = ftell(file).toULong()
     rewind(file)
 
     val buffer = ByteArray(fileSize.toInt())
@@ -36,13 +41,13 @@ internal fun readFileAsByteArray(filePath: String): ByteArray? = memScoped {
     val bytesReadCount: ULong = fread(
         buffer.refTo(0),
         1.toULong(), // Number of items
-        fileSize.toULong(), // Size to read
+        fileSize, // Size to read
         file
     )
 
     fclose(file)
 
-    if (bytesReadCount != fileSize.toULong()) {
+    if (bytesReadCount != fileSize) {
         perror("Did not read file completely: $bytesReadCount != $fileSize")
         return null
     }

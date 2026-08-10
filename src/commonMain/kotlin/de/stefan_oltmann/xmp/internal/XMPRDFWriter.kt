@@ -20,7 +20,7 @@ import de.stefan_oltmann.xmp.options.SerializeOptions
  * Serializes the `XMPMeta`-object using the standard RDF serialization format.
  * The output is a XMP String according to the `SerializeOptions`.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 internal object XMPRDFWriter {
 
     /** Linefeed (U+000A) is the standard XML line terminator. XMP defaults to it. */
@@ -28,6 +28,11 @@ internal object XMPRDFWriter {
 
     /** Two ASCII spaces (U+0020) are the default indent for XMP files. */
     const val XMP_DEFAULT_INDENT = "  "
+
+    /**
+     * Indent offset of the xmlns declaration lines relative to the schema level.
+     */
+    private const val NAMESPACE_INDENT_OFFSET = 3
 
     private const val PACKET_HEADER = """<?xpacket begin="""" + "\uFEFF\"" + """ id="W5M0MpCehiHzreSzNTczkc9d"?>"""
 
@@ -143,13 +148,6 @@ internal object XMPRDFWriter {
 
         if (!options.getOmitPacketWrapper()) {
 
-            level = 0
-
-            while (level > 0) {
-                tailStr += XMP_DEFAULT_INDENT
-                level--
-            }
-
             tailStr += PACKET_TRAILER
             tailStr += if (options.getReadOnlyPacket()) 'r' else 'w'
             tailStr += PACKET_TRAILER2
@@ -219,7 +217,7 @@ internal object XMPRDFWriter {
         usedPrefixes.add("rdf")
 
         for (schema in xmp.root.getChildren())
-            declareUsedNamespaces(sb, schema, usedPrefixes, level + 3)
+            declareUsedNamespaces(sb, schema, usedPrefixes, level + NAMESPACE_INDENT_OFFSET)
 
         /* Write the top level "attrProps" and close the rdf:Description start tag. */
         var allAreAttrs = true
@@ -705,7 +703,7 @@ internal object XMPRDFWriter {
         usedPrefixes.add("xml")
         usedPrefixes.add("rdf")
 
-        declareUsedNamespaces(sb, schemaNode, usedPrefixes, level + 3)
+        declareUsedNamespaces(sb, schemaNode, usedPrefixes, level + NAMESPACE_INDENT_OFFSET)
 
         sb.append('>')
         sb.append(XMP_DEFAULT_NEWLINE)
@@ -732,9 +730,9 @@ internal object XMPRDFWriter {
      *
      * @param sb              the StringBuilder to append to
      * @param node            the property node
-     * @param emitAsRDFValue  property shall be rendered as attribute rather than tag
      * @param useCanonicalRDF use canonical form with inner description tag or
      * the compact form with rdf:ParseType=&quot;resource&quot; attribute.
+     * @param emitAsRDFValue  property shall be rendered as attribute rather than tag
      * @param indent          the current indent level
      */
     private fun serializeCanonicalRDFProperty(
@@ -804,50 +802,7 @@ internal object XMPRDFWriter {
             if (hasRDFResourceQual)
                 throw XMPException("Can't mix rdf:resource and general qualifiers", XMPErrorConst.BADRDF)
 
-            /*
-             * Change serialization to canonical format with inner rdf:Description-tag
-             * depending on option
-             */
-            if (useCanonicalRDF) {
-
-                sb.append(">")
-                sb.append(XMP_DEFAULT_NEWLINE)
-                actualIndent++
-                writeIndent(sb, actualIndent)
-                sb.append(RDF_STRUCT_START)
-                sb.append(">")
-
-            } else {
-                sb.append(" rdf:parseType=\"Resource\">")
-            }
-
-            sb.append(XMP_DEFAULT_NEWLINE)
-
-            serializeCanonicalRDFProperty(
-                sb,
-                node,
-                useCanonicalRDF,
-                true,
-                actualIndent + 1
-            )
-
-            for (qualifier in node.getQualifier())
-                if (!RDF_ATTR_QUALIFIER.contains(qualifier.name))
-                    serializeCanonicalRDFProperty(
-                        sb,
-                        qualifier,
-                        useCanonicalRDF,
-                        false,
-                        actualIndent + 1
-                    )
-
-            if (useCanonicalRDF) {
-
-                writeIndent(sb, actualIndent)
-                sb.append(RDF_STRUCT_END)
-                sb.append(XMP_DEFAULT_NEWLINE)
-                actualIndent--
-            }
+            actualIndent = serializeQualifiedRDFPropertyForm(sb, node, useCanonicalRDF, actualIndent)
 
         } else {
 
@@ -1011,6 +966,75 @@ internal object XMPRDFWriter {
             sb.append('>')
             sb.append(XMP_DEFAULT_NEWLINE)
         }
+    }
+
+    /**
+     * Serializes a node that has general, non-attribute, qualifiers using the
+     * qualified property form. The value is output by a recursive call on the
+     * same node with `emitAsRDFValue` set.
+     *
+     * @param sb              the StringBuilder to append to
+     * @param node            the property node
+     * @param useCanonicalRDF use canonical form with inner description tag or
+     * the compact form with rdf:ParseType=&quot;resource&quot; attribute.
+     * @param indent          the current indent level
+     * @return the indent level after the property has been written
+     */
+    private fun serializeQualifiedRDFPropertyForm(
+        sb: StringBuilder,
+        node: XMPNode,
+        useCanonicalRDF: Boolean,
+        indent: Int
+    ): Int {
+
+        var actualIndent = indent
+
+        /*
+         * Change serialization to canonical format with inner rdf:Description-tag
+         * depending on option
+         */
+        if (useCanonicalRDF) {
+
+            sb.append(">")
+            sb.append(XMP_DEFAULT_NEWLINE)
+            actualIndent++
+            writeIndent(sb, actualIndent)
+            sb.append(RDF_STRUCT_START)
+            sb.append(">")
+
+        } else {
+            sb.append(" rdf:parseType=\"Resource\">")
+        }
+
+        sb.append(XMP_DEFAULT_NEWLINE)
+
+        serializeCanonicalRDFProperty(
+            sb,
+            node,
+            useCanonicalRDF,
+            true,
+            actualIndent + 1
+        )
+
+        for (qualifier in node.getQualifier())
+            if (!RDF_ATTR_QUALIFIER.contains(qualifier.name))
+                serializeCanonicalRDFProperty(
+                    sb,
+                    qualifier,
+                    useCanonicalRDF,
+                    false,
+                    actualIndent + 1
+                )
+
+        if (useCanonicalRDF) {
+
+            writeIndent(sb, actualIndent)
+            sb.append(RDF_STRUCT_END)
+            sb.append(XMP_DEFAULT_NEWLINE)
+            actualIndent--
+        }
+
+        return actualIndent
     }
 
     /**

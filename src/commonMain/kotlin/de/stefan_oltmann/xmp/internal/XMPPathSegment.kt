@@ -35,13 +35,6 @@ internal class XMPPathSegment {
 
     /**
      * Constructor with initial values.
-     */
-    constructor(name: String) {
-        this.name = name
-    }
-
-    /**
-     * Constructor with initial values.
      *
      * Note: Name can be NULL for XMPPath.ARRAY_INDEX_STEP and others.
      */

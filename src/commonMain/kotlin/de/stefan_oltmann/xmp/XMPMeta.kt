@@ -40,7 +40,7 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
  * modify all kinds of properties, create an iterator over all properties and serialize the metadata
  * to a String.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 public class XMPMeta internal constructor() {
 
     /**
@@ -403,14 +403,14 @@ public class XMPMeta internal constructor() {
     /**
      * Replaces an item within an array. The index is passed as an integer, you need not worry about
      * the path string syntax for array items, convert a loop index to a string, etc. The array
-     * passed must already exist. In normal usage the selected array item is modified. A new item is
-     * automatically appended if the index is the array size plus 1.
+     * passed must already exist. The selected array item is modified.
      *
      * @param schemaNS  The namespace URI for the struct. Has the same usage as in getProperty.
      * @param arrayName The name of the array.
      *                  May be a general path expression, must not be `null` or the empty string.
      *                  Has the same namespace prefix usage as propName in getProperty.
-     * @param itemIndex The index of the desired item. Arrays in XMP are indexed from 1. To address
+     * @param itemIndex The index of the desired item, must be in the range 1 to the number of
+     * array items. Arrays in XMP are indexed from 1. To address
      * the last existing item, use [XMPMeta.countArrayItems] to find
      * out the length of the array.
      * @param itemValue the new value of the array item. Has the same usage as propValue in
@@ -1163,7 +1163,10 @@ public class XMPMeta internal constructor() {
             XMPNodeUtils.CLT_SPECIFIC_MATCH -> if (!specificXDefault) {
 
                 /* Update the specific item, update x-default if it matches the old value. */
-                if (haveXDefault && xdItem != itemNode && xdItem != null && xdItem.value == itemNode!!.value)
+                val updateXDefault = haveXDefault && xdItem != itemNode && xdItem != null &&
+                    xdItem.value == itemNode!!.value
+
+                if (updateXDefault)
                     xdItem.value = itemValue
 
                 /* ! Do this after the x-default check! */
@@ -1194,7 +1197,10 @@ public class XMPMeta internal constructor() {
             XMPNodeUtils.CLT_SINGLE_GENERIC -> {
 
                 /* Update the generic item, update x-default if it matches the old value. */
-                if (haveXDefault && xdItem != itemNode && xdItem != null && xdItem.value == itemNode!!.value)
+                val updateXDefault = haveXDefault && xdItem != itemNode && xdItem != null &&
+                    xdItem.value == itemNode!!.value
+
+                if (updateXDefault)
                     xdItem.value = itemValue
 
                 /* ! Do this after the x-default check! */
@@ -1505,18 +1511,6 @@ public class XMPMeta internal constructor() {
      */
     public fun normalize(options: ParseOptions): XMPMeta =
         normalize(this, options)
-
-    public fun printAllToConsole() {
-
-        val iterator: XMPIterator = iterator()
-
-        while (iterator.hasNext()) {
-
-            val propertyInfo = iterator.next()
-
-            println("${propertyInfo.getPath()} = ${propertyInfo.getValue()}")
-        }
-    }
 
     /*
      * Convenience methods for commonly used fields
@@ -2056,7 +2050,7 @@ public class XMPMeta internal constructor() {
                 schemaNS = XMPConst.NS_IPTC_EXT,
                 propName = locationNamePath,
                 propValue = null,
-                options = PropertyOptions().setArrayAlternate(true)
+                options = PropertyOptions().setArrayAlternate(true).setArrayAltText(true)
             )
 
             appendArrayItem(
@@ -2166,7 +2160,7 @@ public class XMPMeta internal constructor() {
             schemaNS = XMPConst.NS_DC,
             propName = "title",
             propValue = null,
-            options = PropertyOptions().setArrayAlternate(true)
+            options = PropertyOptions().setArrayAlternate(true).setArrayAltText(true)
         )
 
         appendArrayItem(
@@ -2223,7 +2217,7 @@ public class XMPMeta internal constructor() {
             schemaNS = XMPConst.NS_DC,
             propName = "description",
             propValue = null,
-            options = PropertyOptions().setArrayAlternate(true)
+            options = PropertyOptions().setArrayAlternate(true).setArrayAltText(true)
         )
 
         appendArrayItem(

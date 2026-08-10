@@ -3,6 +3,7 @@ package de.stefan_oltmann.xmp
 import de.stefan_oltmann.xmp.XMPConst.XMP_DC_SUBJECT
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -363,5 +364,57 @@ class ReadXmpTest {
             expected = "Some title",
             actual = xmpMeta.getTitle()
         )
+    }
+
+    /**
+     * A literal property element with an `rdf:datatype` attribute keeps its value.
+     */
+    @Test
+    fun testParseWithDatatypeOnLiteralProperty() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title rdf:datatype="http://www.w3.org/2001/XMLSchema#string">Some title</dc:title>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            expected = "Some title",
+            actual = xmpMeta.getTitle()
+        )
+
+        assertEquals(
+            expected = "Some title",
+            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+        )
+    }
+
+    /**
+     * A literal property element with `rdf:datatype` and an element child is invalid RDF.
+     */
+    @Test
+    fun testParseWithDatatypeAndElementChildThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
+                  <rdf:li>child</rdf:li>
+                </dc:title>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertFailsWith<XMPException> {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
     }
 }

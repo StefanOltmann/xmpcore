@@ -34,7 +34,7 @@ import nl.adaptivity.xmlutil.dom2.value
 /**
  * Parser for "normal" XML serialisation of RDF.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 internal object XMPRDFParser {
 
     const val RDFTERM_OTHER = 0
@@ -102,6 +102,12 @@ internal object XMPRDFParser {
     const val DEFAULT_PREFIX = "_dflt"
 
     const val XMLNS = "xmlns"
+
+    /**
+     * Maximum number of attributes a non-empty property element can have.
+     * An empty property element can have more attributes.
+     */
+    private const val MAX_PROPERTY_ATTRIBUTES = 3
 
     /**
      * The main parsing method. The XML tree is walked through from the root node and and XMP tree
@@ -231,26 +237,8 @@ internal object XMPRDFParser {
 
                     exclusiveAttrs++
 
-                    if (isTopLevel && attrTerm == RDFTERM_ABOUT) {
-
-                        /*
-                         * This is the rdf:about attribute on a top level node. Set
-                         * the XMP tree name if
-                         * it doesn't have a name yet. Make sure this name matches
-                         * the XMP tree name.
-                         */
-                        if (xmpParent.name != null && xmpParent.name!!.isNotEmpty()) {
-
-                            if (xmpParent.name != attribute.value)
-                                throw XMPException(
-                                    "Mismatched top level rdf:about values",
-                                    XMPErrorConst.BADXMP
-                                )
-
-                        } else {
-                            xmpParent.name = attribute.value
-                        }
-                    }
+                    if (isTopLevel && attrTerm == RDFTERM_ABOUT)
+                        setTopLevelAboutAttribute(xmpParent, attribute)
                 }
 
                 RDFTERM_OTHER ->
@@ -258,6 +246,33 @@ internal object XMPRDFParser {
 
                 else -> throw XMPException("Invalid nodeElement attribute", XMPErrorConst.BADRDF)
             }
+        }
+    }
+
+    /**
+     * Sets the XMP tree name from a top level rdf:about attribute and makes
+     * sure the name matches an already existing one.
+     *
+     * @param xmpParent the XMP tree root
+     * @param attribute the rdf:about attribute
+     */
+    private fun setTopLevelAboutAttribute(xmpParent: XMPNode, attribute: Attr) {
+
+        /*
+         * This is the rdf:about attribute on a top level node. Set
+         * the XMP tree name if it doesn't have a name yet. Make sure this name
+         * matches the XMP tree name.
+         */
+        if (xmpParent.name != null && xmpParent.name!!.isNotEmpty()) {
+
+            if (xmpParent.name != attribute.value)
+                throw XMPException(
+                    "Mismatched top level rdf:about values",
+                    XMPErrorConst.BADXMP
+                )
+
+        } else {
+            xmpParent.name = attribute.value
         }
     }
 
@@ -400,7 +415,7 @@ internal object XMPRDFParser {
                 attributes.removeNamedItem(it.next())
         }
 
-        if (attributes.getLength() > 3) {
+        if (attributes.getLength() > MAX_PROPERTY_ATTRIBUTES) {
 
             /* Only an emptyPropertyElt can have more than 3 attributes. */
             parseEmptyPropertyElement(xmp, xmpParent, xmlNode, isTopLevel)
@@ -523,67 +538,85 @@ internal object XMPRDFParser {
 
             val currentChild = xmlNode.childNodes.item(index)!!
 
-            if (!isWhitespaceNode(currentChild)) {
+            if (isWhitespaceNode(currentChild))
+                continue
 
-                if (currentChild.nodeType == NodeConsts.ELEMENT_NODE && !found) {
+            if (found)
+                throw XMPException("Invalid child of resource property element", XMPErrorConst.BADRDF)
 
-                    currentChild as Element
+            if (currentChild.nodeType == NodeConsts.ELEMENT_NODE) {
 
-                    val isRDF = XMPConst.NS_RDF == currentChild.namespaceURI
+                processResourcePropertyChild(xmp, newCompound, currentChild as Element, options)
 
-                    val localName = currentChild.localName
+                found = true
 
-                    when {
-
-                        isRDF && "Bag" == localName ->
-                            newCompound.options.setArray(true)
-
-                        isRDF && "Seq" == localName ->
-                            newCompound.options.setArray(true).setArrayOrdered(true)
-
-                        isRDF && "Alt" == localName ->
-                            newCompound.options.setArray(true).setArrayOrdered(true).setArrayAlternate(true)
-
-                        else -> {
-
-                            newCompound.options.setStruct(true)
-
-                            if (!isRDF && "Description" != localName) {
-
-                                var typeName = currentChild.namespaceURI
-                                    ?: throw XMPException(
-                                        "All XML elements must be in a namespace", XMPErrorConst.BADXMP
-                                    )
-
-                                typeName += ":$localName"
-
-                                addQualifierNode(newCompound, XMPConst.RDF_TYPE, typeName)
-                            }
-                        }
-                    }
-
-                    parseRdfNodeElement(xmp, newCompound, currentChild, false, options)
-
-                    if (newCompound.hasValueChild)
-                        fixupQualifiedNode(newCompound)
-                    else if (newCompound.options.isArrayAlternate())
-                        XMPNodeUtils.detectAltText(newCompound)
-
-                    found = true
-
-                } else if (found) {
-                    /* Found second child element */
-                    throw XMPException("Invalid child of resource property element", XMPErrorConst.BADRDF)
-                } else {
-                    throw XMPException(
-                        "Children of resource property element must be XML elements", XMPErrorConst.BADRDF
-                    )
-                }
+            } else {
+                throw XMPException(
+                    "Children of resource property element must be XML elements", XMPErrorConst.BADRDF
+                )
             }
         }
 
         if (!found)
             throw XMPException("Missing child of resource property element", XMPErrorConst.BADRDF)
+    }
+
+    /**
+     * Determines the type of an XML child element of a resource property
+     * element, sets the options of the compound node accordingly and processes
+     * the child element itself.
+     *
+     * @param xmp          the xmp metadata object that is generated
+     * @param newCompound  the compound node of the resource property element
+     * @param currentChild the XML child element
+     * @param options      ParseOptions to indicate the parse options provided by the client
+     */
+    private fun processResourcePropertyChild(
+        xmp: XMPMeta,
+        newCompound: XMPNode,
+        currentChild: Element,
+        options: ParseOptions
+    ) {
+
+        val isRDF = XMPConst.NS_RDF == currentChild.namespaceURI
+
+        val localName = currentChild.localName
+
+        when {
+
+            isRDF && "Bag" == localName ->
+                newCompound.options.setArray(true)
+
+            isRDF && "Seq" == localName ->
+                newCompound.options.setArray(true).setArrayOrdered(true)
+
+            isRDF && "Alt" == localName ->
+                newCompound.options.setArray(true).setArrayOrdered(true).setArrayAlternate(true)
+
+            else -> {
+
+                newCompound.options.setStruct(true)
+
+                if (!isRDF && "Description" != localName) {
+
+                    var typeName = currentChild.namespaceURI
+                        ?: throw XMPException(
+                            "All XML elements must be in a namespace", XMPErrorConst.BADXMP
+                        )
+
+                    typeName += ":$localName"
+
+                    addQualifierNode(newCompound, XMPConst.RDF_TYPE, typeName)
+                }
+            }
+        }
+
+        parseRdfNodeElement(xmp, newCompound, currentChild, false, options)
+
+        if (newCompound.hasValueChild)
+            fixupQualifiedNode(newCompound)
+        else if (newCompound.options.isArrayAlternate())
+            XMPNodeUtils.detectAltText(newCompound)
     }
 
     /**
@@ -856,11 +889,12 @@ internal object XMPRDFParser {
 
             val attribute = xmlNode.attributes.item(index) as Attr
 
-            if (
-                attribute === valueNode || XMLNS == attribute.prefix ||
+            val isNamespaceDeclaration = XMLNS == attribute.prefix ||
                 attribute.prefix == null && XMLNS == attribute.nodeName
-            )
-                continue // Skip the rdf:value or rdf:resource attribute holding the value.
+
+            /* Skip the rdf:value or rdf:resource attribute holding the value. */
+            if (attribute === valueNode || isNamespaceDeclaration)
+                continue
 
             val attrTerm = getRDFTermKind(attribute)
 
