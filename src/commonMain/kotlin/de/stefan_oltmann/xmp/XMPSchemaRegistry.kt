@@ -63,7 +63,7 @@ public object XMPSchemaRegistry {
     /**
      * The pattern that must not be contained in simple properties.
      */
-    private val simpleProperyPattern = Regex("[/*?\\[\\]]")
+    private val simplePropertyPattern = Regex("[/*?\\[\\]]")
 
     /**
      * Performs the initialisation of the registry with the default namespaces, aliases and global
@@ -410,7 +410,7 @@ public object XMPSchemaRegistry {
         else
             AliasOptions()
 
-        if (simpleProperyPattern.matches(aliasProp) || simpleProperyPattern.matches(actualProp))
+        if (simplePropertyPattern.containsMatchIn(aliasProp) || simplePropertyPattern.containsMatchIn(actualProp))
             throw XMPException("Alias and actual property names must be simple", XMPErrorConst.BADXPATH)
 
         /* Check if both namespaces are registered */
