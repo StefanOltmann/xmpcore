@@ -239,6 +239,8 @@ kotlin {
 
 // region Writing version.txt for GitHub Actions
 val writeVersion = tasks.register("writeVersion") {
+    group = "build"
+    description = "Writes the current version to version.txt"
     doLast {
         File("build/version.txt").writeText(project.version.toString())
     }
@@ -250,6 +252,8 @@ tasks.getByPath("build").finalizedBy(writeVersion)
 // region Maven publish
 
 val javadocJar = tasks.register<Jar>("javadocJar") {
+    group = "build"
+    description = "Assembles Kotlin docs with Javadoc"
     archiveClassifier.set("javadoc")
 }
 
