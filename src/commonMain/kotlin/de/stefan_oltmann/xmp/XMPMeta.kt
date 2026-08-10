@@ -403,14 +403,14 @@ public class XMPMeta internal constructor() {
     /**
      * Replaces an item within an array. The index is passed as an integer, you need not worry about
      * the path string syntax for array items, convert a loop index to a string, etc. The array
-     * passed must already exist. In normal usage the selected array item is modified. A new item is
-     * automatically appended if the index is the array size plus 1.
+     * passed must already exist. The selected array item is modified.
      *
      * @param schemaNS  The namespace URI for the struct. Has the same usage as in getProperty.
      * @param arrayName The name of the array.
      *                  May be a general path expression, must not be `null` or the empty string.
      *                  Has the same namespace prefix usage as propName in getProperty.
-     * @param itemIndex The index of the desired item. Arrays in XMP are indexed from 1. To address
+     * @param itemIndex The index of the desired item, must be in the range 1 to the number of
+     * array items. Arrays in XMP are indexed from 1. To address
      * the last existing item, use [XMPMeta.countArrayItems] to find
      * out the length of the array.
      * @param itemValue the new value of the array item. Has the same usage as propValue in
