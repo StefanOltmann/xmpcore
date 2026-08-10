@@ -1512,18 +1512,6 @@ public class XMPMeta internal constructor() {
     public fun normalize(options: ParseOptions): XMPMeta =
         normalize(this, options)
 
-    public fun printAllToConsole() {
-
-        val iterator: XMPIterator = iterator()
-
-        while (iterator.hasNext()) {
-
-            val propertyInfo = iterator.next()
-
-            println("${propertyInfo.getPath()} = ${propertyInfo.getValue()}")
-        }
-    }
-
     /*
      * Convenience methods for commonly used fields
      *
