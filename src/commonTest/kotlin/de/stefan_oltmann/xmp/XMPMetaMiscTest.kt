@@ -5,6 +5,7 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 
 /**
  * Tests miscellaneous edge cases of [XMPMeta] path handling.
@@ -30,8 +31,8 @@ class XMPMetaMiscTest {
     }
 
     /**
-     * Setting a property with an out-of-range index removes the implicitly created
-     * nodes and reports the error.
+     * Setting a property with an out-of-range index removes the implicitly
+     * created nodes and reports the error.
      */
     @Test
     fun testSetPropertyWithOutOfRangeIndexThrows() {
@@ -43,5 +44,23 @@ class XMPMetaMiscTest {
         }
 
         assertEquals(XMPErrorConst.BADXPATH, ex.errorCode)
+    }
+
+    /**
+     * An out-of-range index on an alias-created array removes the implicitly
+     * created schema and array nodes.
+     */
+    @Test
+    fun testSetPropertyWithOutOfRangeIndexOnAliasCleansUp() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        val ex = assertFailsWith<XMPException> {
+            /* The pdf:Title alias would create dc:title as alt-text array. */
+            xmpMeta.setProperty(XMPConst.NS_PDF, "Title[3]", "value")
+        }
+
+        assertEquals(XMPErrorConst.BADXPATH, ex.errorCode)
+        assertFalse(xmpMeta.doesPropertyExist(XMPConst.NS_DC, "title"))
     }
 }

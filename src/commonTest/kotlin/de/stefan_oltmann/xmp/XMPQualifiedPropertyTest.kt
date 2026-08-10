@@ -157,6 +157,40 @@ class XMPQualifiedPropertyTest {
     }
 
     /**
+     * An rdf:value element with a resource attribute and a qualifier attribute
+     * moves the qualifier to the parent and keeps the URI value.
+     */
+    @Test
+    fun testRdfValueWithResourceAndQualifier() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <xmp:prop>
+                  <rdf:Description>
+                    <rdf:value rdf:resource="u" dc:q="v"/>
+                  </rdf:Description>
+                </xmp:prop>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        val property = xmpMeta.getProperty(XMPConst.NS_XMP, "prop")!!
+
+        assertEquals("u", property.getValue())
+        assertTrue(property.getOptions().isURI())
+        assertEquals(
+            expected = "v",
+            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_DC, "q")!!.getValue()
+        )
+    }
+
+    /**
      * An rdf:resource property with a qualifier attribute keeps both.
      */
     @Test

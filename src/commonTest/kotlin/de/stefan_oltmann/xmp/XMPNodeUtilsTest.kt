@@ -128,4 +128,19 @@ class XMPNodeUtilsTest {
             xmpMeta.getPropertyString(XMPConst.NS_XMP, "subject[?test:custom='other']")
         )
     }
+
+    /**
+     * An xml:lang qualifier selector without a matching language yields no property.
+     */
+    @Test
+    fun testLangQualifierSelectorWithoutMatchYieldsNothing() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setTitle("Titel")
+
+        assertNull(
+            xmpMeta.getPropertyString(XMPConst.NS_DC, "title[?xml:lang='fr']")
+        )
+    }
 }

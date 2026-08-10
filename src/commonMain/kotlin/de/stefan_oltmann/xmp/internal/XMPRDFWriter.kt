@@ -148,13 +148,6 @@ internal object XMPRDFWriter {
 
         if (!options.getOmitPacketWrapper()) {
 
-            level = 0
-
-            while (level > 0) {
-                tailStr += XMP_DEFAULT_INDENT
-                level--
-            }
-
             tailStr += PACKET_TRAILER
             tailStr += if (options.getReadOnlyPacket()) 'r' else 'w'
             tailStr += PACKET_TRAILER2

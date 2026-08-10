@@ -228,4 +228,35 @@ class XMPMetaParamErrorsTest {
             xmpMeta.doesQualifierExist(XMPConst.NS_XMP, "", XMPConst.NS_XML, "lang")
         }.let { assertEquals(XMPErrorConst.BADPARAM, it.errorCode) }
     }
+
+    /**
+     * The typed getters reject an empty schema namespace.
+     */
+    @Test
+    fun testTypedGettersWithEmptySchemaThrow() {
+
+        assertFailsWith<XMPException> {
+            xmpMeta.getPropertyString("", "prop")
+        }.let { assertEquals(XMPErrorConst.BADPARAM, it.errorCode) }
+
+        assertFailsWith<XMPException> {
+            xmpMeta.getPropertyBoolean("", "prop")
+        }.let { assertEquals(XMPErrorConst.BADPARAM, it.errorCode) }
+
+        assertFailsWith<XMPException> {
+            xmpMeta.getPropertyInteger("", "prop")
+        }.let { assertEquals(XMPErrorConst.BADPARAM, it.errorCode) }
+
+        assertFailsWith<XMPException> {
+            xmpMeta.getPropertyLong("", "prop")
+        }.let { assertEquals(XMPErrorConst.BADPARAM, it.errorCode) }
+
+        assertFailsWith<XMPException> {
+            xmpMeta.getPropertyDouble("", "prop")
+        }.let { assertEquals(XMPErrorConst.BADPARAM, it.errorCode) }
+
+        assertFailsWith<XMPException> {
+            xmpMeta.getPropertyBase64("", "prop")
+        }.let { assertEquals(XMPErrorConst.BADPARAM, it.errorCode) }
+    }
 }

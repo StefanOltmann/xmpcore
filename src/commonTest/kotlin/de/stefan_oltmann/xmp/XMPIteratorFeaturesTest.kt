@@ -352,6 +352,49 @@ class XMPIteratorFeaturesTest {
         assertFalse(iterator.hasNext())
     }
 
+    /**
+     * Skipping the siblings of a property drops the whole current schema
+     * subtree and continues with the next schema.
+     */
+    @Test
+    fun testSkipSiblingsContinuesWithNextSchema() {
+
+        /* language=XML */
+        val twoSchemaXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/"
+                  xmlns:xmp="http://ns.adobe.com/xap/1.0/">
+                <dc:subject>
+                  <rdf:Bag>
+                    <rdf:li>fox</rdf:li>
+                  </rdf:Bag>
+                </dc:subject>
+                <dc:title>
+                  <rdf:Alt>
+                    <rdf:li xml:lang="x-default">Titel</rdf:li>
+                  </rdf:Alt>
+                </dc:title>
+                <xmp:Rating>3</xmp:Rating>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(twoSchemaXmp)
+
+        val iterator = xmpMeta.iterator()
+
+        /* Consume the dc schema and the first dc property. */
+        iterator.next()
+        iterator.next()
+        iterator.skipSiblings()
+
+        assertEquals(
+            expected = listOf("", "xmp:Rating"),
+            actual = collectPaths(iterator)
+        )
+    }
+
     private fun collectPaths(iterator: XMPIterator): List<String> {
 
         val paths = mutableListOf<String>()

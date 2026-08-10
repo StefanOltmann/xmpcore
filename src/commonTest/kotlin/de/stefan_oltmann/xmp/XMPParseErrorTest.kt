@@ -556,6 +556,75 @@ class XMPParseErrorTest {
     }
 
     /**
+     * A combination of rdf:resource and rdf:nodeID is rejected, regardless of
+     * the attribute order.
+     */
+    @Test
+    fun testNodeIdBeforeResourceConflictThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title rdf:nodeID="n" rdf:resource="u"/>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertXMPError(XMPErrorConst.BADRDF) {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
+    }
+
+    /**
+     * A combination of rdf:value and rdf:resource is rejected, regardless of
+     * the attribute order.
+     */
+    @Test
+    fun testResourceBeforeValueConflictThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title rdf:resource="u" rdf:value="v"/>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertXMPError(XMPErrorConst.BADXMP) {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
+    }
+
+    /**
+     * A partially numbered rdf:_N array item is rejected.
+     */
+    @Test
+    fun testPartiallyNumberedRdfArrayItemThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:subject>
+                  <rdf:Bag>
+                    <rdf:_1x>a</rdf:_1x>
+                  </rdf:Bag>
+                </dc:subject>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertXMPError(XMPErrorConst.BADRDF) {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
+    }
+
+    /**
      * Asserts that the given block throws an XMPException with the expected code.
      */
     private fun assertXMPError(expectedCode: Int, block: () -> Unit) {
