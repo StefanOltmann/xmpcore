@@ -58,6 +58,13 @@ detekt {
 }
 
 kover {
+    reports {
+        verify {
+            rule {
+                minBound(95)
+            }
+        }
+    }
 }
 
 kotlin {
