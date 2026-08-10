@@ -36,7 +36,7 @@ class XMPRdfParserRootTest {
         val document = DomParser.parseDocumentFromString("<foo/>")
 
         val ex = assertFailsWith<XMPException> {
-            XMPRDFParser.parse(document.documentElement!!, ParseOptions())
+            XMPRDFParser.parse(document.getDocumentElement()!!, ParseOptions())
         }
 
         assertEquals(XMPErrorConst.BADRDF, ex.errorCode)
