@@ -2062,7 +2062,7 @@ public class XMPMeta internal constructor() {
                 schemaNS = XMPConst.NS_IPTC_EXT,
                 propName = locationNamePath,
                 propValue = null,
-                options = PropertyOptions().setArrayAlternate(true)
+                options = PropertyOptions().setArrayAlternate(true).setArrayAltText(true)
             )
 
             appendArrayItem(
@@ -2172,7 +2172,7 @@ public class XMPMeta internal constructor() {
             schemaNS = XMPConst.NS_DC,
             propName = "title",
             propValue = null,
-            options = PropertyOptions().setArrayAlternate(true)
+            options = PropertyOptions().setArrayAlternate(true).setArrayAltText(true)
         )
 
         appendArrayItem(
@@ -2229,7 +2229,7 @@ public class XMPMeta internal constructor() {
             schemaNS = XMPConst.NS_DC,
             propName = "description",
             propValue = null,
-            options = PropertyOptions().setArrayAlternate(true)
+            options = PropertyOptions().setArrayAlternate(true).setArrayAltText(true)
         )
 
         appendArrayItem(
