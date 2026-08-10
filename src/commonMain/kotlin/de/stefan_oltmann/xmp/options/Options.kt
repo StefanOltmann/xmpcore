@@ -9,6 +9,7 @@
 package de.stefan_oltmann.xmp.options
 
 import de.stefan_oltmann.xmp.XMPException
+import de.stefan_oltmann.xmp.internal.Utils
 import de.stefan_oltmann.xmp.internal.XMPErrorConst
 
 /**
@@ -78,7 +79,7 @@ public abstract class Options {
      * @return Returns the options as hex bitmask.
      */
     override fun toString(): String =
-        "0x" + valueBits.toString(16)
+        "0x" + valueBits.toString(Utils.HEX_RADIX)
 
     /**
      * To be implemeted by inheritants.
@@ -112,7 +113,7 @@ public abstract class Options {
 
         if (invalidOptions != 0)
             throw XMPException(
-                "The option bit(s) 0x" + invalidOptions.toString(16) + " + are invalid!",
+                "The option bit(s) 0x" + invalidOptions.toString(Utils.HEX_RADIX) + " + are invalid!",
                 XMPErrorConst.BADOPTIONS
             )
 

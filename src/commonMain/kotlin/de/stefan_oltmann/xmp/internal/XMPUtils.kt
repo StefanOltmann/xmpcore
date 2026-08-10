@@ -59,7 +59,7 @@ internal object XMPUtils {
                 throw XMPException(XMPErrorConst.EMPTY_CONVERT_STRING_TEXT, XMPErrorConst.BADVALUE)
 
             return if (rawValue.startsWith("0x"))
-                rawValue.substring(2).toInt(16)
+                rawValue.substring(2).toInt(Utils.HEX_RADIX)
             else
                 rawValue.toInt()
 
@@ -77,7 +77,7 @@ internal object XMPUtils {
                 throw XMPException(XMPErrorConst.EMPTY_CONVERT_STRING_TEXT, XMPErrorConst.BADVALUE)
 
             return if (rawValue.startsWith("0x"))
-                rawValue.substring(2).toLong(16)
+                rawValue.substring(2).toLong(Utils.HEX_RADIX)
             else
                 rawValue.toLong()
 

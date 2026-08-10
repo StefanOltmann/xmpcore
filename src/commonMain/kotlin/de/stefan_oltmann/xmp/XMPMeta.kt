@@ -40,7 +40,7 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
  * modify all kinds of properties, create an iterator over all properties and serialize the metadata
  * to a String.
  */
-@Suppress("TooManyFunctions")
+@Suppress("TooManyFunctions", "LargeClass")
 public class XMPMeta internal constructor() {
 
     /**
@@ -1163,7 +1163,10 @@ public class XMPMeta internal constructor() {
             XMPNodeUtils.CLT_SPECIFIC_MATCH -> if (!specificXDefault) {
 
                 /* Update the specific item, update x-default if it matches the old value. */
-                if (haveXDefault && xdItem != itemNode && xdItem != null && xdItem.value == itemNode!!.value)
+                val updateXDefault = haveXDefault && xdItem != itemNode && xdItem != null &&
+                    xdItem.value == itemNode!!.value
+
+                if (updateXDefault)
                     xdItem.value = itemValue
 
                 /* ! Do this after the x-default check! */
@@ -1194,7 +1197,10 @@ public class XMPMeta internal constructor() {
             XMPNodeUtils.CLT_SINGLE_GENERIC -> {
 
                 /* Update the generic item, update x-default if it matches the old value. */
-                if (haveXDefault && xdItem != itemNode && xdItem != null && xdItem.value == itemNode!!.value)
+                val updateXDefault = haveXDefault && xdItem != itemNode && xdItem != null &&
+                    xdItem.value == itemNode!!.value
+
+                if (updateXDefault)
                     xdItem.value = itemValue
 
                 /* ! Do this after the x-default check! */

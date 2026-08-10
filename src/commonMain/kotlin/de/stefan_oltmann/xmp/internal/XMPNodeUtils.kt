@@ -222,12 +222,9 @@ internal object XMPNodeUtils {
             throw ex
         }
 
-        if (rootImplicitNode != null) {
-
-            /* Set options only if a node has been successful created */
-            if (leafOptions != null)
-                currNode.options.mergeWith(leafOptions)
-        }
+        /* Set options only if a node has been successful created */
+        if (rootImplicitNode != null && leafOptions != null)
+            currNode.options.mergeWith(leafOptions)
 
         return currNode
     }
