@@ -55,7 +55,7 @@ internal object XMPRDFParser {
     const val RDFTERM_NODE_ID = 6
 
     /**
-     * End of coreSyntaxTerms
+     * End of coreSyntaxTerms.
      */
     const val RDFTERM_DATATYPE = 7
 
@@ -97,7 +97,7 @@ internal object XMPRDFParser {
     const val RDFTERM_LAST_OLD = RDFTERM_BAG_ID
 
     /**
-     * this prefix is used for default namespaces
+     * this prefix is used for default namespaces.
      */
     const val DEFAULT_PREFIX = "_dflt"
 
@@ -126,13 +126,13 @@ internal object XMPRDFParser {
     @Suppress("ThrowsCount", "UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
     fun parseRdfRoot(xmp: XMPMeta, rdfRdfNode: Node, options: ParseOptions) {
 
-        if (rdfRdfNode.nodeName != "rdf:RDF")
-            throw XMPException("Root node should be of type rdf:RDF", XMPErrorConst.BADRDF)
-
         if (rdfRdfNode.nodeType != NodeConsts.ELEMENT_NODE)
             throw XMPException("Root node must be of element type.", XMPErrorConst.BADRDF)
 
         rdfRdfNode as Element
+
+        if (XMPConst.NS_RDF != rdfRdfNode.namespaceURI || "RDF" != rdfRdfNode.localName)
+            throw XMPException("Root node should be of type rdf:RDF", XMPErrorConst.BADRDF)
 
         if (rdfRdfNode.attributes.getLength() == 0)
             throw XMPException("Illegal: rdf:RDF node has no attributes", XMPErrorConst.BADRDF)
@@ -203,15 +203,17 @@ internal object XMPRDFParser {
         isTopLevel: Boolean
     ) {
 
-        // Used to detect attributes that are mutually exclusive.
+        /* Used to detect attributes that are mutually exclusive. */
         var exclusiveAttrs = 0
 
         for (index in 0 until xmlNode.attributes.getLength()) {
 
             val attribute = xmlNode.attributes.item(index) as Attr
 
-            // quick hack, ns declarations do not appear in C++
-            // ignore "ID" without namespace
+            /*
+             * Quick hack, ns declarations do not appear in C++
+             * ignore "ID" without namespace
+             */
             if (XMLNS == attribute.prefix || attribute.prefix == null && XMLNS == attribute.nodeName)
                 continue
 
@@ -231,10 +233,12 @@ internal object XMPRDFParser {
 
                     if (isTopLevel && attrTerm == RDFTERM_ABOUT) {
 
-                        // This is the rdf:about attribute on a top level node. Set
-                        // the XMP tree name if
-                        // it doesn't have a name yet. Make sure this name matches
-                        // the XMP tree name.
+                        /*
+                         * This is the rdf:about attribute on a top level node. Set
+                         * the XMP tree name if
+                         * it doesn't have a name yet. Make sure this name matches
+                         * the XMP tree name.
+                         */
                         if (xmpParent.name != null && xmpParent.name!!.isNotEmpty()) {
 
                             if (xmpParent.name != attribute.value)
@@ -258,7 +262,7 @@ internal object XMPRDFParser {
     }
 
     /**
-     * 7.2.13 propertyEltList
+     * 7.2.13 propertyEltList.
      * ws* ( propertyElt ws* )*
      *
      * @param xmp        the xmp metadata object that is generated
@@ -370,7 +374,7 @@ internal object XMPRDFParser {
         if (!isPropertyElementName(nodeTerm))
             throw XMPException("Invalid property element name", XMPErrorConst.BADRDF)
 
-        // remove the namespace-definitions from the list
+        /* Remove the namespace-definitions from the list */
         val attributes = xmlNode.attributes
 
         var nsAttrs: MutableList<String>? = null
@@ -414,8 +418,8 @@ internal object XMPRDFParser {
 
                 val attrValue = attribute.value
 
-                val condition = XMPConst.XML_LANG == attribute.nodeName &&
-                    !("ID" == attribute.localName && XMPConst.NS_RDF == attribute.namespaceURI)
+                val condition = XMPConst.XML_LANG == attribute.nodeName ||
+                    "ID" == attribute.localName && XMPConst.NS_RDF == attribute.namespaceURI
 
                 if (!condition) {
 
@@ -489,13 +493,13 @@ internal object XMPRDFParser {
         options: ParseOptions
     ) {
 
-        // Strip old "punchcard" chaff which has on the prefix "iX:".
+        /* Strip old "punchcard" chaff which has on the prefix "iX:". */
         if (isTopLevel && "iX:changes" == xmlNode.nodeName)
             return
 
         val newCompound = addChildNode(xmp, xmpParent, xmlNode, "", isTopLevel)
 
-        // walk through the attributes
+        /* Walk through the attributes */
         @Suppress("LoopWithTooManyJumpStatements")
         for (index in 0 until xmlNode.attributes.getLength()) {
 
@@ -512,7 +516,7 @@ internal object XMPRDFParser {
                 throw XMPException("Invalid attribute for resource property element", XMPErrorConst.BADRDF)
         }
 
-        // walk through the children
+        /* Walk through the children */
         var found = false
 
         for (index in 0 until xmlNode.childNodes.length) {
@@ -568,7 +572,7 @@ internal object XMPRDFParser {
                     found = true
 
                 } else if (found) {
-                    // found second child element
+                    /* Found second child element */
                     throw XMPException("Invalid child of resource property element", XMPErrorConst.BADRDF)
                 } else {
                     throw XMPException(
@@ -753,7 +757,7 @@ internal object XMPRDFParser {
                 RDFTERM_ID -> continue
 
                 /*
-                 * sample_52.xmp has an <rdf:li rdf:about=''/> we want to skip.
+                 * Sample_52.xmp has an <rdf:li rdf:about=''/> we want to skip.
                  */
                 RDFTERM_ABOUT -> continue
 
@@ -818,11 +822,13 @@ internal object XMPRDFParser {
             }
         }
 
-        // Create the right kind of child node and visit the attributes again
-        // to add the fields or qualifiers.
-        // ! Because of implementation vagaries,
-        //   the xmpParent is the tree root for top level properties.
-        // ! The schema is found, created if necessary, by addChildNode.
+        /*
+         * Create the right kind of child node and visit the attributes again
+         * to add the fields or qualifiers.
+         * ! Because of implementation vagaries,
+         * the xmpParent is the tree root for top level properties.
+         * ! The schema is found, created if necessary, by addChildNode.
+         */
         val childNode = addChildNode(xmp, xmpParent, xmlNode, "", isTopLevel)
 
         var childIsStruct = false
@@ -837,7 +843,7 @@ internal object XMPRDFParser {
 
             childNode.value = valueNodeValue ?: ""
 
-            // ! Might have both rdf:value and rdf:resource.
+            /* ! Might have both rdf:value and rdf:resource. */
             if (!hasValueAttr)
                 childNode.options.setURI(true)
 
@@ -864,7 +870,7 @@ internal object XMPRDFParser {
                 RDFTERM_ID, RDFTERM_NODE_ID -> continue
 
                 /*
-                 * sample_52.xmp has an <rdf:li rdf:about=''/> we want to skip.
+                 * Sample_52.xmp has an <rdf:li rdf:about=''/> we want to skip.
                  */
                 RDFTERM_ABOUT -> continue
 
@@ -940,7 +946,7 @@ internal object XMPRDFParser {
 
         val childName = prefix + xmlNodeLocalName
 
-        // create schema node if not already there
+        /* Create schema node if not already there */
         val childOptions = PropertyOptions()
 
         var isAlias = false
@@ -949,8 +955,10 @@ internal object XMPRDFParser {
 
         if (isTopLevel) {
 
-            // Lookup the schema node, adjust the XMP parent pointer.
-            // Incoming parent must be the tree root.
+            /*
+             * Lookup the schema node, adjust the XMP parent pointer.
+             * Incoming parent must be the tree root.
+             */
             val schemaNode = XMPNodeUtils.findSchemaNode(
                 xmp.root, namespace,
                 DEFAULT_PREFIX, true
@@ -960,12 +968,16 @@ internal object XMPRDFParser {
 
             schemaNode.isImplicit = false // Clear the implicit node bit.
 
-            // *** Should use "opt &= ~flag" (no conditional),
-            // need runtime check for proper 32 bit code.
+            /*
+             * *** Should use "opt &= ~flag" (no conditional),
+             * need runtime check for proper 32 bit code.
+             */
             actualXmpParent = schemaNode
 
-            // If this is an alias set the alias flag in the node
-            // and the hasAliases flag in the tree.
+            /*
+             * If this is an alias set the alias flag in the node
+             * and the hasAliases flag in the tree.
+             */
             if (XMPSchemaRegistry.findAlias(childName) != null) {
                 isAlias = true
                 xmp.root.hasAliases = true
@@ -973,16 +985,16 @@ internal object XMPRDFParser {
             }
         }
 
-        // Make sure that this is not a duplicate of a named node.
-        val isArrayItem = isNumberedArrayItemName(childName)
+        /* Make sure that this is not a duplicate of a named node. */
+        val isArrayItem = isNumberedArrayItemName(xmlNode)
         val isValueNode = "rdf:value" == childName
 
-        // Create XMP node and so some checks
+        /* Create XMP node and so some checks */
         val newChild = XMPNode(childName, value, childOptions)
 
         newChild.isAlias = isAlias
 
-        // Add the new child to the XMP parent node, a value node first.
+        /* Add the new child to the XMP parent node, a value node first. */
         if (!isValueNode)
             actualXmpParent.addChild(newChild)
         else
@@ -1017,7 +1029,7 @@ internal object XMPRDFParser {
 
         val isLang = XMPConst.XML_LANG == name
 
-        // normalize value of language qualifiers
+        /* Normalize value of language qualifiers */
         val normalizedValue = if (isLang)
             Utils.normalizeLangValue(value)
         else
@@ -1045,11 +1057,13 @@ internal object XMPRDFParser {
 
         require("rdf:value" == valueNode.name)
 
-        // Move the qualifiers on the value node to the parent.
-        // Make sure an xml:lang qualifier stays at the front.
-        // Check for duplicate names between the value node's qualifiers and the parent's children.
-        // The parent's children are about to become qualifiers. Check here, between the groups.
-        // Intra-group duplicates are caught by XMPNode#addChild(...).
+        /*
+         * Move the qualifiers on the value node to the parent.
+         * Make sure an xml:lang qualifier stays at the front.
+         * Check for duplicate names between the value node's qualifiers and the parent's children.
+         * The parent's children are about to become qualifiers. Check here, between the groups.
+         * Intra-group duplicates are caught by XMPNode#addChild(...).
+         */
 
         if (valueNode.options.hasLanguage()) {
 
@@ -1063,7 +1077,7 @@ internal object XMPRDFParser {
             xmpParent.addQualifier(langQual)
         }
 
-        // Start the remaining copy after the xml:lang qualifier.
+        /* Start the remaining copy after the xml:lang qualifier. */
         for (index in 1..valueNode.getQualifierLength()) {
 
             val qualifier = valueNode.getQualifier(index)
@@ -1071,8 +1085,10 @@ internal object XMPRDFParser {
             xmpParent.addQualifier(qualifier)
         }
 
-        // Change the parent's other children into qualifiers.
-        // This loop starts at 1, child 0 is the rdf:value node.
+        /*
+         * Change the parent's other children into qualifiers.
+         * This loop starts at 1, child 0 is the rdf:value node.
+         */
         for (index in 2..xmpParent.getChildrenLength()) {
 
             val qualifier = xmpParent.getChild(index)
@@ -1114,7 +1130,7 @@ internal object XMPRDFParser {
     }
 
     /**
-     * 7.2.6 propertyElementURIs
+     * 7.2.6 propertyElementURIs.
      * anyURI - ( coreSyntaxTerms | rdf:Description | oldTerms )
      */
     private fun isPropertyElementName(term: Int): Boolean {
@@ -1126,7 +1142,7 @@ internal object XMPRDFParser {
     }
 
     /**
-     * 7.2.4 oldTerms<br></br>
+     * 7.2.4 oldTerms.<br></br>
      * rdf:aboutEach | rdf:aboutEachPrefix | rdf:bagID
      *
      * @param term the term id
@@ -1136,7 +1152,7 @@ internal object XMPRDFParser {
         RDFTERM_FIRST_OLD <= term && term <= RDFTERM_LAST_OLD
 
     /**
-     * 7.2.2 coreSyntaxTerms<br></br>
+     * 7.2.2 coreSyntaxTerms.<br></br>
      * rdf:RDF | rdf:ID | rdf:about | rdf:parseType | rdf:resource | rdf:nodeID |
      * rdf:datatype
      *
@@ -1162,6 +1178,12 @@ internal object XMPRDFParser {
             else -> throw XMPException("Unknown Node ${node.nodeType}", XMPErrorConst.BADXMP)
         }
 
+        val localName = when {
+            node.nodeType == NodeConsts.ELEMENT_NODE -> (node as Element).localName
+            node.nodeType == NodeConsts.ATTRIBUTE_NODE -> (node as Attr).localName
+            else -> throw XMPException("Unknown Node ${node.nodeType}", XMPErrorConst.BADXMP)
+        }
+
         /*
          * This code handles the fact that sometimes "rdf:about" and "rdf:ID"
          * come without the prefix.
@@ -1177,27 +1199,27 @@ internal object XMPRDFParser {
 
         if (mustBeRdfNamespace || namespace == XMPConst.NS_RDF) {
 
-            when (node.nodeName) {
+            when (localName) {
 
-                "rdf:li" ->
+                "li" ->
                     return RDFTERM_LI
 
                 "parseType" ->
                     return RDFTERM_PARSE_TYPE
 
-                "rdf:Description" ->
+                "Description" ->
                     return RDFTERM_DESCRIPTION
 
-                "rdf:about", "about" ->
+                "about" ->
                     return RDFTERM_ABOUT
 
                 "resource" ->
                     return RDFTERM_RESOURCE
 
-                "rdf:RDF" ->
+                "RDF" ->
                     return RDFTERM_RDF
 
-                "rdf:ID", "ID" ->
+                "ID" ->
                     return RDFTERM_ID
 
                 "nodeID" ->
@@ -1220,18 +1242,37 @@ internal object XMPRDFParser {
         return RDFTERM_OTHER
     }
 
-    private fun isNumberedArrayItemName(nodeName: String): Boolean {
+    /**
+     * Checks if a node is an RDF array item, i.e. an element of type `rdf:li` or
+     * `rdf:_N` in the RDF namespace, regardless of the used prefix.
+     */
+    private fun isNumberedArrayItemName(xmlNode: Node): Boolean {
 
-        var result = "rdf:li" == nodeName
-
-        if (nodeName.startsWith("rdf:_")) {
-
-            result = true
-
-            for (i in 5 until nodeName.length)
-                result = result && nodeName[i] >= '0' && nodeName[i] <= '9'
+        val namespace = when {
+            xmlNode.nodeType == NodeConsts.ELEMENT_NODE -> (xmlNode as Element).namespaceURI
+            xmlNode.nodeType == NodeConsts.ATTRIBUTE_NODE -> (xmlNode as Attr).namespaceURI
+            else -> null
         }
 
-        return result
+        if (XMPConst.NS_RDF != namespace)
+            return false
+
+        val localName = when {
+            xmlNode.nodeType == NodeConsts.ELEMENT_NODE -> (xmlNode as Element).localName
+            xmlNode.nodeType == NodeConsts.ATTRIBUTE_NODE -> (xmlNode as Attr).localName
+            else -> null
+        } ?: return false
+
+        if ("li" == localName)
+            return true
+
+        if (!localName.startsWith("_"))
+            return false
+
+        for (i in 1 until localName.length)
+            if (localName[i] !in '0'..'9')
+                return false
+
+        return true
     }
 }

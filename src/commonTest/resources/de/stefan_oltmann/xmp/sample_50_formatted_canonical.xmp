@@ -1,5 +1,5 @@
 <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
-<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core for KMP 1.7.1">
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core for KMP 1.7.2">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description rdf:about=""
         xmlns:aux="http://ns.adobe.com/exif/1.0/aux/"
@@ -61,11 +61,7 @@
       <xmp:MetadataDate>2013-05-24T14:08:48+03:00</xmp:MetadataDate>
       <xmp:ModifyDate>2013-05-24T14:08:48+03:00</xmp:ModifyDate>
       <xmp:Rating>0</xmp:Rating>
-      <xmpMM:DocumentID>
-        <rdf:Description>
-          <rdf:resource>xmp.did:E2D0CB145FC4E211AD7DCE11772AE6CC</rdf:resource>
-        </rdf:Description>
-      </xmpMM:DocumentID>
+      <xmpMM:DocumentID rdf:resource="xmp.did:E2D0CB145FC4E211AD7DCE11772AE6CC"/>
       <xmpMM:History>
         <rdf:Seq/>
       </xmpMM:History>

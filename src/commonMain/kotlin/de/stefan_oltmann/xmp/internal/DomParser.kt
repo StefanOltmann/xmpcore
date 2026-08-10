@@ -16,49 +16,83 @@ internal object DomParser {
         """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>"""
 
     @OptIn(XmlUtilInternal::class, ExperimentalXmlUtilApi::class)
-    fun parseDocumentFromString(input: String): Document {
-
-        /*
-         * We encountered a situation where NUL characters at the end of XMP
-         * caused an exception in the parser for unknown reasons. This issue was
-         * observed in the test images IMG_0001.jpg and IMG_0002.jpg on the iOS simulator,
-         * suggesting the possibility of real-world scenarios.
-         *
-         * Additionally, we identified some corrupted files with random junk after the
-         * first </rdf:RDF>, potentially caused by faulty writers.
-         *
-         * Since "xpacket" and "xmpmeta" are skippable at the user's discretion,
-         * the only required tags are within the RDF part. Therefore, we trim it down to this.
-         */
-
-        val rdfStartPos = input.indexOf("<rdf:RDF")
-        val rdfEndPos = input.indexOf(RDF_RDF_END)
-
-        /*
-         * We check the start positions to avoid an generic
-         * IndexOutOfBoundsException for the substring() call.
-         */
-
-        if (rdfStartPos == -1)
-            throw XMPException("String '<rdf:RDF' was not found in XMP.", XMPErrorConst.BADXMP)
-
-        if (rdfEndPos == -1) {
-
-            /*
-             * If we can't find </rdf:RDF> the document may contain a single self-closing RDF tag.
-             */
-            if (input.contains(SINGLE_SELF_CLOSING_RDF_TAG))
-                return parseDocumentFromStringInternal(SINGLE_SELF_CLOSING_RDF_TAG)
-
-            throw XMPException("String '</rdf:RDF>' was not found in XMP.", XMPErrorConst.BADXMP)
+    fun parseDocumentFromString(input: String): Document =
+        try {
+            parseDocumentFromStringInternal(input)
+        } catch (ex: Exception) {
+            parseCorruptedDocument(input, ex)
         }
 
-        val trimmedInput = input.substring(
-            rdfStartPos until rdfEndPos + RDF_RDF_END.length
-        )
+    /**
+     * Parses a document that failed the full parse, tolerating junk around the RDF part.
+     *
+     * @param input the full document input
+     * @param originalException the error of the full parse, thrown if no fallback works
+     */
+    private fun parseCorruptedDocument(input: String, originalException: Exception): Document {
 
-        return parseDocumentFromStringInternal(trimmedInput)
+        /*
+         * Some corrupted files contain junk around the RDF part, e.g. NUL characters
+         * or random text, which the XML parser rejects. First try parsing the prefix
+         * up to the end of the RDF part and its enclosing element, which keeps the
+         * xpacket processing instruction and all namespace declarations.
+         */
+        val firstLt = input.indexOf('<')
+        val rdfEndPos = input.indexOf(RDF_RDF_END)
+
+        if (firstLt >= 0 && rdfEndPos >= 0) {
+
+            var cutEnd = rdfEndPos + RDF_RDF_END.length
+
+            val nextCloseTag = input.indexOf("</", cutEnd)
+
+            if (nextCloseTag >= 0) {
+
+                val closeTagEnd = input.indexOf('>', nextCloseTag)
+
+                if (closeTagEnd >= 0)
+                    cutEnd = closeTagEnd + 1
+            }
+
+            val cleanedDocument = parseDocumentOrNull(input.substring(firstLt until cutEnd))
+
+            if (cleanedDocument != null)
+                return cleanedDocument
+
+            /*
+             * Files with junk before the RDF part are trimmed down to the RDF part.
+             */
+            val rdfStartPos = input.indexOf("<rdf:RDF")
+
+            if (rdfStartPos >= 0) {
+
+                val trimmedDocument = parseDocumentOrNull(
+                    input.substring(rdfStartPos until rdfEndPos + RDF_RDF_END.length)
+                )
+
+                if (trimmedDocument != null)
+                    return trimmedDocument
+            }
+        }
+
+        /*
+         * Without an end tag the document may contain a single self-closing RDF tag.
+         */
+        if (input.contains(SINGLE_SELF_CLOSING_RDF_TAG))
+            return parseDocumentFromStringInternal(SINGLE_SELF_CLOSING_RDF_TAG)
+
+        throw originalException
     }
+
+    /**
+     * Parses the input or returns null if the input cannot be parsed.
+     */
+    private fun parseDocumentOrNull(input: String): Document? =
+        try {
+            parseDocumentFromStringInternal(input)
+        } catch (ignored: Exception) {
+            null
+        }
 
     @OptIn(ExperimentalXmlUtilApi::class)
     private fun parseDocumentFromStringInternal(input: String): Document {

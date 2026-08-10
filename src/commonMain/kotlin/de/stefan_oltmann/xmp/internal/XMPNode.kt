@@ -18,17 +18,17 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
 internal class XMPNode(
 
     /**
-     * name of the node, contains different information depending of the node kind
+     * name of the node, contains different information depending of the node kind.
      */
     var name: String?,
 
     /**
-     * value of the node, contains different information depending of the node kind
+     * value of the node, contains different information depending of the node kind.
      */
     var value: String?,
 
     /**
-     * options describing the kind of the node
+     * options describing the kind of the node.
      */
     var options: PropertyOptions = PropertyOptions()
 
@@ -119,7 +119,7 @@ internal class XMPNode(
      */
     private fun cleanupChildren() {
 
-        if (children?.isEmpty() == null)
+        if (children?.isEmpty() == true)
             children = null
     }
 
@@ -160,17 +160,17 @@ internal class XMPNode(
 
         options.setHasQualifiers(true)
 
-        // contraints
+        /* Contraints */
         if (XMPConst.XML_LANG == qualNode.name) {
 
-            // "xml:lang" is always first and the option "hasLanguage" is set
+            /* "xml:lang" is always first and the option "hasLanguage" is set */
             options.setHasLanguage(true)
 
             getOrCreateQualifier().add(0, qualNode)
 
         } else if (XMPConst.RDF_TYPE == qualNode.name) {
 
-            // "rdf:type" must be first or second after "xml:lang" and the option "hasType" is set
+            /* "rdf:type" must be first or second after "xml:lang" and the option "hasType" is set */
             options.setHasType(true)
 
             getOrCreateQualifier().add(
@@ -180,7 +180,7 @@ internal class XMPNode(
 
         } else {
 
-            // other qualifiers are appended
+            /* Other qualifiers are appended */
             getOrCreateQualifier().add(qualNode)
         }
     }
@@ -191,10 +191,10 @@ internal class XMPNode(
     fun removeQualifier(qualNode: XMPNode) {
 
         if (XMPConst.XML_LANG == qualNode.name) {
-            // if "xml:lang" is removed, remove hasLanguage-flag too
+            /* If "xml:lang" is removed, remove hasLanguage-flag too */
             options.setHasLanguage(false)
         } else if (XMPConst.RDF_TYPE == qualNode.name) {
-            // if "rdf:type" is removed, remove hasType-flag too
+            /* If "rdf:type" is removed, remove hasType-flag too */
             options.setHasType(false)
         }
 
@@ -211,7 +211,7 @@ internal class XMPNode(
      */
     fun removeQualifiers() {
 
-        // clear qualifier related options
+        /* Clear qualifier related options */
         options.setHasQualifiers(false)
         options.setHasLanguage(false)
         options.setHasType(false)
@@ -256,7 +256,7 @@ internal class XMPNode(
      */
     fun sort() {
 
-        // sort qualifier
+        /* Sort qualifier */
         if (hasQualifier()) {
 
             val quals = getOrCreateQualifier().toTypedArray<XMPNode>()
@@ -281,7 +281,7 @@ internal class XMPNode(
             }
         }
 
-        // sort children
+        /* Sort children */
         if (hasChildren()) {
 
             if (!options.isArray())
@@ -294,7 +294,7 @@ internal class XMPNode(
         }
     }
 
-    // ------------------------------------------------------------------------------ private methods
+    /* ------------------------------------------------------------------------------ private methods */
 
     private fun getOrCreateChildren(): MutableList<XMPNode> {
 

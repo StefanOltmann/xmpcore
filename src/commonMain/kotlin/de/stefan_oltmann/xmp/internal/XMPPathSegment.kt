@@ -14,22 +14,22 @@ package de.stefan_oltmann.xmp.internal
 internal class XMPPathSegment {
 
     /**
-     * name of the path segment
+     * name of the path segment.
      */
     var name: String?
 
     /**
-     * kind of the path segment
+     * kind of the path segment.
      */
     var kind = 0
 
     /**
-     * flag if segment is an alias
+     * flag if segment is an alias.
      */
     var isAlias = false
 
     /**
-     * alias form if applicable
+     * alias form if applicable.
      */
     var aliasForm = 0
 

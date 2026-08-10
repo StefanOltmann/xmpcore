@@ -3,6 +3,7 @@ package de.stefan_oltmann.xmp
 import de.stefan_oltmann.xmp.XMPConst.XMP_DC_SUBJECT
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -190,7 +191,7 @@ class ReadXmpTest {
         /* language=XML */
         val testXmp = """
             <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
-            <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core for KMP 1.7.1">
+            <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="${XMPVersionInfo.VERSION_MESSAGE}">
               <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
                 <rdf:Description rdf:about=""
                     xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -220,6 +221,147 @@ class ReadXmpTest {
         assertEquals(
             expected = "Vögel auf dem Wasser.",
             actual = xmpMeta.getDescription()
+        )
+    }
+
+    /**
+     * The xpacket processing instruction must survive parsing.
+     */
+    @Test
+    fun testPacketHeaderSurvivesParse() {
+
+        /* language=XML */
+        val testXmp = """
+            <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+            <x:xmpmeta xmlns:x="adobe:ns:meta/">
+              <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                <rdf:Description rdf:about=""
+                    xmlns:dc="http://purl.org/dc/elements/1.1/">
+                  <dc:title>
+                    <rdf:Alt>
+                      <rdf:li xml:lang="x-default">Titel</rdf:li>
+                    </rdf:Alt>
+                  </dc:title>
+                </rdf:Description>
+              </rdf:RDF>
+            </x:xmpmeta>
+            <?xpacket end="w"?>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        val packetHeader = xmpMeta.getPacketHeader()
+
+        assertNotNull(packetHeader)
+        assertTrue(packetHeader.contains("id=\"W5M0MpCehiHzreSzNTczkc9d\""))
+    }
+
+    /**
+     * Namespace declarations on ancestor elements must be honored.
+     */
+    @Test
+    fun testParseWithOuterNamespaceDeclaration() {
+
+        /* language=XML */
+        val testXmp = """
+            <?xpacket begin="﻿" id="W5M0MpCehiHzreSzNTczkc9d"?>
+            <x:xmpmeta xmlns:x="adobe:ns:meta/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+              <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                <rdf:Description rdf:about="">
+                  <dc:title>
+                    <rdf:Alt>
+                      <rdf:li xml:lang="x-default">Titel</rdf:li>
+                    </rdf:Alt>
+                  </dc:title>
+                </rdf:Description>
+              </rdf:RDF>
+            </x:xmpmeta>
+            <?xpacket end="w"?>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            expected = "Titel",
+            actual = xmpMeta.getTitle()
+        )
+    }
+
+    /**
+     * A different prefix for the RDF namespace must be accepted.
+     */
+    @Test
+    fun testParseWithAlternativeRdfPrefix() {
+
+        /* language=XML */
+        val testXmp = """
+            <foo:RDF xmlns:foo="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+                xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <foo:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title>
+                  <rdf:Alt>
+                    <rdf:li xml:lang="x-default">Titel</rdf:li>
+                  </rdf:Alt>
+                </dc:title>
+              </foo:Description>
+            </foo:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            expected = "Titel",
+            actual = xmpMeta.getTitle()
+        )
+    }
+
+    /**
+     * An rdf:ID attribute on a literal property element must not prevent parsing.
+     */
+    @Test
+    fun testParseWithRdfIdAttributeOnLiteralProperty() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title rdf:ID="title1">Some title</dc:title>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            expected = "Some title",
+            actual = xmpMeta.getTitle()
+        )
+    }
+
+    /**
+     * An rdf:ID attribute combined with xml:lang on a literal property element must not
+     * prevent parsing.
+     */
+    @Test
+    fun testParseWithRdfIdAndLangOnLiteralProperty() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title xml:lang="en" rdf:ID="title1">Some title</dc:title>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            expected = "Some title",
+            actual = xmpMeta.getTitle()
         )
     }
 }

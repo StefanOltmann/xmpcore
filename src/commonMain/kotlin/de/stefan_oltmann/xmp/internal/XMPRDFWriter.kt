@@ -23,22 +23,22 @@ import de.stefan_oltmann.xmp.options.SerializeOptions
 @Suppress("TooManyFunctions")
 internal object XMPRDFWriter {
 
-    /** linefeed (U+000A) is the standard XML line terminator. XMP defaults to it. */
+    /** Linefeed (U+000A) is the standard XML line terminator. XMP defaults to it. */
     const val XMP_DEFAULT_NEWLINE = "\n"
 
     /** Two ASCII spaces (U+0020) are the default indent for XMP files. */
     const val XMP_DEFAULT_INDENT = "  "
 
-    private const val PACKET_HEADER = "<?xpacket begin=\"\uFEFF\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>"
+    private const val PACKET_HEADER = """<?xpacket begin="""" + "\uFEFF\"" + """ id="W5M0MpCehiHzreSzNTczkc9d"?>"""
 
     /**
-     * The w/r is missing inbetween
+     * The w/r is missing inbetween.
      */
     private const val PACKET_TRAILER = "<?xpacket end=\""
 
     private const val PACKET_TRAILER2 = "\"?>"
 
-    private const val RDF_XMPMETA_START = "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\" x:xmptk=\""
+    private const val RDF_XMPMETA_START = """<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk=""""
 
     private const val RDF_XMPMETA_END = "</x:xmpmeta>"
 
@@ -58,7 +58,7 @@ internal object XMPRDFWriter {
     private const val RDF_EMPTY_STRUCT = "<rdf:Description/>"
 
     /**
-     * a set of all rdf attribute qualifier
+     * a set of all rdf attribute qualifier.
      */
     val RDF_ATTR_QUALIFIER: Set<String> = setOf(
         XMPConst.XML_LANG, "rdf:resource", "rdf:ID", "rdf:bagID", "rdf:nodeID"
@@ -93,14 +93,14 @@ internal object XMPRDFWriter {
 
         var level = 0
 
-        // Write the packet header PI.
+        /* Write the packet header PI. */
         if (!options.getOmitPacketWrapper()) {
             writeIndent(sb, level)
             sb.append(PACKET_HEADER)
             sb.append(XMP_DEFAULT_NEWLINE)
         }
 
-        // Write the x:xmpmeta element's start tag.
+        /* Write the x:xmpmeta element's start tag. */
         if (!options.getOmitXmpMetaElement()) {
 
             writeIndent(sb, level)
@@ -112,23 +112,23 @@ internal object XMPRDFWriter {
             level++
         }
 
-        // Write the rdf:RDF start tag.
+        /* Write the rdf:RDF start tag. */
         writeIndent(sb, level)
         sb.append(RDF_RDF_START)
         sb.append(XMP_DEFAULT_NEWLINE)
 
-        // Write all of the properties.
+        /* Write all of the properties. */
         if (options.getUseCanonicalFormat())
             serializeCanonicalRDFSchemas(sb, xmp, options, level)
         else
             serializeCompactRDFSchemas(sb, xmp, level)
 
-        // Write the rdf:RDF end tag.
+        /* Write the rdf:RDF end tag. */
         writeIndent(sb, level)
         sb.append(RDF_RDF_END)
         sb.append(XMP_DEFAULT_NEWLINE)
 
-        // Write the xmpmeta end tag.
+        /* Write the xmpmeta end tag. */
         if (!options.getOmitXmpMetaElement()) {
 
             level--
@@ -138,7 +138,7 @@ internal object XMPRDFWriter {
             sb.append(XMP_DEFAULT_NEWLINE)
         }
 
-        // Write the packet trailer PI into the tail string as UTF-8.
+        /* Write the packet trailer PI into the tail string as UTF-8. */
         var tailStr = ""
 
         if (!options.getOmitPacketWrapper()) {
@@ -208,12 +208,12 @@ internal object XMPRDFWriter {
         level: Int
     ) {
 
-        // Begin the rdf:Description start tag.
+        /* Begin the rdf:Description start tag. */
         writeIndent(sb, level + 1)
         sb.append(RDF_SCHEMA_START)
         writeTreeName(sb, xmp)
 
-        // Write all necessary xmlns attributes.
+        /* Write all necessary xmlns attributes. */
         val usedPrefixes: MutableSet<String> = mutableSetOf()
         usedPrefixes.add("xml")
         usedPrefixes.add("rdf")
@@ -221,7 +221,7 @@ internal object XMPRDFWriter {
         for (schema in xmp.root.getChildren())
             declareUsedNamespaces(sb, schema, usedPrefixes, level + 3)
 
-        // Write the top level "attrProps" and close the rdf:Description start tag.
+        /* Write the top level "attrProps" and close the rdf:Description start tag. */
         var allAreAttrs = true
 
         for (schema in xmp.root.getChildren())
@@ -239,12 +239,14 @@ internal object XMPRDFWriter {
             return // ! Done if all properties in all schema are written as attributes.
         }
 
-        // Write the remaining properties for each schema.
+        /* Write the remaining properties for each schema. */
         for (schema in xmp.root.getChildren())
             serializeCompactRDFElementProps(sb, schema, level + 2)
 
-        // Write the rdf:Description end tag.
-        // *** Elide the end tag if everything (all props in all schema) is an attr.
+        /*
+         * Write the rdf:Description end tag.
+         * *** Elide the end tag if everything (all props in all schema) is an attr.
+         */
         writeIndent(sb, level + 1)
         sb.append(RDF_SCHEMA_END)
         sb.append(XMP_DEFAULT_NEWLINE)
@@ -308,9 +310,11 @@ internal object XMPRDFWriter {
             var emitEndTag = true
             var indentEndTag = true
 
-            // Determine the XML element name, write the name part of the start tag. Look over the
-            // qualifiers to decide on "normal" versus "rdf:value" form. Emit the attribute
-            // qualifiers at the same time.
+            /*
+             * Determine the XML element name, write the name part of the start tag. Look over the
+             * qualifiers to decide on "normal" versus "rdf:value" form. Emit the attribute
+             * qualifiers at the same time.
+             */
             var elemName = node.name
 
             if (XMPConst.ARRAY_ITEM_NAME == elemName)
@@ -340,14 +344,14 @@ internal object XMPRDFWriter {
                 }
             }
 
-            // Process the property according to the standard patterns.
+            /* Process the property according to the standard patterns. */
             if (hasGeneralQualifiers) {
 
                 serializeCompactRDFGeneralQualifier(sb, indent, node)
 
             } else {
 
-                // This node has only attribute qualifiers. Emit as a property element.
+                /* This node has only attribute qualifiers. Emit as a property element. */
                 if (!node.options.isCompositeProperty()) {
 
                     val result = serializeCompactRDFSimpleProp(sb, node)
@@ -365,7 +369,7 @@ internal object XMPRDFWriter {
                 }
             }
 
-            // Emit the property element end tag.
+            /* Emit the property element end tag. */
             if (emitEndTag) {
 
                 if (indentEndTag)
@@ -389,7 +393,7 @@ internal object XMPRDFWriter {
         node: XMPNode
     ): Array<Any> {
 
-        // This is a simple property.
+        /* This is a simple property. */
         var emitEndTag = true
         var indentEndTag = true
 
@@ -430,7 +434,7 @@ internal object XMPRDFWriter {
         indent: Int
     ) {
 
-        // This is an array.
+        /* This is an array. */
         sb.append('>')
         sb.append(XMP_DEFAULT_NEWLINE)
         emitRDFArrayTag(sb, node, true, indent + 1)
@@ -458,7 +462,7 @@ internal object XMPRDFWriter {
         hasRDFResourceQual: Boolean
     ): Boolean {
 
-        // This must be a struct.
+        /* This must be a struct. */
         var hasAttrFields = false
         var hasElemFields = false
         var emitEndTag = true
@@ -481,10 +485,12 @@ internal object XMPRDFWriter {
 
             !node.hasChildren() -> {
 
-                // Catch an empty struct as a special case. The case
-                // below would emit an empty
-                // XML element, which gets reparsed as a simple property
-                // with an empty value.
+                /*
+                 * Catch an empty struct as a special case. The case
+                 * below would emit an empty
+                 * XML element, which gets reparsed as a simple property
+                 * with an empty value.
+                 */
                 sb.append(" rdf:parseType=\"Resource\"/>")
                 sb.append(XMP_DEFAULT_NEWLINE)
                 emitEndTag = false
@@ -492,8 +498,10 @@ internal object XMPRDFWriter {
 
             !hasElemFields -> {
 
-                // All fields can be attributes, use the
-                // emptyPropertyElt form.
+                /*
+                 * All fields can be attributes, use the
+                 * emptyPropertyElt form.
+                 */
                 serializeCompactRDFAttrProps(sb, node, indent + 1)
                 sb.append("/>")
                 sb.append(XMP_DEFAULT_NEWLINE)
@@ -502,8 +510,10 @@ internal object XMPRDFWriter {
 
             !hasAttrFields -> {
 
-                // All fields must be elements, use the
-                // parseTypeResourcePropertyElt form.
+                /*
+                 * All fields must be elements, use the
+                 * parseTypeResourcePropertyElt form.
+                 */
                 sb.append(" rdf:parseType=\"Resource\">")
                 sb.append(XMP_DEFAULT_NEWLINE)
                 serializeCompactRDFElementProps(sb, node, indent + 1)
@@ -511,7 +521,7 @@ internal object XMPRDFWriter {
 
             else -> {
 
-                // Have a mix of attributes and elements, use an inner rdf:Description.
+                /* Have a mix of attributes and elements, use an inner rdf:Description. */
                 sb.append('>')
                 sb.append(XMP_DEFAULT_NEWLINE)
                 writeIndent(sb, indent + 1)
@@ -542,14 +552,18 @@ internal object XMPRDFWriter {
         node: XMPNode
     ) {
 
-        // The node has general qualifiers, ones that can't be
-        // attributes on a property element.
-        // Emit using the qualified property pseudo-struct form. The
-        // value is output by a call
-        // to SerializePrettyRDFProperty with emitAsRDFValue set.
+        /*
+         * The node has general qualifiers, ones that can't be
+         * attributes on a property element.
+         * Emit using the qualified property pseudo-struct form. The
+         * value is output by a call
+         * to SerializePrettyRDFProperty with emitAsRDFValue set.
+         */
 
-        // *** We're losing compactness in the calls to SerializePrettyRDFProperty.
-        // *** Should refactor to have SerializeCompactRDFProperty that does one node.
+        /*
+         * *** We're losing compactness in the calls to SerializePrettyRDFProperty.
+         * *** Should refactor to have SerializeCompactRDFProperty that does one node.
+         */
         sb.append(" rdf:parseType=\"Resource\">")
         sb.append(XMP_DEFAULT_NEWLINE)
         serializeCanonicalRDFProperty(sb, node, false, true, indent + 1)
@@ -576,7 +590,7 @@ internal object XMPRDFWriter {
         level: Int
     ) {
 
-        // Write each of the schema's actual properties.
+        /* Write each of the schema's actual properties. */
 
         for (propNode in schemaNode.getChildren())
             serializeCanonicalRDFProperty(
@@ -601,7 +615,7 @@ internal object XMPRDFWriter {
 
         if (node.options.isSchemaNode()) {
 
-            // The schema node name is the URI, the value is the prefix.
+            /* The schema node name is the URI, the value is the prefix. */
             val prefix = node.value!!.substring(0, node.value!!.length - 1)
             declareNamespace(sb, prefix, node.name, usedPrefixes, indent)
 
@@ -643,7 +657,7 @@ internal object XMPRDFWriter {
 
         if (actualNamespace == null) {
 
-            // prefix contains qname, extract prefix and lookup namespace with prefix
+            /* Prefix contains qname, extract prefix and lookup namespace with prefix */
             val qname = QName.parse(actualPrefix)
 
             if (!qname.hasPrefix)
@@ -651,10 +665,10 @@ internal object XMPRDFWriter {
 
             actualPrefix = qname.prefix!!
 
-            // add colon for lookup
+            /* Add colon for lookup */
             actualNamespace = XMPSchemaRegistry.getNamespaceURI("$actualPrefix:")
 
-            // prefix w/o colon
+            /* Prefix w/o colon */
             declareNamespace(sb, actualPrefix, actualNamespace, usedPrefixes, indent)
         }
 
@@ -735,8 +749,10 @@ internal object XMPRDFWriter {
         var emitEndTag = true
         var indentEndTag = true
 
-        // Determine the XML element name. Open the start tag with the name and
-        // attribute qualifiers.
+        /*
+         * Determine the XML element name. Open the start tag with the name and
+         * attribute qualifiers.
+         */
         var elemName = node.name
 
         if (emitAsRDFValue)
@@ -776,18 +792,22 @@ internal object XMPRDFWriter {
             }
         }
 
-        // Process the property according to the standard patterns.
+        /* Process the property according to the standard patterns. */
         if (hasGeneralQualifiers && !emitAsRDFValue) {
 
-            // This node has general, non-attribute, qualifiers. Emit using the
-            // qualified property form.
-            // ! The value is output by a recursive call ON THE SAME NODE with
-            // emitAsRDFValue set.
+            /*
+             * This node has general, non-attribute, qualifiers. Emit using the
+             * qualified property form.
+             * ! The value is output by a recursive call ON THE SAME NODE with
+             * emitAsRDFValue set.
+             */
             if (hasRDFResourceQual)
                 throw XMPException("Can't mix rdf:resource and general qualifiers", XMPErrorConst.BADRDF)
 
-            // Change serialization to canonical format with inner rdf:Description-tag
-            // depending on option
+            /*
+             * Change serialization to canonical format with inner rdf:Description-tag
+             * depending on option
+             */
             if (useCanonicalRDF) {
 
                 sb.append(">")
@@ -831,12 +851,12 @@ internal object XMPRDFWriter {
 
         } else {
 
-            // This node has no general qualifiers. Emit using an unqualified form.
+            /* This node has no general qualifiers. Emit using an unqualified form. */
             when {
 
                 !node.options.isCompositeProperty() -> {
 
-                    // This is a simple property.
+                    /* This is a simple property. */
                     if (node.options.isURI()) {
 
                         sb.append(" rdf:resource=\"")
@@ -865,7 +885,7 @@ internal object XMPRDFWriter {
 
                 node.options.isArray() -> {
 
-                    // This is an array.
+                    /* This is an array. */
                     sb.append('>')
                     sb.append(XMP_DEFAULT_NEWLINE)
                     emitRDFArrayTag(sb, node, true, actualIndent + 1)
@@ -887,11 +907,13 @@ internal object XMPRDFWriter {
 
                 !hasRDFResourceQual -> {
 
-                    // This is a "normal" struct, use the rdf:parseType="Resource" form.
+                    /* This is a "normal" struct, use the rdf:parseType="Resource" form. */
                     if (!node.hasChildren()) {
 
-                        // Change serialization to canonical format with inner rdf:Description-tag
-                        // if option is set
+                        /*
+                         * Change serialization to canonical format with inner rdf:Description-tag
+                         * if option is set
+                         */
                         if (useCanonicalRDF) {
 
                             sb.append(">")
@@ -910,8 +932,10 @@ internal object XMPRDFWriter {
 
                     } else {
 
-                        // Change serialization to canonical format with inner rdf:Description-tag
-                        // if option is set
+                        /*
+                         * Change serialization to canonical format with inner rdf:Description-tag
+                         * if option is set
+                         */
                         if (useCanonicalRDF) {
 
                             sb.append(">")
@@ -949,7 +973,7 @@ internal object XMPRDFWriter {
 
                 else -> {
 
-                    // This is a struct with an rdf:resource attribute, use the "empty property element" form.
+                    /* This is a struct with an rdf:resource attribute, use the "empty property element" form. */
 
                     for (child in node.getChildren()) {
 
@@ -976,7 +1000,7 @@ internal object XMPRDFWriter {
             }
         }
 
-        // Emit the property element end tag.
+        /* Emit the property element end tag. */
         if (emitEndTag) {
 
             if (indentEndTag)
@@ -1042,7 +1066,7 @@ internal object XMPRDFWriter {
         sb.append(escapeXML(value ?: "", forAttribute, true))
 
     /**
-     * A node can be serialized as RDF-Attribute, if it meets the following conditions:
+     * A node can be serialized as RDF-Attribute, if it meets the following conditions.
      *
      *  * is not array item
      *  * don't has qualifier

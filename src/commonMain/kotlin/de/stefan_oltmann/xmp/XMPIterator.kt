@@ -78,7 +78,7 @@ public class XMPIterator(
     private val options: IteratorOptions
 
     /**
-     * the base namespace of the property path, will be changed during the iteration
+     * the base namespace of the property path, will be changed during the iteration.
      */
     private var baseNS: String? = null
 
@@ -93,7 +93,7 @@ public class XMPIterator(
     private var skipSubtree = false
 
     /**
-     * the node iterator doing the work
+     * the node iterator doing the work.
      */
     private var nodeIterator: Iterator<XMPPropertyInfo>? = null
 
@@ -109,10 +109,10 @@ public class XMPIterator(
      */
     init {
 
-        // make sure that options is defined at least with defaults
+        /* Make sure that options is defined at least with defaults */
         this.options = options ?: IteratorOptions()
 
-        // the start node of the iteration depending on the schema and property filter
+        /* The start node of the iteration depending on the schema and property filter */
         var startNode: XMPNode?
         var initialPath: String? = null
         val baseSchema = !schemaNS.isNullOrEmpty()
@@ -122,17 +122,17 @@ public class XMPIterator(
 
             !baseSchema && !baseProperty -> {
 
-                // complete tree will be iterated
+                /* Complete tree will be iterated */
                 startNode = xmp.root
             }
 
             baseSchema && baseProperty -> {
 
-                // Schema and property node provided
+                /* Schema and property node provided */
 
                 val path = expandXPath(schemaNS, propPath)
 
-                // base path is the prop path without the property leaf
+                /* Base path is the prop path without the property leaf */
                 val basePath = XMPPath()
 
                 for (i in 0 until path.size() - 1)
@@ -145,19 +145,21 @@ public class XMPIterator(
 
             baseSchema && !baseProperty -> {
 
-                // Only Schema provided
+                /* Only Schema provided */
                 startNode = findSchemaNode(xmp.root, schemaNS, false)
             }
 
             else -> {
 
-                // !baseSchema  &&  baseProperty
-                // No schema but property provided -> error
+                /*
+                 * !baseSchema  &&  baseProperty
+                 * No schema but property provided -> error
+                 */
                 throw XMPException("Schema namespace URI is required", XMPErrorConst.BADSCHEMA)
             }
         }
 
-        // create iterator
+        /* Create iterator */
         if (startNode != null) {
 
             if (!this.options.isJustChildren())
@@ -201,42 +203,42 @@ public class XMPIterator(
     private open inner class NodeIterator : Iterator<XMPPropertyInfo> {
 
         /**
-         * the state of the iteration
+         * the state of the iteration.
          */
         private var state = ITERATE_NODE
 
         /**
-         * the currently visited node
+         * the currently visited node.
          */
         private var visitedNode: XMPNode? = null
 
         /**
-         * the recursively accumulated path
+         * the recursively accumulated path.
          */
         private var path: String? = null
 
         /**
-         * the iterator that goes through the children and qualifier list
+         * the iterator that goes through the children and qualifier list.
          */
         protected var childrenIterator: Iterator<XMPNode>? = null
 
         /**
-         * index of node with parent, only interesting for arrays
+         * index of node with parent, only interesting for arrays.
          */
         private var index = 0
 
         /**
-         * the iterator for each child
+         * the iterator for each child.
          */
         private var subIterator = emptySequence<XMPPropertyInfo>().iterator()
 
         /**
-         * the cached `PropertyInfo` to return
+         * the cached `PropertyInfo` to return.
          */
         protected var returnProperty: XMPPropertyInfo? = null
 
         /**
-         * Default constructor
+         * Default constructor.
          */
         constructor()
 
@@ -255,7 +257,7 @@ public class XMPIterator(
             if (visitedNode.options.isSchemaNode())
                 baseNS = visitedNode.name
 
-            // for all but the root node and schema nodes
+            /* For all but the root node and schema nodes */
             path = accumulatePath(visitedNode, parentPath, index)
         }
 
@@ -267,9 +269,9 @@ public class XMPIterator(
         override fun hasNext(): Boolean {
 
             if (returnProperty != null)
-                return true // hasNext has been called before
+                return true // HasNext has been called before
 
-            // find next node
+            /* Find next node */
             return if (state == ITERATE_NODE) {
 
                 reportNode()
@@ -307,18 +309,18 @@ public class XMPIterator(
 
             state = ITERATE_CHILDREN
 
-            return if (visitedNode!!.parent != null &&
-                (!options.isJustLeafnodes() || !visitedNode!!.hasChildren())
-            ) {
-                returnProperty = createPropertyInfo(visitedNode, baseNS!!, path!!)
-                true
-            } else {
-                hasNext()
-            }
+            val node = visitedNode
+
+            if (node == null || node.parent == null || options.isJustLeafnodes() && node.hasChildren())
+                return hasNext()
+
+            returnProperty = createPropertyInfo(node, baseNS, path)
+
+            return true
         }
 
         /**
-         * Handles the iteration of the children or qualfier
+         * Handles the iteration of the children or qualfier.
          *
          * @return Returns if there are more elements available.
          */
@@ -405,7 +407,7 @@ public class XMPIterator(
                 if (!segmentName!!.startsWith("?"))
                     segmentName
                 else
-                    segmentName.substring(1) // qualifier
+                    segmentName.substring(1) // Qualifier
 
             } else {
 
@@ -422,12 +424,12 @@ public class XMPIterator(
          * @return Returns a `XMPProperty`-object that serves representation of the node.
          */
         protected fun createPropertyInfo(
-            node: XMPNode?,
-            baseNS: String,
-            path: String
+            node: XMPNode,
+            baseNS: String?,
+            path: String?
         ): XMPPropertyInfo {
 
-            val value = if (node!!.options.isSchemaNode())
+            val value = if (node.options.isSchemaNode())
                 null
             else
                 node.value
@@ -437,22 +439,39 @@ public class XMPIterator(
                 override fun getNamespace(): String {
 
                     if (node.options.isSchemaNode())
-                        return baseNS
+                        return baseNS ?: ""
 
-                    /* determine namespace of leaf node */
-                    val qname = QName.parse(node.name!!)
+                    /* Determine namespace of leaf node */
+                    val name = node.name
 
-                    return XMPSchemaRegistry.getNamespaceURI(qname.prefix!!)!!
+                    if (name != null) {
+
+                        val prefix = QName.parse(name).prefix
+
+                        if (prefix != null) {
+
+                            val namespace = XMPSchemaRegistry.getNamespaceURI(prefix)
+
+                            if (namespace != null)
+                                return namespace
+                        }
+                    }
+
+                    return baseNS ?: ""
                 }
 
-                override fun getPath(): String = path
+                override fun getPath(): String =
+                    path ?: ""
 
-                override fun getValue(): String = value!!
+                override fun getValue(): String =
+                    value ?: ""
 
-                override fun getOptions(): PropertyOptions = node.options
+                override fun getOptions(): PropertyOptions =
+                    node.options
 
-                /* the language is not reported */
-                override fun getLanguage(): String? = null
+                /* The language is not reported */
+                override fun getLanguage(): String? =
+                    null
             }
         }
     }
@@ -463,14 +482,14 @@ public class XMPIterator(
      */
     private inner class NodeIteratorChildren(parentNode: XMPNode, parentPath: String?) : NodeIterator() {
 
-        private val parentPath: String
+        private val parentPath: String?
 
         private val nodeChildrenIterator: Iterator<XMPNode>
 
         private var index = 0
 
         /**
-         * Constructor
+         * Constructor.
          *
          * @param parentNode the node which children shall be iterated.
          * @param parentPath the full path of the former node without the leaf node.
@@ -480,7 +499,7 @@ public class XMPIterator(
             if (parentNode.options.isSchemaNode())
                 baseNS = parentNode.name
 
-            this.parentPath = accumulatePath(parentNode, parentPath, 1)!!
+            this.parentPath = accumulatePath(parentNode, parentPath, 1)
 
             nodeChildrenIterator = parentNode.iterateChildren()
         }
@@ -492,7 +511,7 @@ public class XMPIterator(
          */
         override fun hasNext(): Boolean {
 
-            // hasNext has been called before
+            /* HasNext has been called before */
             if (returnProperty != null)
                 return true
 
@@ -513,9 +532,11 @@ public class XMPIterator(
             else if (child.parent != null)
                 path = accumulatePath(child, parentPath, index)
 
-            // report next property, skip not-leaf nodes in case options is set
+            /* Report next property, skip not-leaf nodes in case options is set */
             if (!options.isJustLeafnodes() || !child.hasChildren()) {
-                returnProperty = createPropertyInfo(child, baseNS!!, path!!)
+
+                returnProperty = createPropertyInfo(child, baseNS, path)
+
                 return true
             }
 
@@ -526,17 +547,17 @@ public class XMPIterator(
     private companion object {
 
         /**
-         * iteration state
+         * iteration state.
          */
         const val ITERATE_NODE = 0
 
         /**
-         * iteration state
+         * iteration state.
          */
         const val ITERATE_CHILDREN = 1
 
         /**
-         * iteration state
+         * iteration state.
          */
         const val ITERATE_QUALIFIER = 2
     }

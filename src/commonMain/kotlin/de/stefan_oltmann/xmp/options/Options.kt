@@ -18,7 +18,7 @@ import de.stefan_oltmann.xmp.internal.XMPErrorConst
 public abstract class Options {
 
     /**
-     * the internal int containing all options
+     * the internal int containing all options.
      */
     private var valueBits = 0
 
@@ -99,7 +99,7 @@ public abstract class Options {
      * @param options the bitmask to check.
      *
      */
-    protected open fun assertConsistency(options: Int): Unit = Unit // empty, no checks
+    protected open fun assertConsistency(options: Int): Unit = Unit // Empty, no checks
 
     /**
      * Checks options before they are set.

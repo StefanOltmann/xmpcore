@@ -105,7 +105,7 @@ public object XMPConst {
     public const val NS_EXIF: String = "http://ns.adobe.com/exif/1.0/"
 
     /**
-     * NS for the CIPA XMP for Exif document v1.1
+     * NS for the CIPA XMP for Exif document v1.1.
      */
     public const val NS_EXIF_CIPA: String = "http://cipa.jp/exif/1.0/"
 
@@ -130,39 +130,39 @@ public object XMPConst {
     public const val NS_WAV: String = "http://ns.adobe.com/xmp/wav/1.0/"
 
     /**
-     * BExt Schema
+     * BExt Schema.
      */
     public const val NS_BWF: String = "http://ns.adobe.com/bwf/bext/1.0/"
 
     /**
-     * RIFF Info Schema
+     * RIFF Info Schema.
      */
     public const val NS_RIFF_INFO: String = "http://ns.adobe.com/riff/info/"
 
     public const val NS_SCRIPT: String = "http://ns.adobe.com/xmp/1.0/Script/"
 
     /**
-     * Transform XMP
+     * Transform XMP.
      */
     public const val NS_TRANSFORM_XMP: String = "http://ns.adobe.com/TransformXMP/"
 
     /**
-     * Adobe Flash SWF
+     * Adobe Flash SWF.
      */
     public const val NS_SWF: String = "http://ns.adobe.com/swf/1.0/"
 
-    // XMP namespaces that are Adobe private
+    /* XMP namespaces that are Adobe private */
 
     public const val NS_DM: String = "http://ns.adobe.com/xmp/1.0/DynamicMedia/"
 
     public const val NS_TRANSIENT: String = "http://ns.adobe.com/xmp/transient/1.0/"
 
     /**
-     * legacy Dublin Core NS, will be converted to NS_DC
+     * legacy Dublin Core NS, will be converted to NS_DC.
      */
     public const val NS_DC_DEPRECATED: String = "http://purl.org/dc/1.1/"
 
-    // Namespaces of products
+    /* Namespaces of products */
     public const val NS_ACDSEE: String = "http://ns.acdsee.com/iptc/1.0/"
     public const val NS_DIGIKAM: String = "http://www.digikam.org/ns/1.0/"
     public const val NS_MYLIO: String = "http://ns.mylollc.com/MyloEdit/"
@@ -171,7 +171,7 @@ public object XMPConst {
     public const val NS_LIGHTROOM: String = "http://ns.adobe.com/lightroom/1.0/"
     public const val NS_PHOTOSHOP: String = "http://ns.adobe.com/photoshop/1.0/"
 
-    // XML namespace constants for qualifiers and structured property fields.
+    /* XML namespace constants for qualifiers and structured property fields. */
 
     /**
      * The XML namespace for qualifiers of the xmp:Identifier property.
@@ -220,8 +220,10 @@ public object XMPConst {
 
     public const val TYPE_MANIFEST_ITEM: String = "http://ns.adobe.com/xap/1.0/sType/ManifestItem#"
 
-    // ---------------------------------------------------------------------------------------------
-    // Basic types and constants
+    /*
+     * ---------------------------------------------------------------------------------------------
+     * Basic types and constants
+     */
 
     /**
      * The canonical true string value for Booleans in serialized XMP. Code that converts from the
@@ -246,32 +248,32 @@ public object XMPConst {
     public const val ARRAY_ITEM_NAME: String = "[]"
 
     /**
-     * The x-default string for localized properties
+     * The x-default string for localized properties.
      */
     public const val X_DEFAULT: String = "x-default"
 
     /**
-     * xml:lang qualfifier
+     * xml:lang qualfifier.
      */
     public const val XML_LANG: String = "xml:lang"
 
     /**
-     * rdf:type qualfifier
+     * rdf:type qualfifier.
      */
     public const val RDF_TYPE: String = "rdf:type"
 
     /**
-     * Processing Instruction (PI) for xmp packet
+     * Processing Instruction (PI) for xmp packet.
      */
     public const val XMP_PI: String = "xpacket"
 
     /**
-     * XMP meta tag version new
+     * XMP meta tag version new.
      */
     public const val TAG_XMPMETA: String = "xmpmeta"
 
     /**
-     * XMP meta tag version old
+     * XMP meta tag version old.
      */
     public const val TAG_XAPMETA: String = "xapmeta"
 
@@ -289,7 +291,7 @@ public object XMPConst {
     public const val XMP_MWG_RS_REGION_LIST: String = "Regions/mwg-rs:RegionList"
     public const val XMP_MWG_RS_APPLIED_TO_DIMENSIONS: String = "Regions/mwg-rs:AppliedToDimensions"
 
-    /* xmpDM:pick="1" or xmpDM:pick="0" */
+    /* XmpDM:pick="1" or xmpDM:pick="0" */
     public const val FLAGGED_TAG_ADOBE_NAME: String = "pick"
     public const val FLAGGED_TAG_ADOBE_TRUE: String = "1"
     public const val FLAGGED_TAG_ADOBE_FALSE: String = "0"
@@ -304,7 +306,7 @@ public object XMPConst {
     public const val FLAGGED_TAG_MYLIO_TRUE: String = "true"
     public const val FLAGGED_TAG_MYLIO_FALSE: String = "false"
 
-    /* narrative:Tagged="True" or narrative:Tagged="False" */
+    /* Narrative:Tagged="True" or narrative:Tagged="False" */
     public const val FLAGGED_TAG_NARRATIVE_NAME: String = "Tagged"
     public const val FLAGGED_TAG_NARRATIVE_TRUE: String = TRUE_STRING
     public const val FLAGGED_TAG_NARRATIVE_FALSE: String = FALSE_STRING

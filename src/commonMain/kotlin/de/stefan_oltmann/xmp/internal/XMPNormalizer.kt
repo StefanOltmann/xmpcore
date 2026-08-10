@@ -20,12 +20,12 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
 internal object XMPNormalizer {
 
     /**
-     * caches the correct dc-property array forms
+     * caches the correct dc-property array forms.
      */
     private val dcArrayForms = createDCArrays()
 
     /**
-     * Normalizes a raw parsed XMPMeta-Object
+     * Normalizes a raw parsed XMPMeta-Object.
      *
      * @param xmp     the raw metadata object
      * @param options the parsing options
@@ -67,7 +67,7 @@ internal object XMPNormalizer {
 
             if (checkUUIDFormat(nameStr)) {
 
-                /* move UUID to xmpMM:InstanceID and remove it from the root node */
+                /* Move UUID to xmpMM:InstanceID and remove it from the root node */
                 val path = expandXPath(XMPConst.NS_XMP_MM, "InstanceID")
                 val idNode = XMPNodeUtils.findNode(tree, path, true, null)
 
@@ -90,11 +90,13 @@ internal object XMPNormalizer {
      */
     private fun touchUpDataModel(xmp: XMPMeta) {
 
-        // make sure the DC schema is existing, because it might be needed within the normalization
-        // if not touched it will be removed by removeEmptySchemas
+        /*
+         * Make sure the DC schema is existing, because it might be needed within the normalization
+         * if not touched it will be removed by removeEmptySchemas
+         */
         XMPNodeUtils.findSchemaNode(xmp.root, XMPConst.NS_DC, true)
 
-        // Do the special case fixes within each schema.
+        /* Do the special case fixes within each schema. */
         val it = xmp.root.iterateChildren()
 
         while (it.hasNext()) {
@@ -137,14 +139,14 @@ internal object XMPNormalizer {
 
             } else if (currProp.options.isSimple()) {
 
-                // create a new array and add the current property as child, if it was formerly simple
+                /* Create a new array and add the current property as child, if it was formerly simple */
                 val newArray = XMPNode(currProp.name, null, arrayForm)
 
                 currProp.name = XMPConst.ARRAY_ITEM_NAME
                 newArray.addChild(currProp)
                 dcSchema.replaceChild(index, newArray)
 
-                // fix language alternatives
+                /* Fix language alternatives */
                 if (arrayForm.isArrayAltText() && !currProp.options.hasLanguage()) {
 
                     val newLang = XMPNode(XMPConst.XML_LANG, XMPConst.X_DEFAULT)
@@ -154,7 +156,7 @@ internal object XMPNormalizer {
 
             } else {
 
-                // clear array options and add corrected array form if it has been an array before
+                /* Clear array options and add corrected array form if it has been an array before */
                 currProp.options.setOption(
                     PropertyOptions.ARRAY or
                         PropertyOptions.ARRAY_ORDERED or
@@ -165,7 +167,7 @@ internal object XMPNormalizer {
 
                 currProp.options.mergeWith(arrayForm)
 
-                // applying for "dc:description", "dc:rights", "dc:title"
+                /* Applying for "dc:description", "dc:rights", "dc:title" */
                 if (arrayForm.isArrayAltText())
                     repairAltText(currProp)
             }
@@ -184,7 +186,7 @@ internal object XMPNormalizer {
         if (arrayNode == null || !arrayNode.options.isArray())
             return // Already OK or not even an array.
 
-        // fix options
+        /* Fix options */
         arrayNode.options.setArrayOrdered(true).setArrayAlternate(true).setArrayAltText(true)
 
         val it = arrayNode.iterateChildrenMutable()
@@ -195,7 +197,7 @@ internal object XMPNormalizer {
 
             if (currChild.options.isCompositeProperty()) {
 
-                // Delete non-simple children.
+                /* Delete non-simple children. */
                 it.remove()
 
             } else if (!currChild.options.hasLanguage()) {
@@ -204,12 +206,12 @@ internal object XMPNormalizer {
 
                 if (childValue.isNullOrEmpty()) {
 
-                    // Delete empty valued children that have no xml:lang.
+                    /* Delete empty valued children that have no xml:lang. */
                     it.remove()
 
                 } else {
 
-                    // Add a xml:lang qualifier with the value "x-repair".
+                    /* Add a xml:lang qualifier with the value "x-repair". */
                     val repairLang = XMPNode(XMPConst.XML_LANG, "x-repair")
                     currChild.addQualifier(repairLang)
                 }
@@ -250,12 +252,12 @@ internal object XMPNormalizer {
 
                 currProp.isAlias = false
 
-                // Find the base path, look for the base schema and root node.
+                /* Find the base path, look for the base schema and root node. */
                 val info = XMPSchemaRegistry.findAlias(currProp.name!!)
 
                 if (info != null) {
 
-                    // find or create schema
+                    /* Find or create schema */
                     val baseSchema = XMPNodeUtils.findSchemaNode(
                         tree, info.getNamespace(), null, true
                     )
@@ -273,22 +275,26 @@ internal object XMPNormalizer {
 
                         if (info.getAliasForm().isSimple()) {
 
-                            // A top-to-top alias, transplant the property.
-                            // change the alias property name to the base name
+                            /*
+                             * A top-to-top alias, transplant the property.
+                             * change the alias property name to the base name
+                             */
                             val qname = info.getPrefix() + info.getPropName()
 
                             currProp.name = qname
 
                             baseSchema.addChild(currProp)
 
-                            // remove the alias property
+                            /* Remove the alias property */
 
                             currSchema.removeChild(currProp)
 
                         } else {
 
-                            // An alias to an array item,
-                            // create the array and transplant the property.
+                            /*
+                             * An alias to an array item,
+                             * create the array and transplant the property.
+                             */
                             baseNode = XMPNode(
                                 name = info.getPrefix() + info.getPropName(),
                                 value = null,
@@ -304,9 +310,11 @@ internal object XMPNormalizer {
 
                     } else if (info.getAliasForm().isSimple()) {
 
-                        // The base node does exist and this is a top-to-top alias.
-                        // Check for conflicts if strict aliasing is on.
-                        // Remove and delete the alias subtree.
+                        /*
+                         * The base node does exist and this is a top-to-top alias.
+                         * Check for conflicts if strict aliasing is on.
+                         * Remove and delete the alias subtree.
+                         */
                         if (strictAliasing)
                             compareAliasedSubtrees(currProp, baseNode, true)
 
@@ -314,9 +322,11 @@ internal object XMPNormalizer {
 
                     } else {
 
-                        // This is an alias to an array item and the array exists.
-                        // Look for the aliased item.
-                        // Then transplant or check & delete as appropriate.
+                        /*
+                         * This is an alias to an array item and the array exists.
+                         * Look for the aliased item.
+                         * Then transplant or check & delete as appropriate.
+                         */
                         var itemNode: XMPNode? = null
 
                         if (info.getAliasForm().isArrayAltText()) {
@@ -353,7 +363,7 @@ internal object XMPNormalizer {
     }
 
     /**
-     * Moves an alias node of array form to another schema into an array
+     * Moves an alias node of array form to another schema into an array.
      *
      * @param childNode  the node to be moved
      * @param baseArray  the base array for the array item
@@ -367,7 +377,7 @@ internal object XMPNormalizer {
 
         if (baseArray.options.isArrayAltText()) {
 
-            // *** Allow x-default.
+            /* *** Allow x-default. */
             if (childNode.options.hasLanguage())
                 throw XMPException(
                     "Alias to x-default already has a language qualifier",
@@ -393,7 +403,7 @@ internal object XMPNormalizer {
      */
     private fun deleteEmptySchemas(tree: XMPNode) {
 
-        // Delete empty schema nodes. Do this last, other cleanup can make empty schema.
+        /* Delete empty schema nodes. Do this last, other cleanup can make empty schema. */
 
         val it = tree.iterateChildrenMutable()
 
@@ -465,7 +475,7 @@ internal object XMPNormalizer {
 
         val dcArrayForms = mutableMapOf<String, PropertyOptions>()
 
-        // Properties supposed to be a "Bag".
+        /* Properties supposed to be a "Bag". */
         val bagForm = PropertyOptions()
         bagForm.setArray(true)
         dcArrayForms["dc:contributor"] = bagForm
@@ -475,14 +485,14 @@ internal object XMPNormalizer {
         dcArrayForms["dc:subject"] = bagForm
         dcArrayForms["dc:type"] = bagForm
 
-        // Properties supposed to be a "Seq".
+        /* Properties supposed to be a "Seq". */
         val seqForm = PropertyOptions()
         seqForm.setArray(true)
         seqForm.setArrayOrdered(true)
         dcArrayForms["dc:creator"] = seqForm
         dcArrayForms["dc:date"] = seqForm
 
-        // Properties supposed to be an "Alt" in alternative-text form.
+        /* Properties supposed to be an "Alt" in alternative-text form. */
         val altTextForm = PropertyOptions()
         altTextForm.setArray(true)
         altTextForm.setArrayOrdered(true)

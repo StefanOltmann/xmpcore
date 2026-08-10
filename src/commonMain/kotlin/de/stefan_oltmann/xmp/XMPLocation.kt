@@ -1,24 +1,24 @@
 package de.stefan_oltmann.xmp
 
-/** As used in Iptc4xmpExt */
+/** As used in Iptc4xmpExt. */
 public data class XMPLocation(
 
     /**
-     * Iptc4xmpExt:LocationName
+     * Iptc4xmpExt:LocationName.
      *
      * For example "Times Square"
      */
     val name: String?,
 
     /**
-     * Iptc4xmpExt:Sublocation
+     * Iptc4xmpExt:Sublocation.
      *
      * For example "Schnurpselstraße 7"
      */
     val location: String?,
 
     /**
-     * Iptc4xmpExt:City
+     * Iptc4xmpExt:City.
      * photoshop:City
      *
      * For example "Oldenburg"
@@ -26,7 +26,7 @@ public data class XMPLocation(
     val city: String?,
 
     /**
-     * Iptc4xmpExt:ProvinceState
+     * Iptc4xmpExt:ProvinceState.
      * photoshop:State
      *
      * For example "Niedersachsen"
@@ -34,7 +34,7 @@ public data class XMPLocation(
     val state: String?,
 
     /**
-     * Iptc4xmpExt:CountryName
+     * Iptc4xmpExt:CountryName.
      * photoshop:Country
      *
      * For example "Deutschland"

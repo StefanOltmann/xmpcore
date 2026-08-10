@@ -16,12 +16,12 @@ import de.stefan_oltmann.xmp.XMPConst
 internal object Utils {
 
     /**
-     * segments of a UUID
+     * segments of a UUID.
      */
     const val UUID_SEGMENT_COUNT = 4
 
     /**
-     * length of a UUID
+     * length of a UUID.
      */
     const val UUID_LENGTH = 32 + UUID_SEGMENT_COUNT
 
@@ -30,18 +30,18 @@ internal object Utils {
     private const val XML_NAME_LENGTH = 0x0100
 
     /**
-     * table of XML name start chars (<= 0xFF)
+     * table of XML name start chars (<= 0xFF).
      */
     private val xmlNameStartChars = BooleanArray(XML_NAME_LENGTH)
 
     /**
-     * table of XML name chars (<= 0xFF)
+     * table of XML name chars (<= 0xFF).
      */
     private val xmlNameChars = BooleanArray(XML_NAME_LENGTH)
 
     private val controlCharRegex = Regex("[\\p{Cntrl}]")
 
-    /** init char tables  */
+    /** Init char tables. */
     init {
         initCharTables()
     }
@@ -114,7 +114,7 @@ internal object Utils {
     @kotlin.jvm.JvmStatic
     fun splitNameAndValue(selector: String): Array<String> {
 
-        // get the name
+        /* Get the name */
         val eq = selector.indexOf('=')
 
         var pos = 1
@@ -124,14 +124,14 @@ internal object Utils {
 
         val name = selector.substring(pos, eq)
 
-        // get the value
+        /* Get the value */
         pos = eq + 1
 
         val quote = selector[pos]
 
         pos++
 
-        val end = selector.length - 2 // quote and ]
+        val end = selector.length - 2 // Quote and ]
 
         val value = StringBuilder(end - eq)
 
@@ -142,7 +142,7 @@ internal object Utils {
             pos++
 
             if (selector[pos] == quote) {
-                // skip one quote in value
+                /* Skip one quote in value */
                 pos++
             }
         }
@@ -151,7 +151,7 @@ internal object Utils {
     }
 
     /**
-     * Check some requirements for an UUID:
+     * Check some requirements for an UUID.
      *
      *  * Length of the UUID is 32
      *  * The Delimiter count is 4 and all the 4 delimiter are on their right position (8, 13, 18, 23)
@@ -244,7 +244,7 @@ internal object Utils {
     @Suppress("ComplexCondition", "kotlin:S3776")
     fun escapeXML(value: String, forAttribute: Boolean, escapeWhitespaces: Boolean): String {
 
-        // quick check if character are contained that need special treatment
+        /* Quick check if character are contained that need special treatment */
         var needsEscaping = false
 
         for (index in 0 until value.length) {
@@ -265,7 +265,7 @@ internal object Utils {
         if (!needsEscaping)
             return value
 
-        // slow path with escaping
+        /* Slow path with escaping */
         val buffer = StringBuilder(value.length * 4 / 3)
 
         @Suppress("LoopWithTooManyJumpStatements")
@@ -305,8 +305,10 @@ internal object Utils {
 
             } else {
 
-                // write control chars escaped,
-                // if there are others than tab, LF and CR the xml will become invalid.
+                /*
+                 * Write control chars escaped,
+                 * if there are others than tab, LF and CR the xml will become invalid.
+                 */
                 buffer.append("&#x")
                 buffer.append(char.code.toString(HEX_RADIX).uppercase())
                 buffer.append(';')

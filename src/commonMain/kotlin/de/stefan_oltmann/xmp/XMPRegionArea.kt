@@ -8,7 +8,7 @@
 // =================================================================================================
 package de.stefan_oltmann.xmp
 
-/** As used in XMP-mwg-rs */
+/** As used in XMP-mwg-rs. */
 public data class XMPRegionArea(
     val xPos: Double,
     val yPos: Double,

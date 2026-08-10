@@ -9,9 +9,9 @@
 package de.stefan_oltmann.xmp.internal
 
 internal data class QName(
-    /** XML namespace prefix */
+    /** XML namespace prefix. */
     val prefix: String?,
-    /** XML localname */
+    /** XML localname. */
     val localName: String
 ) {
 

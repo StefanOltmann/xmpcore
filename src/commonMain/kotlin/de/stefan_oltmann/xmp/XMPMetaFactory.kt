@@ -15,7 +15,7 @@ import de.stefan_oltmann.xmp.options.ParseOptions
 import de.stefan_oltmann.xmp.options.SerializeOptions
 
 /**
- * Creates `XMPMeta`-instances from an `InputStream`
+ * Creates `XMPMeta`-instances from an `InputStream`.
  */
 public object XMPMetaFactory {
 
@@ -67,7 +67,7 @@ public object XMPMetaFactory {
 
             val actualOptions = options ?: SerializeOptions()
 
-            /* sort the internal data model on demand */
+            /* Sort the internal data model on demand */
             if (actualOptions.getSort())
                 xmp.sort()
 
