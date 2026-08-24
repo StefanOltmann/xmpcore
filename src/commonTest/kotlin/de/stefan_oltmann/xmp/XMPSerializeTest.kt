@@ -3,6 +3,7 @@ package de.stefan_oltmann.xmp
 import de.stefan_oltmann.xmp.internal.XMPErrorConst
 import de.stefan_oltmann.xmp.options.PropertyOptions
 import de.stefan_oltmann.xmp.options.SerializeOptions
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -14,6 +15,33 @@ import kotlin.test.assertTrue
  * [SerializeOptions] behavior.
  */
 class XMPSerializeTest {
+
+    private val registeredNamespaces = mutableListOf<String>()
+
+    /**
+     * Registers a namespace for the test under way and remembers it for cleanup, so the
+     * process-global registry stays unpolluted for other tests.
+     */
+    private fun registerTestNamespace(namespaceUri: String, prefix: String): String {
+
+        XMPSchemaRegistry.registerNamespace(namespaceUri, prefix)
+
+        registeredNamespaces.add(namespaceUri)
+
+        return namespaceUri
+    }
+
+    /**
+     * Frees all namespaces this test class registered.
+     */
+    @AfterTest
+    fun cleanUpRegistry() {
+
+        for (namespaceUri in registeredNamespaces)
+            XMPSchemaRegistry.deleteNamespace(namespaceUri)
+
+        registeredNamespaces.clear()
+    }
 
     /**
      * The packet wrapper can be omitted.
@@ -64,6 +92,135 @@ class XMPSerializeTest {
         )
 
         assertTrue(serialized.contains("<?xpacket end=\"r\"?>"))
+    }
+
+    /**
+     * By default no padding is written, the trailer directly follows the content.
+     */
+    @Test
+    fun testSerializeDefaultHasNoPadding() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        val serialized = XMPMetaFactory.serializeToString(xmpMeta)
+
+        assertTrue(serialized.contains("</x:xmpmeta>\n<?xpacket"))
+    }
+
+    /**
+     * The configured padding is written between the content and the packet trailer, so
+     * embedded packets can later be updated in place. Following Adobe's serializer the
+     * padding consists of 100-space chunks separated by newlines plus a final newline.
+     */
+    @Test
+    fun testSerializePadding() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        /* 250 chars: two full 100-space chunks and 47 remaining spaces, each line ended. */
+        val expectedPadding = buildString {
+            append(" ".repeat(100))
+            append('\n')
+            append(" ".repeat(100))
+            append('\n')
+            append(" ".repeat(47))
+            append('\n')
+        }
+
+        val serialized = XMPMetaFactory.serializeToString(
+            xmpMeta,
+            SerializeOptions().setPadding(250)
+        )
+
+        assertTrue(serialized.endsWith(expectedPadding + "<?xpacket end=\"w\"?>"))
+
+        /* Roundtrip: the padded packet parses again with identical content. */
+        val reparsed = XMPMetaFactory.parseFromString(serialized)
+
+        assertEquals(
+            XMPMetaFactory.serializeToString(xmpMeta),
+            XMPMetaFactory.serializeToString(reparsed)
+        )
+    }
+
+    /**
+     * Padding is not written when the packet wrapper is omitted.
+     */
+    @Test
+    fun testSerializePaddingOmittedWithWrapper() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        val serialized = XMPMetaFactory.serializeToString(
+            xmpMeta,
+            SerializeOptions()
+                .setOmitPacketWrapper(true)
+                .setPadding(500)
+        )
+
+        assertFalse(serialized.contains("xpacket"))
+        assertFalse(serialized.contains("      "))
+    }
+
+    /**
+     * Newline and indent options are honored in the output.
+     */
+    @Test
+    fun testSerializeCustomNewlineAndIndent() {
+
+        val xmpMeta = XMPMetaFactory.create()
+        xmpMeta.setProperty("http://purl.org/dc/elements/1.1/", "dc:title", "value")
+
+        val serialized = XMPMetaFactory.serializeToString(
+            xmpMeta,
+            SerializeOptions()
+                .setNewline("\r\n")
+                .setIndent("\t")
+        )
+
+        assertTrue(serialized.contains("\r\n"))
+
+        /* No plain newline may remain, every line ends with CRLF. */
+        assertFalse(serialized.replace("\r\n", "").contains("\n"))
+
+        assertTrue(serialized.contains("\r\n\t<rdf:RDF"))
+    }
+
+    /**
+     * The base indent shifts every line by the given number of levels.
+     */
+    @Test
+    fun testSerializeBaseIndent() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        val serialized = XMPMetaFactory.serializeToString(
+            xmpMeta,
+            SerializeOptions()
+                .setBaseIndent(2)
+        )
+
+        assertTrue(serialized.startsWith("    <?xpacket"))
+
+        assertTrue(serialized.contains("\n    <x:xmpmeta"))
+
+        /* The result still parses. */
+        XMPMetaFactory.parseFromString(serialized)
+    }
+
+    /**
+     * Negative padding and base indent are rejected.
+     */
+    @Test
+    fun testSerializeInvalidOptionValues() {
+
+        assertFailsWith<IllegalArgumentException> {
+            SerializeOptions().setPadding(-1)
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            SerializeOptions().setBaseIndent(-1)
+        }
     }
 
     /**
@@ -220,7 +377,7 @@ class XMPSerializeTest {
 
         val qualifierNamespace = "http://example.org/xmpcore-serialize-qual/"
 
-        XMPSchemaRegistry.registerNamespace(qualifierNamespace, "serQual")
+        registerTestNamespace(qualifierNamespace, "serQual")
 
         val xmpMeta = XMPMetaFactory.create()
 
@@ -241,7 +398,7 @@ class XMPSerializeTest {
 
         val qualifierNamespace = "http://example.org/xmpcore-serialize-mixed/"
 
-        XMPSchemaRegistry.registerNamespace(qualifierNamespace, "serMixed")
+        registerTestNamespace(qualifierNamespace, "serMixed")
 
         val xmpMeta = XMPMetaFactory.create()
 
@@ -263,7 +420,7 @@ class XMPSerializeTest {
 
         val qualifierNamespace = "http://example.org/xmpcore-serialize-general/"
 
-        XMPSchemaRegistry.registerNamespace(qualifierNamespace, "serGeneral")
+        registerTestNamespace(qualifierNamespace, "serGeneral")
 
         val xmpMeta = XMPMetaFactory.create()
 
@@ -364,7 +521,7 @@ class XMPSerializeTest {
 
         val typeNamespace = "http://example.org/xmpcore-serialize-typed/"
 
-        XMPSchemaRegistry.registerNamespace(typeNamespace, "serTyped")
+        registerTestNamespace(typeNamespace, "serTyped")
 
         /* language=XML */
         val testXmp = """
@@ -416,7 +573,7 @@ class XMPSerializeTest {
 
         val qualifierNamespace = "http://example.org/xmpcore-serialize-res/"
 
-        XMPSchemaRegistry.registerNamespace(qualifierNamespace, "serRes")
+        registerTestNamespace(qualifierNamespace, "serRes")
 
         val xmpMeta = XMPMetaFactory.create()
 
@@ -437,7 +594,7 @@ class XMPSerializeTest {
 
         val qualifierNamespace = "http://example.org/xmpcore-serialize-res2/"
 
-        XMPSchemaRegistry.registerNamespace(qualifierNamespace, "serRes2")
+        registerTestNamespace(qualifierNamespace, "serRes2")
 
         val xmpMeta = XMPMetaFactory.create()
 
@@ -457,7 +614,7 @@ class XMPSerializeTest {
 
         val qualifierNamespace = "http://example.org/xmpcore-serialize-canqual/"
 
-        XMPSchemaRegistry.registerNamespace(qualifierNamespace, "serCanQual")
+        registerTestNamespace(qualifierNamespace, "serCanQual")
 
         val xmpMeta = XMPMetaFactory.create()
 
@@ -483,7 +640,7 @@ class XMPSerializeTest {
 
         val qualifierNamespace = "http://example.org/xmpcore-serialize-emptystruct/"
 
-        XMPSchemaRegistry.registerNamespace(qualifierNamespace, "serEmptyStruct")
+        registerTestNamespace(qualifierNamespace, "serEmptyStruct")
 
         val xmpMeta = XMPMetaFactory.create()
 
@@ -504,7 +661,7 @@ class XMPSerializeTest {
 
         val qualifierNamespace = "http://example.org/xmpcore-serialize-canres/"
 
-        XMPSchemaRegistry.registerNamespace(qualifierNamespace, "serCanRes")
+        registerTestNamespace(qualifierNamespace, "serCanRes")
 
         val xmpMeta = XMPMetaFactory.create()
 
@@ -539,8 +696,8 @@ class XMPSerializeTest {
     }
 
     /**
-     * Asserts that serializing throws an XMPException whose cause is the
-     * BADRDF error of the RDF writer.
+     * Asserts that serializing throws an XMPException that carries the BADRDF
+     * error code of the RDF writer directly, without being re-wrapped.
      */
     private fun assertSerializeFailsWithBadRdf(xmpMeta: XMPMeta, options: SerializeOptions) {
 
@@ -548,18 +705,6 @@ class XMPSerializeTest {
             XMPMetaFactory.serializeToString(xmpMeta, options)
         }
 
-        assertEquals(XMPErrorConst.UNKNOWN, ex.errorCode)
-
-        var cause: Throwable? = ex.cause
-
-        while (cause != null) {
-
-            if (cause is XMPException && cause.errorCode == XMPErrorConst.BADRDF)
-                return
-
-            cause = cause.cause
-        }
-
-        throw AssertionError("Expected a BADRDF cause, got: ${ex.cause}")
+        assertEquals(XMPErrorConst.BADRDF, ex.errorCode)
     }
 }

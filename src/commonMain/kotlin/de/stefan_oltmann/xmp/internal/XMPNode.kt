@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPConst
@@ -65,9 +67,19 @@ internal class XMPNode(
 
     fun addChild(node: XMPNode) {
 
-        /* Ignore doubled childs. */
-        if (childExists(node.name!!))
+        /*
+         * Slightly corrupted files may contain a property more than once.
+         * Instead of rejecting the whole file, we keep only one value. Like
+         * ExifTool when extracting duplicated tags, the last occurrence wins
+         * and replaces the earlier one at its position.
+         */
+        val duplicateIndex = findChildIndex(node.name)
+
+        if (duplicateIndex >= 0) {
+            node.parent = this
+            getOrCreateChildren()[duplicateIndex] = node
             return
+        }
 
         node.parent = this
 
@@ -76,9 +88,14 @@ internal class XMPNode(
 
     fun addChild(index: Int, node: XMPNode) {
 
-        /* Ignore doubled childs. */
-        if (childExists(node.name!!))
+        /* See addChild(XMPNode): a duplicated name keeps the last occurrence. */
+        val duplicateIndex = findChildIndex(node.name)
+
+        if (duplicateIndex >= 0) {
+            node.parent = this
+            getOrCreateChildren()[duplicateIndex] = node
             return
+        }
 
         node.parent = this
 
@@ -151,9 +168,25 @@ internal class XMPNode(
 
     fun addQualifier(qualNode: XMPNode) {
 
-        /* Ignore doubled qualifiers. */
-        if (qualifierExists(qualNode.name!!))
+        /*
+         * See addChild(XMPNode): a duplicated qualifier keeps the last
+         * occurrence instead of rejecting the file. The replacement stays at
+         * the position of the old qualifier, so "xml:lang" and "rdf:type"
+         * keep their fixed places.
+         */
+        val duplicateIndex = findQualifierIndex(qualNode.name)
+
+        if (duplicateIndex >= 0) {
+            qualNode.parent = this
+            qualNode.options.setQualifier(true)
+            options.setHasQualifiers(true)
+            if (XMPConst.XML_LANG == qualNode.name)
+                options.setHasLanguage(true)
+            else if (XMPConst.RDF_TYPE == qualNode.name)
+                options.setHasType(true)
+            getOrCreateQualifier()[duplicateIndex] = qualNode
             return
+        }
 
         qualNode.parent = this
         qualNode.options.setQualifier(true)
@@ -198,9 +231,11 @@ internal class XMPNode(
             options.setHasType(false)
         }
 
-        getOrCreateQualifier().remove(qualNode)
+        val qualifierList = getOrCreateQualifier()
 
-        if (qualifier!!.isEmpty()) {
+        qualifierList.remove(qualNode)
+
+        if (qualifierList.isEmpty()) {
             options.setHasQualifiers(false)
             qualifier = null
         }
@@ -237,13 +272,15 @@ internal class XMPNode(
     fun iterateQualifier(): Iterator<XMPNode> =
         qualifier?.listIterator() ?: emptySequence<XMPNode>().iterator()
 
-    override fun compareTo(other: XMPNode): Int {
-
+    /**
+     * Schema nodes compare by their value (the prefix), all other nodes by name.
+     * A null name or value sorts before any non-null one.
+     */
+    override fun compareTo(other: XMPNode): Int =
         if (options.isSchemaNode())
-            return value!!.compareTo(other.value!!)
-
-        return name!!.compareTo(other.name!!)
-    }
+            compareValuesBy(this, other) { it.value }
+        else
+            compareValuesBy(this, other) { it.name }
 
     /**
      * Sorts the complete datamodel according to the following rules:
@@ -259,7 +296,9 @@ internal class XMPNode(
         /* Sort qualifier */
         if (hasQualifier()) {
 
-            val quals = getOrCreateQualifier().toTypedArray<XMPNode>()
+            val qualifierList = getOrCreateQualifier()
+
+            val quals = qualifierList.toTypedArray()
 
             var sortFrom = 0
 
@@ -272,49 +311,58 @@ internal class XMPNode(
 
             quals.sort(sortFrom, quals.size)
 
-            val iterator = qualifier!!.listIterator()
-
-            for (j in quals.indices) {
-                iterator.next()
-                iterator.set(quals[j])
-                quals[j].sort()
+            for (index in quals.indices) {
+                qualifierList[index] = quals[index]
+                quals[index].sort()
             }
         }
 
         /* Sort children */
         if (hasChildren()) {
 
+            val childList = requireNotNull(children)
+
             if (!options.isArray())
-                children!!.sort()
+                childList.sort()
 
-            val it = iterateChildren()
-
-            while (it.hasNext())
-                it.next().sort()
+            for (child in childList)
+                child.sort()
         }
     }
 
     /* ------------------------------------------------------------------------------ private methods */
 
-    private fun getOrCreateChildren(): MutableList<XMPNode> {
+    private fun getOrCreateChildren(): MutableList<XMPNode> =
+        children ?: mutableListOf<XMPNode>().also { children = it }
 
-        if (children == null)
-            children = mutableListOf()
+    private fun getOrCreateQualifier(): MutableList<XMPNode> =
+        qualifier ?: mutableListOf<XMPNode>().also { qualifier = it }
 
-        return children!!
+    /**
+     * Returns the index of the child with the given name, or -1 if there is none.
+     * Array items share the name "[]" and are never treated as duplicates.
+     */
+    private fun findChildIndex(childName: String?): Int {
+
+        if (childName == null || XMPConst.ARRAY_ITEM_NAME == childName)
+            return -1
+
+        val children = children ?: return -1
+
+        return children.indexOfFirst { it.name == childName }
     }
 
-    private fun getOrCreateQualifier(): MutableList<XMPNode> {
+    /**
+     * Returns the index of the qualifier with the given name, or -1 if there is none.
+     * Array items share the name "[]" and are never treated as duplicates.
+     */
+    private fun findQualifierIndex(qualifierName: String?): Int {
 
-        if (qualifier == null)
-            qualifier = mutableListOf()
+        if (qualifierName == null || XMPConst.ARRAY_ITEM_NAME == qualifierName)
+            return -1
 
-        return qualifier!!
+        val qualifierList = qualifier ?: return -1
+
+        return qualifierList.indexOfFirst { it.name == qualifierName }
     }
-
-    private fun childExists(childName: String): Boolean =
-        XMPConst.ARRAY_ITEM_NAME != childName && findChildByName(childName) != null
-
-    private fun qualifierExists(qualifierName: String): Boolean =
-        XMPConst.ARRAY_ITEM_NAME != qualifierName && findQualifierByName(qualifierName) != null
 }

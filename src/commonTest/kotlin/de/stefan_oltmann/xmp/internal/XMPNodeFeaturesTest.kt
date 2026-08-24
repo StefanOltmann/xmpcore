@@ -15,18 +15,21 @@ import kotlin.test.assertTrue
 class XMPNodeFeaturesTest {
 
     /**
-     * Adding a child with an existing name is ignored.
+     * Adding a child with an existing name keeps the last occurrence at the
+     * position of the first, like ExifTool when reading duplicated tags.
      */
     @Test
-    fun testAddChildIgnoresDuplicateNames() {
+    fun testAddChildReplacesDuplicateNames() {
 
         val parent = XMPNode("parent", null)
 
         parent.addChild(XMPNode("child", "first"))
+        parent.addChild(XMPNode("other", "o"))
         parent.addChild(XMPNode("child", "second"))
 
-        assertEquals(1, parent.getChildrenLength())
-        assertEquals("first", parent.getChild(1).value)
+        assertEquals(2, parent.getChildrenLength())
+        assertEquals("second", parent.getChild(1).value)
+        assertEquals("o", parent.getChild(2).value)
     }
 
     /**
@@ -44,18 +47,20 @@ class XMPNodeFeaturesTest {
     }
 
     /**
-     * Adding an existing qualifier is ignored.
+     * Adding an existing qualifier keeps the last occurrence at its position.
      */
     @Test
-    fun testAddQualifierIgnoresDuplicates() {
+    fun testAddQualifierReplacesDuplicates() {
 
         val parent = XMPNode("prop", "value")
 
         parent.addQualifier(XMPNode("?custom", "first"))
+        parent.addQualifier(XMPNode(XMPConst.XML_LANG, "de"))
         parent.addQualifier(XMPNode("?custom", "second"))
 
-        assertEquals(1, parent.getQualifierLength())
-        assertEquals("first", parent.getQualifier(1).value)
+        assertEquals(2, parent.getQualifierLength())
+        assertEquals(XMPConst.XML_LANG, parent.getQualifier(1).name)
+        assertEquals("second", parent.getQualifier(2).value)
     }
 
     /**

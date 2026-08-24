@@ -505,7 +505,10 @@ class XMPMetaConvenienceTest {
             <?xpacket end="w"?>
         """.trimIndent()
 
-        assertTrue(XMPMetaFactory.parseFromString(testXmp).getPacketHeader()!!.contains("W5M0MpCehiHzreSzNTczkc9d"))
+        assertTrue(
+            checkNotNull(XMPMetaFactory.parseFromString(testXmp).getPacketHeader())
+                .contains("W5M0MpCehiHzreSzNTczkc9d")
+        )
 
         val xmpMeta = XMPMetaFactory.create()
 

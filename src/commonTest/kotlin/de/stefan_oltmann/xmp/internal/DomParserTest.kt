@@ -78,7 +78,7 @@ class DomParserTest {
 
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
-        assertTrue(xmpMeta.getPacketHeader()!!.contains("W5M0MpCehiHzreSzNTczkc9d"))
+        assertTrue(checkNotNull(xmpMeta.getPacketHeader()).contains("W5M0MpCehiHzreSzNTczkc9d"))
     }
 
     /**

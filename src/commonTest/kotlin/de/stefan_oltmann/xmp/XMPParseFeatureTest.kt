@@ -37,7 +37,7 @@ class XMPParseFeatureTest {
 
         assertEquals(
             expected = "$typeNamespace:MyType",
-            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "thing", XMPConst.NS_RDF, "type")!!.getValue()
+            actual = checkNotNull(xmpMeta.getQualifier(XMPConst.NS_XMP, "thing", XMPConst.NS_RDF, "type")).getValue()
         )
         assertEquals(
             expected = "v",
@@ -63,7 +63,7 @@ class XMPParseFeatureTest {
 
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
-        val property = xmpMeta.getProperty(XMPConst.NS_XMP, "Webpage")!!
+        val property = checkNotNull(xmpMeta.getProperty(XMPConst.NS_XMP, "Webpage"))
 
         assertEquals("http://example.org/", property.getValue())
         assertTrue(property.getOptions().isURI())
@@ -90,11 +90,15 @@ class XMPParseFeatureTest {
 
         assertEquals(
             expected = "a",
-            actual = xmpMeta.getStructField(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "field1")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getStructField(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "field1")
+            ).getValue()
         )
         assertEquals(
             expected = "b",
-            actual = xmpMeta.getStructField(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "field2")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getStructField(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "field2")
+            ).getValue()
         )
     }
 
@@ -121,7 +125,9 @@ class XMPParseFeatureTest {
 
         assertEquals(
             expected = "a",
-            actual = xmpMeta.getStructField(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "field1")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getStructField(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "field1")
+            ).getValue()
         )
     }
 
@@ -222,7 +228,7 @@ class XMPParseFeatureTest {
 
         assertEquals(
             expected = "Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-DE")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-DE")).getValue()
         )
     }
 
@@ -319,7 +325,7 @@ class XMPParseFeatureTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(1, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
-        assertEquals("", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)!!.getValue())
+        assertEquals("", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)).getValue())
     }
 
     /**
@@ -365,7 +371,7 @@ class XMPParseFeatureTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
-        assertEquals("swiper", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)!!.getValue())
+        assertEquals("swiper", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)).getValue())
     }
 
     /**
@@ -479,6 +485,67 @@ class XMPParseFeatureTest {
         assertEquals(
             expected = "",
             actual = xmpMeta.getPropertyString(XMPConst.NS_XMP, "struct/_dflt:elem")
+        )
+    }
+
+    /**
+     * A slightly corrupted file with a duplicated property is parsed instead
+     * of rejected. The last occurrence wins like in ExifTool.
+     */
+    @Test
+    fun testDuplicatedPropertyKeepsLastValue() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:photoshop="http://ns.adobe.com/photoshop/1.0/">
+                <photoshop:City>Oldenburg</photoshop:City>
+                <photoshop:City>Berlin</photoshop:City>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals("Berlin", xmpMeta.getPropertyString(XMPConst.NS_PHOTOSHOP, "City"))
+    }
+
+    /**
+     * A duplicated field inside one struct keeps the last value.
+     */
+    @Test
+    fun testDuplicatedStructFieldKeepsLastValue() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                  xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/">
+                <mwg-rs:Regions rdf:parseType="Resource">
+                  <mwg-rs:RegionList>
+                    <rdf:Seq>
+                      <rdf:li rdf:parseType="Resource">
+                        <mwg-rs:Name>First</mwg-rs:Name>
+                        <mwg-rs:Name>Second</mwg-rs:Name>
+                        <mwg-rs:Type>Face</mwg-rs:Type>
+                      </rdf:li>
+                    </rdf:Seq>
+                  </mwg-rs:RegionList>
+                </mwg-rs:Regions>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            expected = "Second",
+            actual = xmpMeta.getPropertyString(
+                XMPConst.NS_MWG_RS,
+                "Regions/mwg-rs:RegionList[1]/mwg-rs:Name"
+            )
         )
     }
 }

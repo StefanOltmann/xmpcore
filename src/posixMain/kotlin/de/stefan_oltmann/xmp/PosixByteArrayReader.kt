@@ -26,22 +26,45 @@ internal fun readFileAsByteArray(filePath: String): ByteArray? = memScoped {
         return null
     }
 
-    /* Move the cursor to the end of the file. */
+    /*
+     * Move the cursor to the end of the file and determine its size.
+     * ftell returns Int on Windows and Long on Unix. A negative result
+     * signals that the size could not be determined, which happens when
+     * the file is too large for the return type (e.g. over 2 GiB on Windows).
+     */
     fseek(file, 0, SEEK_END)
 
-    /*
-     * ftell returns Int on Windows and Long on Unix. Normalize to ULong so
-     * the buffer size and the expected read count share one portable type.
-     */
-    val fileSize = ftell(file).toULong()
+    val rawFileSize = ftell(file)
+
+    if (rawFileSize < 0) {
+        fclose(file)
+        perror("Could not determine file size, it may be too large: $filePath")
+        return null
+    }
+
+    val fileSize = rawFileSize.toULong()
+
     rewind(file)
+
+    /*
+     * A file that does not fit into one ByteArray would truncate its size
+     * below and crash with a negative array size. Fail cleanly instead.
+     */
+    if (fileSize > Int.MAX_VALUE.toULong()) {
+        fclose(file)
+        perror("File is too large to read into memory: $fileSize bytes")
+        return null
+    }
 
     val buffer = ByteArray(fileSize.toInt())
 
     val bytesReadCount: ULong = fread(
+        /* Destination for the raw file content */
         buffer.refTo(0),
-        1.toULong(), // Number of items
-        fileSize, // Size to read
+        /* Single-byte items, so the returned count equals the byte count */
+        1.toULong(),
+        /* Number of items to read */
+        fileSize,
         file
     )
 

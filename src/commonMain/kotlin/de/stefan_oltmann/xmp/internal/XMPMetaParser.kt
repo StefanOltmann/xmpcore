@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPConst
@@ -32,6 +34,13 @@ internal object XMPMetaParser {
     private val XMP_RDF = Any()
 
     /**
+     * Maximum nesting depth of the XML containers that are searched for the RDF root. Real-world
+     * documents stay far below this, while hostile input can nest arbitrarily deep and would
+     * exhaust the stack through the recursive search.
+     */
+    private const val MAX_SEARCH_DEPTH = 512
+
+    /**
      * Parses the input source into an XMP metadata object, including
      * de-aliasing and normalisation.
      *
@@ -53,7 +62,7 @@ internal object XMPMetaParser {
 
         val xmpMetaRequired = actualOptions.getRequireXMPMeta()
 
-        val result = findRootNode(document, xmpMetaRequired, arrayOfNulls(3))
+        val result = findRootNode(document, xmpMetaRequired, arrayOfNulls(3), 0)
 
         if (result == null || result[1] !== XMP_RDF)
             throw XMPException("XMP RDF was not found.", XMPErrorConst.BADXMP)
@@ -90,6 +99,7 @@ internal object XMPMetaParser {
      * @param xmpMetaRequired flag if the xmpmeta-tag is still required, might be set
      * initially to `true`, if the parse option "REQUIRE_XMP_META" is set
      * @param result          The result array that is filled during the recursive process.
+     * @param depth           current XML nesting depth, used to bound the recursion.
      * @return Returns an array that contains the result or `null`.
      * The array contains:
      *
@@ -101,8 +111,20 @@ internal object XMPMetaParser {
     private fun findRootNode(
         root: Node,
         xmpMetaRequired: Boolean,
-        result: Array<Any?>
+        result: Array<Any?>,
+        depth: Int
     ): Array<Any?>? {
+
+        /*
+         * Reject hostile documents that nest deeper than any legitimate XMP can, before the
+         * recursion can exhaust the stack with a StackOverflowError that would escape the
+         * XMPException contract.
+         */
+        if (depth > MAX_SEARCH_DEPTH)
+            throw XMPException(
+                "Maximum nesting depth of $MAX_SEARCH_DEPTH exceeded",
+                XMPErrorConst.BADXMP
+            )
 
         /*
          * Look among this parent's content for x:xapmeta or x:xmpmeta.
@@ -129,8 +151,12 @@ internal object XMPMetaParser {
                 /* Ignore comments */
                 child.nodeType == NodeConsts.COMMENT_NODE -> continue
 
-                child.nodeType != NodeConsts.TEXT_NODE &&
-                    child.nodeType != NodeConsts.PROCESSING_INSTRUCTION_NODE -> {
+                /*
+                 * Only elements can contain or be the RDF root. Any other node type here
+                 * (e.g. a document type declaration that slipped through) is ignored instead
+                 * of crashing on an invalid cast.
+                 */
+                child.nodeType == NodeConsts.ELEMENT_NODE -> {
 
                     val childElement = child as Element
 
@@ -144,7 +170,7 @@ internal object XMPMetaParser {
                     ) {
 
                         /* By not passing the RequireXMPMeta-option, the rdf-Node will be valid */
-                        return findRootNode(child, false, result)
+                        return findRootNode(child, false, result, depth + 1)
                     }
 
                     if (!xmpMetaRequired && "RDF" == rootLocal && XMPConst.NS_RDF == rootNS) {
@@ -156,7 +182,7 @@ internal object XMPMetaParser {
                     }
 
                     /* Continue searching */
-                    val newResult = findRootNode(child, xmpMetaRequired, result)
+                    val newResult = findRootNode(child, xmpMetaRequired, result, depth + 1)
 
                     return newResult ?: continue
                 }

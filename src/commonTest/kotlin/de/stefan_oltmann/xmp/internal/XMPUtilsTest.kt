@@ -41,16 +41,22 @@ class XMPUtilsTest {
         assertFalse(XMPUtils.convertToBoolean("off"))
         assertFalse(XMPUtils.convertToBoolean("no"))
         assertFalse(XMPUtils.convertToBoolean("0"))
-        assertFalse(XMPUtils.convertToBoolean("0x0"))
     }
 
     /**
-     * Unrecognized non-numeric values convert to false, empty values are rejected.
+     * Unrecognized values like garbage or hex integers are rejected like Adobe does,
+     * empty values too.
      */
     @Test
-    fun testConvertToBooleanFallback() {
+    fun testConvertToBooleanInvalid() {
 
-        assertFalse(XMPUtils.convertToBoolean("xyz"))
+        assertFailsWith<XMPException> {
+            XMPUtils.convertToBoolean("xyz")
+        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
+
+        assertFailsWith<XMPException> {
+            XMPUtils.convertToBoolean("0x0")
+        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
 
         val ex = assertFailsWith<XMPException> {
             XMPUtils.convertToBoolean("")
@@ -145,6 +151,36 @@ class XMPUtilsTest {
 
         assertFailsWith<XMPException> {
             XMPUtils.decodeBase64("!!!")
+        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
+    }
+
+    /**
+     * XML whitespace from wrapped lines is ignored like Adobe's decoder does, while other
+     * invalid characters stay rejected.
+     */
+    @Test
+    fun testDecodeBase64IgnoresWhitespace() {
+
+        val bytes = byteArrayOf(1, 2, 3, 4, 5, 6)
+
+        val wrapped = buildString {
+            append("AQID")
+            append('\r')
+            append('\n')
+            append("BAUG")
+            append('\t')
+            append("  ")
+            append('\n')
+        }
+
+        assertContentEquals(bytes, XMPUtils.decodeBase64(wrapped))
+
+        /* Whitespace-only input decodes to empty data instead of failing. */
+        assertContentEquals(byteArrayOf(), XMPUtils.decodeBase64(" \r\n\t"))
+
+        /* Other junk between the alphabet characters remains an error. */
+        assertFailsWith<XMPException> {
+            XMPUtils.decodeBase64("AQ!ID")
         }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
     }
 }

@@ -26,7 +26,7 @@ class XMPMetaLocalizedTextTest {
 
         val property = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
 
-        assertEquals("Titel", property!!.getValue())
+        assertEquals("Titel", checkNotNull(property).getValue())
     }
 
     /**
@@ -43,7 +43,7 @@ class XMPMetaLocalizedTextTest {
 
         assertEquals(
             expected = "Deutscher Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue()
         )
     }
 
@@ -60,7 +60,7 @@ class XMPMetaLocalizedTextTest {
 
         val property = xmpMeta.getLocalizedText(XMPConst.NS_DC, "description", null, XMPConst.X_DEFAULT)
 
-        assertEquals("Beschreibung", property!!.getValue())
+        assertEquals("Beschreibung", checkNotNull(property).getValue())
     }
 
     /**
@@ -77,7 +77,7 @@ class XMPMetaLocalizedTextTest {
 
         assertEquals(
             expected = "Deutsche Beschreibung",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "description", null, "de")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "description", null, "de")).getValue()
         )
     }
 
@@ -95,11 +95,11 @@ class XMPMetaLocalizedTextTest {
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "title"))
         assertEquals(
             expected = "Der Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")).getValue()
         )
         assertEquals(
             expected = "Der Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue()
         )
     }
 
@@ -127,7 +127,7 @@ class XMPMetaLocalizedTextTest {
 
         assertEquals(
             expected = "Deutschland",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", "de", "de-CH")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", "de", "de-CH")).getValue()
         )
     }
 
@@ -157,10 +157,10 @@ class XMPMetaLocalizedTextTest {
 
         xmpMeta.setLocalizedText(XMPConst.NS_DC, "title", null, "de", "Neu")
 
-        assertEquals("Neu", xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue())
+        assertEquals("Neu", checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue())
         assertEquals(
             "Neu",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")).getValue()
         )
     }
 
@@ -189,10 +189,10 @@ class XMPMetaLocalizedTextTest {
 
         xmpMeta.setLocalizedText(XMPConst.NS_DC, "title", null, "de", "Neu")
 
-        assertEquals("Neu", xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue())
+        assertEquals("Neu", checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue())
         assertEquals(
             "Default",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")).getValue()
         )
     }
 
@@ -222,11 +222,11 @@ class XMPMetaLocalizedTextTest {
 
         xmpMeta.setLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT, "Neu")
 
-        assertEquals("Neu", xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue())
-        assertEquals("Neu", xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "fr")!!.getValue())
+        assertEquals("Neu", checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue())
+        assertEquals("Neu", checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "fr")).getValue())
         assertEquals(
             "Neu",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")).getValue()
         )
     }
 
@@ -256,10 +256,10 @@ class XMPMetaLocalizedTextTest {
         xmpMeta.setLocalizedText(XMPConst.NS_DC, "title", null, "de", "Neu")
 
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "title"))
-        assertEquals("Neu", xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue())
+        assertEquals("Neu", checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue())
         assertEquals(
             "Neu",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")).getValue()
         )
     }
 
@@ -291,11 +291,11 @@ class XMPMetaLocalizedTextTest {
         assertEquals(3, xmpMeta.countArrayItems(XMPConst.NS_DC, "title"))
         assertEquals(
             "Deutschland",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-DE")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-DE")).getValue()
         )
         assertEquals(
             "Oesterreich",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-AT")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-AT")).getValue()
         )
     }
 
@@ -327,7 +327,7 @@ class XMPMetaLocalizedTextTest {
         assertEquals(3, xmpMeta.countArrayItems(XMPConst.NS_DC, "title"))
         assertEquals(
             "Deutschland",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue()
         )
     }
 
@@ -393,11 +393,11 @@ class XMPMetaLocalizedTextTest {
 
         assertEquals(
             expected = "Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-DE")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-DE")).getValue()
         )
         assertEquals(
             expected = "Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "DE-de")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "DE-de")).getValue()
         )
     }
 
@@ -472,7 +472,7 @@ class XMPMetaLocalizedTextTest {
 
         xmpMeta.setTitle("Titel")
 
-        val property = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!
+        val property = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT))
 
         assertEquals("Titel", property.getValue())
         assertEquals("x-default", property.getLanguage())
@@ -522,7 +522,7 @@ class XMPMetaLocalizedTextTest {
 
         assertEquals(
             expected = "Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue()
+            actual = checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue()
         )
     }
 
@@ -552,10 +552,10 @@ class XMPMetaLocalizedTextTest {
 
         xmpMeta.setLocalizedText(XMPConst.NS_DC, "title", "de", "de-CH", "Neu")
 
-        assertEquals("Neu", xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-DE")!!.getValue())
+        assertEquals("Neu", checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de-DE")).getValue())
         assertEquals(
             "Neu",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")).getValue()
         )
     }
 
@@ -585,10 +585,10 @@ class XMPMetaLocalizedTextTest {
         xmpMeta.setLocalizedText(XMPConst.NS_DC, "title", null, "de", "Neu")
 
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "title"))
-        assertEquals("Neu", xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")!!.getValue())
+        assertEquals("Neu", checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")).getValue())
         assertEquals(
             "Neu",
-            xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")!!.getValue()
+            checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")).getValue()
         )
     }
 }

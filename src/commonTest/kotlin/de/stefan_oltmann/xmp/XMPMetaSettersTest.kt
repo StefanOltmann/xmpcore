@@ -30,7 +30,7 @@ class XMPMetaSettersTest {
 
         assertEquals(
             expected = "newValue",
-            actual = xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)!!.getValue()
+            actual = checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)).getValue()
         )
         assertEquals(1, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
     }
@@ -76,7 +76,7 @@ class XMPMetaSettersTest {
 
         assertEquals(
             expected = "second",
-            actual = xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)!!.getValue()
+            actual = checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)).getValue()
         )
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
     }

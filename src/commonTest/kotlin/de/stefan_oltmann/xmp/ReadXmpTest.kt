@@ -187,7 +187,7 @@ class ReadXmpTest {
     }
 
     @Test
-    fun readXmpWithTitleAndDescription() {
+    fun testReadXmpWithTitleAndDescription() {
 
         /* language=XML */
         val testXmp = """
@@ -391,7 +391,9 @@ class ReadXmpTest {
 
         assertEquals(
             expected = "Some title",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
+            ).getValue()
         )
     }
 
@@ -409,6 +411,29 @@ class ReadXmpTest {
                 <dc:title rdf:datatype="http://www.w3.org/2001/XMLSchema#string">
                   <rdf:li>child</rdf:li>
                 </dc:title>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertFailsWith<XMPException> {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
+    }
+
+    /**
+     * A CDATA section inside a property element is not a text node, so the element takes the
+     * resource property path and the CDATA child is rejected like in the Adobe Java original
+     * (whose document builder also keeps CDATA sections as separate node types).
+     */
+    @Test
+    fun testParseWithCdataSectionInLiteralPropertyThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title><![CDATA[Some title]]></dc:title>
               </rdf:Description>
             </rdf:RDF>
         """.trimIndent()

@@ -36,7 +36,9 @@ class XMPNormalizerTest {
 
         assertEquals(
             expected = "Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
+            ).getValue()
         )
 
         /* The alias name resolves to the base, so no xmp: schema may remain. */
@@ -80,7 +82,9 @@ class XMPNormalizerTest {
 
         assertEquals(
             expected = "Base",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
+            ).getValue()
         )
 
         /* The alias name resolves to the base, so no xmp: schema may remain. */
@@ -157,7 +161,9 @@ class XMPNormalizerTest {
 
         assertEquals(
             expected = "Same",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
+            ).getValue()
         )
     }
 
@@ -214,12 +220,14 @@ class XMPNormalizerTest {
 
         assertEquals(
             expected = "Eine Bildunterschrift",
-            actual = xmpMeta.getLocalizedText(
-                XMPConst.NS_DC,
-                "description",
-                null,
-                XMPConst.X_DEFAULT
-            )!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(
+                    XMPConst.NS_DC,
+                    "description",
+                    null,
+                    XMPConst.X_DEFAULT
+                )
+            ).getValue()
         )
     }
 
@@ -253,7 +261,9 @@ class XMPNormalizerTest {
 
         assertEquals(
             expected = "Base",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
+            ).getValue()
         )
 
         /* The alias name resolves to the base, so no photoshop schema may remain. */
@@ -324,7 +334,9 @@ class XMPNormalizerTest {
 
         assertEquals(
             expected = "Alias",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
+            ).getValue()
         )
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "title"))
     }
@@ -417,7 +429,9 @@ class XMPNormalizerTest {
 
         assertEquals(
             expected = "Der Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
+            ).getValue()
         )
     }
 
@@ -433,7 +447,7 @@ class XMPNormalizerTest {
 
         assertEquals(
             expected = "Autorin",
-            actual = xmpMeta.getArrayItem(XMPConst.NS_DC, "creator", 1)!!.getValue()
+            actual = checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "creator", 1)).getValue()
         )
     }
 

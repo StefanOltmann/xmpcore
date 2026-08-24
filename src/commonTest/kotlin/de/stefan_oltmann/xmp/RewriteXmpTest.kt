@@ -61,18 +61,9 @@ class RewriteXmpTest {
 
                 if (!equals) {
 
-                    SystemFileSystem
-                        .sink(Path("build/sample_${index}_formatted_compact.xmp"))
-                        .buffered()
-                        .use {
-                            it.write(actualCompactXmp.encodeToByteArray())
-                        }
+                    writeDiffArtifact("sample_${index}_formatted_compact.xmp", actualCompactXmp)
 
-                    SystemFileSystem.sink(Path("build/sample_${index}_formatted_canonical.xmp"))
-                        .buffered()
-                        .use {
-                            it.write(actualCanonicalXmp.encodeToByteArray())
-                        }
+                    writeDiffArtifact("sample_${index}_formatted_canonical.xmp", actualCanonicalXmp)
 
                     fail("XMP for sample $index looks different after rewrite.")
                 }
@@ -107,12 +98,7 @@ class RewriteXmpTest {
 
             if (!equals) {
 
-                SystemFileSystem
-                    .sink(Path("build/sample_${index}_roundtrip_compact.xmp"))
-                    .buffered()
-                    .use {
-                        it.write(newXmp.encodeToByteArray())
-                    }
+                writeDiffArtifact("sample_${index}_roundtrip_compact.xmp", newXmp)
 
                 fail("XMP for sample $index looks different after compact roundtrip.")
             }
@@ -139,12 +125,7 @@ class RewriteXmpTest {
 
             if (!equals) {
 
-                SystemFileSystem
-                    .sink(Path("build/sample_${index}_roundtrip_canonical.xmp"))
-                    .buffered()
-                    .use {
-                        it.write(newXmp.encodeToByteArray())
-                    }
+                writeDiffArtifact("sample_${index}_roundtrip_canonical.xmp", newXmp)
 
                 fail("XMP for sample $index looks different after canonical roundtrip.")
             }
@@ -171,12 +152,7 @@ class RewriteXmpTest {
 
             if (!equals) {
 
-                SystemFileSystem
-                    .sink(Path("build/sample_${index}_compact_to_canonical.xmp"))
-                    .buffered()
-                    .use {
-                        it.write(newXmp.encodeToByteArray())
-                    }
+                writeDiffArtifact("sample_${index}_compact_to_canonical.xmp", newXmp)
 
                 fail("XMP for sample $index looks different after compact to canonical conversion.")
             }
@@ -203,12 +179,7 @@ class RewriteXmpTest {
 
             if (!equals) {
 
-                SystemFileSystem
-                    .sink(Path("build/sample_${index}_canonical_to_compact.xmp"))
-                    .buffered()
-                    .use {
-                        it.write(newXmp.encodeToByteArray())
-                    }
+                writeDiffArtifact("sample_${index}_canonical_to_compact.xmp", newXmp)
 
                 fail("XMP for sample $index looks different after canonical to compact conversion.")
             }
@@ -224,6 +195,23 @@ class RewriteXmpTest {
     private fun getFormattedCanonicalXmp(index: Int): String =
         Resource("$RESOURCE_PATH/sample_${index}_formatted_canonical.xmp").readText()
 
+    /**
+     * Writes a failing comparison next to the build output for local diffing. This is best
+     * effort only: on runners where the working directory is not writable the dump is skipped
+     * instead of throwing and masking the actual assertion failure.
+     */
+    private fun writeDiffArtifact(fileName: String, content: String) {
+
+        runCatching {
+            SystemFileSystem.createDirectories(BUILD_DIR)
+
+            SystemFileSystem
+                .sink(Path("$BUILD_DIR/$fileName"))
+                .buffered()
+                .use { it.write(content.encodeToByteArray()) }
+        }
+    }
+
     companion object {
 
         /*
@@ -234,5 +222,7 @@ class RewriteXmpTest {
         const val TEST_PHOTO_COUNT = 110
 
         private const val RESOURCE_PATH: String = "de/stefan_oltmann/xmp"
+
+        private val BUILD_DIR: Path = Path("build")
     }
 }

@@ -2,6 +2,7 @@ package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPConst
 import de.stefan_oltmann.xmp.XMPException
+import de.stefan_oltmann.xmp.XMPSchemaRegistry
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -138,6 +139,12 @@ class XMPPathParserTest {
      */
     @Test
     fun testExpandQualifierSelector() {
+
+        /*
+         * The prefix must be registered here, because the test must not depend on the
+         * registration side effects of other test classes in the shared registry.
+         */
+        XMPSchemaRegistry.registerNamespace("http://example.org/xmpcore-test/", "test")
 
         val path = XMPPathParser.expandXPath(XMPConst.NS_DC, "subject[?test:qual='value']")
 
@@ -369,6 +376,22 @@ class XMPPathParserTest {
         }
 
         assertEquals(XMPErrorConst.BADSCHEMA, ex.errorCode)
+    }
+
+    /**
+     * A bracket at the very end of the path is rejected instead of reading
+     * past the end of the string.
+     */
+    @Test
+    fun testExpandBracketAtEndOfPathThrows() {
+
+        assertFailsWith<XMPException> {
+            XMPPathParser.expandXPath(XMPConst.NS_DC, "a[")
+        }.let { assertEquals(XMPErrorConst.BADXPATH, it.errorCode) }
+
+        assertFailsWith<XMPException> {
+            XMPPathParser.expandXPath(XMPConst.NS_DC, "a[dc:b=")
+        }.let { assertEquals(XMPErrorConst.BADXPATH, it.errorCode) }
     }
 
     /**

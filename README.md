@@ -1,6 +1,6 @@
 # XMP Core for Kotlin Multiplatform
 
-[![Kotlin](https://img.shields.io/badge/kotlin-2.4.10-blue.svg?logo=kotlin)](httpw://kotlinlang.org)
+[![Kotlin](https://img.shields.io/badge/kotlin-2.4.10-blue.svg?logo=kotlin)](https://kotlinlang.org)
 ![JVM](https://img.shields.io/badge/-JVM-gray.svg?style=flat)
 ![Android](https://img.shields.io/badge/-Android-gray.svg?style=flat)
 ![iOS](https://img.shields.io/badge/-iOS-gray.svg?style=flat)
@@ -15,7 +15,7 @@ This library is a port of Adobe's XMP SDK to Kotlin Multiplatform.
 ## Installation
 
 ```
-implementation("de.stefan-oltmann:xmpcore:1.7.3")
+implementation("de.stefan-oltmann:xmpcore:1.7.4")
 ```
 
 ## How to use
@@ -55,6 +55,13 @@ If you have previously used the official XMP Core Java library available on Mave
 make sure to update your imports from `com.adobe.internal.xmp`
 to `de.stefan_oltmann.xmp`.
 
+### Memory note
+
+Namespaces discovered while parsing are registered permanently in a process-global schema registry
+(like Adobe's XMP Core). Parsing a file with unknown namespaces therefore leaves small permanent
+entries behind. Applications that parse very large numbers of files with many changing namespaces
+over long uptime should keep this in mind.
+
 ## Contributions
 
 Contributions to this project are welcome! If you encounter any issues, have suggestions for
@@ -68,8 +75,9 @@ improvements, or would like to contribute new features, please feel free to subm
 
 ## License
 
-The same [BSD license](original_source/original_license.txt) applies to this project as to Adobe's
-open source XMP SDK, from which it is derived.
+The same [BSD license](LICENSE) applies to this project as to Adobe's open source XMP SDK, from
+which it is derived. See [NOTICE.md](NOTICE.md) for attributions of the original work and the
+bundled third-party libraries.
 
 Note: The original license page went offline, but you can still find it on
 [archive.org](https://web.archive.org/web/20210616112605/https://www.adobe.com/devnet/xmp/library/eula-xmp-library-java.html).

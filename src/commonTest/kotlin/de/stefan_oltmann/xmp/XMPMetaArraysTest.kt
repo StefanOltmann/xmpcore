@@ -26,8 +26,8 @@ class XMPMetaArraysTest {
         xmpMeta.appendArrayItem(XMPConst.NS_DC, "subject", PropertyOptions().setArray(true), "swiper")
 
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
-        assertEquals("fox", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)!!.getValue())
-        assertEquals("swiper", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)!!.getValue())
+        assertEquals("fox", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)).getValue())
+        assertEquals("swiper", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)).getValue())
         assertTrue(xmpMeta.doesArrayItemExist(XMPConst.NS_DC, "subject", 1))
         assertFalse(xmpMeta.doesArrayItemExist(XMPConst.NS_DC, "subject", 3))
     }
@@ -45,7 +45,7 @@ class XMPMetaArraysTest {
 
         assertEquals(
             expected = "swiper",
-            actual = xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", XMPConst.ARRAY_LAST_ITEM)!!.getValue()
+            actual = checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", XMPConst.ARRAY_LAST_ITEM)).getValue()
         )
     }
 
@@ -104,7 +104,7 @@ class XMPMetaArraysTest {
         xmpMeta.setArrayItem(XMPConst.NS_DC, "subject", 1, "bird")
 
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
-        assertEquals("bird", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)!!.getValue())
+        assertEquals("bird", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)).getValue())
     }
 
     /**
@@ -120,7 +120,7 @@ class XMPMetaArraysTest {
 
         xmpMeta.setArrayItem(XMPConst.NS_DC, "subject", XMPConst.ARRAY_LAST_ITEM, "bird")
 
-        assertEquals("bird", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)!!.getValue())
+        assertEquals("bird", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)).getValue())
     }
 
     /**
@@ -151,8 +151,8 @@ class XMPMetaArraysTest {
 
         xmpMeta.insertArrayItem(XMPConst.NS_DC, "subject", 1, "bird")
 
-        assertEquals("bird", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)!!.getValue())
-        assertEquals("fox", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)!!.getValue())
+        assertEquals("bird", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)).getValue())
+        assertEquals("fox", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)).getValue())
         assertEquals(3, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
     }
 
@@ -195,7 +195,7 @@ class XMPMetaArraysTest {
 
         xmpMeta.insertArrayItem(XMPConst.NS_DC, "subject", XMPConst.ARRAY_LAST_ITEM, "swiper")
 
-        assertEquals("swiper", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)!!.getValue())
+        assertEquals("swiper", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 2)).getValue())
     }
 
     /**
@@ -266,11 +266,14 @@ class XMPMetaArraysTest {
         xmpMeta.deleteArrayItem(XMPConst.NS_DC, "subject", 1)
 
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
-        assertEquals("swiper", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)!!.getValue())
+        assertEquals("swiper", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)).getValue())
 
         xmpMeta.deleteArrayItem(XMPConst.NS_DC, "subject", XMPConst.ARRAY_LAST_ITEM)
 
-        assertEquals("swiper", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", XMPConst.ARRAY_LAST_ITEM)!!.getValue())
+        assertEquals(
+            "swiper",
+            checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", XMPConst.ARRAY_LAST_ITEM)).getValue()
+        )
         assertEquals(1, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
     }
 
@@ -305,7 +308,9 @@ class XMPMetaArraysTest {
 
         assertEquals(
             expected = "Region A",
-            actual = xmpMeta.getStructField(XMPConst.NS_XMP, "regions[1]", XMPConst.NS_XMP, "name")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getStructField(XMPConst.NS_XMP, "regions[1]", XMPConst.NS_XMP, "name")
+            ).getValue()
         )
         assertEquals(1, xmpMeta.countArrayItems(XMPConst.NS_XMP, "regions"))
     }
@@ -415,12 +420,14 @@ class XMPMetaArraysTest {
 
         assertEquals(
             expected = "http://jane",
-            actual = xmpMeta.getStructField(
-                XMPConst.NS_XMP,
-                "creators[dc:name='Jane']",
-                XMPConst.NS_DC,
-                "url"
-            )!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getStructField(
+                    XMPConst.NS_XMP,
+                    "creators[dc:name='Jane']",
+                    XMPConst.NS_DC,
+                    "url"
+                )
+            ).getValue()
         )
     }
 
