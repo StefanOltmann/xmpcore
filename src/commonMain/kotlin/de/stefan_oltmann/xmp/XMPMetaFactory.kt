@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp
 
 import de.stefan_oltmann.xmp.internal.XMPErrorConst
@@ -15,7 +17,8 @@ import de.stefan_oltmann.xmp.options.ParseOptions
 import de.stefan_oltmann.xmp.options.SerializeOptions
 
 /**
- * Creates `XMPMeta`-instances from an `InputStream`.
+ * Creates `XMPMeta`-instances and serializes them to a String. This is the entry point for
+ * parsing XMP packets.
  */
 public object XMPMetaFactory {
 
@@ -25,9 +28,20 @@ public object XMPMetaFactory {
     @kotlin.jvm.JvmStatic
     public val versionInfo: XMPVersionInfo = XMPVersionInfo
 
+    /**
+     * Creates an empty `XMPMeta`-object.
+     */
     @kotlin.jvm.JvmStatic
     public fun create(): XMPMeta = XMPMeta()
 
+    /**
+     * Creates an `XMPMeta`-object from a string.
+     *
+     * @param packet A String containing an XMP-file.
+     * @param options Options controlling the parsing.
+     * @return Returns the `XMPMeta`-object created from the input.
+     * @throws XMPException If the file is not well-formed XML or if the parsing fails.
+     */
     @kotlin.jvm.JvmStatic
     @kotlin.jvm.JvmOverloads
     @Throws(XMPException::class)
@@ -55,6 +69,15 @@ public object XMPMetaFactory {
         }
     }
 
+    /**
+     * Serializes an `XMPMeta`-object as RDF into a string.
+     * Note: Encoding is ignored when serializing to a string.
+     *
+     * @param xmp A metadata object.
+     * @param options Options to control the serialization (see [SerializeOptions]).
+     * @return Returns a String containing the serialized RDF.
+     * @throws XMPException On serialization errors.
+     */
     @kotlin.jvm.JvmStatic
     @kotlin.jvm.JvmOverloads
     @Throws(XMPException::class)
@@ -71,7 +94,7 @@ public object XMPMetaFactory {
             if (actualOptions.getSort())
                 xmp.sort()
 
-            return XMPRDFWriter.serialize(xmp, actualOptions)
+            return XMPRDFWriter(actualOptions).serialize(xmp)
 
         } catch (ex: XMPException) {
 

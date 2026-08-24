@@ -1,5 +1,5 @@
 plugins {
-    kotlin("jvm") version "2.0.0"
+    kotlin("jvm") version "2.4.10"
 }
 
 group = "de.stefan-oltmann"
@@ -10,5 +10,5 @@ repositories {
 }
 
 dependencies {
-    implementation("de.stefan-oltmann:xmpcore:1.7.0")
+    implementation("de.stefan-oltmann:xmpcore:1.7.4")
 }

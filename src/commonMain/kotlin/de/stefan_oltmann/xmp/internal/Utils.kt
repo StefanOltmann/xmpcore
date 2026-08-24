@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPConst
@@ -38,8 +40,6 @@ internal object Utils {
      * table of XML name chars (<= 0xFF).
      */
     private val xmlNameChars = BooleanArray(XML_NAME_LENGTH)
-
-    private val controlCharRegex = Regex("[\\p{Cntrl}]")
 
     /** Init char tables. */
     init {
@@ -131,7 +131,7 @@ internal object Utils {
 
         pos++
 
-        val end = selector.length - 2 // Quote and ]
+        val end = selector.length - 2 /* Quote and ] */
 
         val value = StringBuilder(end - eq)
 
@@ -319,14 +319,55 @@ internal object Utils {
     }
 
     /**
-     * Replaces the ASCII control chars with a space.
+     * Replaces control characters with a space.
+     *
+     * Tab, LF and CR are preserved like in the Adobe original, so multi-line values survive
+     * round trips. All other control characters would make the serialized XML invalid and are
+     * therefore replaced.
      *
      * @param value a node value
      * @return Returns the cleaned up value
      */
     @kotlin.jvm.JvmStatic
-    fun replaceControlCharsWithSpace(value: String): String =
-        value.replace(controlCharRegex, " ")
+    fun replaceControlCharsWithSpace(value: String): String {
+
+        /* Fast path without allocation for values that need no replacement */
+        var needsReplacement = false
+
+        for (char in value) {
+
+            if (isReplacedControlChar(char)) {
+                needsReplacement = true
+
+                break
+            }
+        }
+
+        if (!needsReplacement)
+            return value
+
+        val buffer = StringBuilder(value.length)
+
+        for (char in value)
+            buffer.append(if (isReplacedControlChar(char)) ' ' else char)
+
+        return buffer.toString()
+    }
+
+    /**
+     * Checks whether a character is a control character that gets replaced by a space.
+     *
+     * Tab, LF and CR are excluded, matching the Adobe original.
+     *
+     * @param char the character to check
+     * @return Returns true if the character must be replaced.
+     */
+    @Suppress("MagicNumber")
+    private fun isReplacedControlChar(char: Char): Boolean =
+        (char.code <= 0x1F || char.code == 0x7F) &&
+            char != '\t' &&
+            char != '\n' &&
+            char != '\r'
 
     /**
      * Simple check if a character is a valid XML start name char.

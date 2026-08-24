@@ -1,5 +1,6 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBinary
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
 
@@ -66,6 +67,15 @@ kover {
     }
 }
 
+/*
+ * The coverage bound above only takes effect when koverVerify runs, which no
+ * lifecycle task does by default. Hooking it into "check" enforces the bound
+ * for every "build", locally and in CI.
+ */
+tasks.named("check") {
+    dependsOn(tasks.named("koverVerify"))
+}
+
 kotlin {
 
     explicitApi()
@@ -89,8 +99,20 @@ kotlin {
         withHostTest {}
     }
 
+    /*
+     * Windows reserves only ~1 MiB of stack for executables by default. The recursive RDF
+     * parser legitimately recurses up to its nesting limit, which does not fit into that
+     * budget, so the stack reservation is raised for Windows binaries and test runners.
+     * Reserving more stack does not commit physical memory.
+     */
     mingwX64("win") {
         binaries {
+
+            configureEach {
+                if (this is NativeBinary)
+                    linkerOpts("-Wl,--stack,16777216")
+            }
+
             executable(setOf(NativeBuildType.RELEASE)) {
                 entryPoint = "de.stefan_oltmann.xmp.main"
             }
@@ -280,7 +302,7 @@ mavenPublishing {
         licenses {
             license {
                 name = "The BSD License"
-                url = "https://github.com/StefanOltmann/xmpcore/blob/main/original_source/original_license.txt"
+                url = "https://github.com/StefanOltmann/xmpcore/blob/main/LICENSE"
             }
         }
 

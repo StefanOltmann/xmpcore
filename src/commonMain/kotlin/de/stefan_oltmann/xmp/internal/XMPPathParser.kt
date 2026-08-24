@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPException
@@ -44,14 +46,12 @@ internal object XMPPathParser {
 
         val expandedXPath = XMPPath()
 
-        val pos = PathPosition()
-
-        pos.path = path
-
         /*
          * Pull out the first component and do some special processing on it: add the schema
          * namespace prefix and see if it is an alias. The start must be a "qualName".
          */
+        val pos = PathPosition(path)
+
         parseRootNode(schemaNS, pos, expandedXPath)
 
         /* Now continue to process the rest of the XMPPath string. */
@@ -63,9 +63,7 @@ internal object XMPPathParser {
 
             pos.stepEnd = pos.stepBegin
 
-            var segment: XMPPathSegment
-
-            segment = if (path[pos.stepBegin] != '[') {
+            val segment = if (path[pos.stepBegin] != '[') {
 
                 /* A struct field or qualifier. */
                 parseStructSegment(pos)
@@ -78,40 +76,46 @@ internal object XMPPathParser {
 
             if (segment.kind == XMPPath.STRUCT_FIELD_STEP) {
 
-                if (segment.name!![0] == '@') {
+                var name = requireNotNull(segment.name)
 
-                    segment.name = "?" + segment.name!!.substring(1)
+                if (name.startsWith("@")) {
 
-                    if ("?xml:lang" != segment.name)
+                    name = "?" + name.substring(1)
+                    segment.name = name
+
+                    if ("?xml:lang" != name)
                         throw XMPException("Only xml:lang allowed with '@'", XMPErrorConst.BADXPATH)
                 }
 
-                if (segment.name!![0] == '?') {
+                if (name.startsWith("?")) {
 
                     pos.nameStart++
 
                     segment.kind = XMPPath.QUALIFIER_STEP
                 }
 
-                verifyQualName(pos.path!!.substring(pos.nameStart, pos.nameEnd))
+                verifyQualName(path.substring(pos.nameStart, pos.nameEnd))
 
             } else if (segment.kind == XMPPath.FIELD_SELECTOR_STEP) {
 
-                if (segment.name!![1] == '@') {
+                var name = requireNotNull(segment.name)
 
-                    segment.name = "[?" + segment.name!!.substring(2)
+                if (name[1] == '@') {
 
-                    if (!segment.name!!.startsWith("[?xml:lang="))
+                    name = "[?" + name.substring(2)
+                    segment.name = name
+
+                    if (!name.startsWith("[?xml:lang="))
                         throw XMPException("Only xml:lang allowed with '@'", XMPErrorConst.BADXPATH)
                 }
 
-                if (segment.name!![1] == '?') {
+                if (name[1] == '?') {
 
                     pos.nameStart++
 
                     segment.kind = XMPPath.QUAL_SELECTOR_STEP
 
-                    verifyQualName(pos.path!!.substring(pos.nameStart, pos.nameEnd))
+                    verifyQualName(path.substring(pos.nameStart, pos.nameEnd))
                 }
             }
 
@@ -146,7 +150,7 @@ internal object XMPPathParser {
 
         pos.nameStart = pos.stepBegin
 
-        while (pos.stepEnd < pos.path!!.length && "/[*".indexOf(pos.path!![pos.stepEnd]) < 0)
+        while (pos.stepEnd < pos.path.length && "/[*".indexOf(pos.path[pos.stepEnd]) < 0)
             pos.stepEnd++
 
         pos.nameEnd = pos.stepEnd
@@ -155,7 +159,7 @@ internal object XMPPathParser {
             throw XMPException("Empty XMPPath segment", XMPErrorConst.BADXPATH)
 
         return XMPPathSegment(
-            pos.path!!.substring(pos.stepBegin, pos.stepEnd),
+            pos.path.substring(pos.stepBegin, pos.stepEnd),
             XMPPath.STRUCT_FIELD_STEP
         )
     }
@@ -170,12 +174,15 @@ internal object XMPPathParser {
         /* Look at the character after the leading '['. */
         pos.stepEnd++
 
-        if (pos.path!![pos.stepEnd] in '0'..'9') {
+        if (pos.stepEnd >= pos.path.length)
+            throw XMPException("Missing ']' or '=' for array index", XMPErrorConst.BADXPATH)
+
+        if (pos.path[pos.stepEnd] in '0'..'9') {
 
             /* A numeric (decimal integer) array index. */
             while (
-                pos.stepEnd < pos.path!!.length &&
-                '0' <= pos.path!![pos.stepEnd] && pos.path!![pos.stepEnd] <= '9'
+                pos.stepEnd < pos.path.length &&
+                '0' <= pos.path[pos.stepEnd] && pos.path[pos.stepEnd] <= '9'
             )
                 pos.stepEnd++
 
@@ -185,17 +192,17 @@ internal object XMPPathParser {
 
             /* Could be "[last()]" or one of the selector forms. Find the ']' or '='. */
             while (
-                pos.stepEnd < pos.path!!.length && pos.path!![pos.stepEnd] != ']' &&
-                pos.path!![pos.stepEnd] != '='
+                pos.stepEnd < pos.path.length && pos.path[pos.stepEnd] != ']' &&
+                pos.path[pos.stepEnd] != '='
             )
                 pos.stepEnd++
 
-            if (pos.stepEnd >= pos.path!!.length)
+            if (pos.stepEnd >= pos.path.length)
                 throw XMPException("Missing ']' or '=' for array index", XMPErrorConst.BADXPATH)
 
-            if (pos.path!![pos.stepEnd] == ']') {
+            if (pos.path[pos.stepEnd] == ']') {
 
-                if ("[last()" != pos.path!!.substring(pos.stepBegin, pos.stepEnd))
+                if ("[last()" != pos.path.substring(pos.stepBegin, pos.stepEnd))
                     throw XMPException("Invalid non-numeric array index", XMPErrorConst.BADXPATH)
 
                 segment = XMPPathSegment(null, XMPPath.ARRAY_LAST_STEP)
@@ -208,7 +215,10 @@ internal object XMPPathParser {
                 /* Absorb the '=', remember the quote. */
                 pos.stepEnd++
 
-                val quote = pos.path!![pos.stepEnd]
+                if (pos.stepEnd >= pos.path.length)
+                    throw XMPException("Invalid quote in array selector", XMPErrorConst.BADXPATH)
+
+                val quote = pos.path[pos.stepEnd]
 
                 if (quote != '\'' && quote != '"')
                     throw XMPException("Invalid quote in array selector", XMPErrorConst.BADXPATH)
@@ -218,7 +228,7 @@ internal object XMPPathParser {
 
                 skipQuotedSelectorValue(pos, quote)
 
-                if (pos.stepEnd >= pos.path!!.length)
+                if (pos.stepEnd >= pos.path.length)
                     throw XMPException("No terminating quote for array selector", XMPErrorConst.BADXPATH)
 
                 /* Absorb the trailing quote. */
@@ -229,12 +239,12 @@ internal object XMPPathParser {
             }
         }
 
-        if (pos.stepEnd >= pos.path!!.length || pos.path!![pos.stepEnd] != ']')
+        if (pos.stepEnd >= pos.path.length || pos.path[pos.stepEnd] != ']')
             throw XMPException("Missing ']' for array index", XMPErrorConst.BADXPATH)
 
         pos.stepEnd++
 
-        segment.name = pos.path!!.substring(pos.stepBegin, pos.stepEnd)
+        segment.name = pos.path.substring(pos.stepBegin, pos.stepEnd)
 
         return segment
     }
@@ -247,12 +257,12 @@ internal object XMPPathParser {
      */
     private fun skipQuotedSelectorValue(pos: PathPosition, quote: Char) {
 
-        while (pos.stepEnd < pos.path!!.length) {
+        while (pos.stepEnd < pos.path.length) {
 
-            if (pos.path!![pos.stepEnd] == quote) {
+            if (pos.path[pos.stepEnd] == quote) {
 
                 /* Check for escaped quote */
-                if (pos.stepEnd + 1 >= pos.path!!.length || pos.path!![pos.stepEnd + 1] != quote)
+                if (pos.stepEnd + 1 >= pos.path.length || pos.path[pos.stepEnd + 1] != quote)
                     break
 
                 pos.stepEnd++
@@ -268,13 +278,13 @@ internal object XMPPathParser {
      */
     private fun parseRootNode(schemaNS: String, pos: PathPosition, expandedXPath: XMPPath) {
 
-        while (pos.stepEnd < pos.path!!.length && "/[*".indexOf(pos.path!![pos.stepEnd]) < 0)
+        while (pos.stepEnd < pos.path.length && "/[*".indexOf(pos.path[pos.stepEnd]) < 0)
             pos.stepEnd++
 
         if (pos.stepEnd == pos.stepBegin)
             throw XMPException("Empty initial XMPPath step", XMPErrorConst.BADXPATH)
 
-        val rootProp = verifyXPathRoot(schemaNS, pos.path!!.substring(pos.stepBegin, pos.stepEnd))
+        val rootProp = verifyXPathRoot(schemaNS, pos.path.substring(pos.stepBegin, pos.stepEnd))
         val aliasInfo = schemaRegistry.findAlias(rootProp)
 
         if (aliasInfo == null) {

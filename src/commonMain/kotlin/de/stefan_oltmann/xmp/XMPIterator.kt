@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp
 
 import de.stefan_oltmann.xmp.internal.QName
@@ -276,51 +278,66 @@ public class XMPIterator(
         override fun hasNext(): Boolean {
 
             if (returnProperty != null)
-                return true // HasNext has been called before
+                return true /* HasNext has been called before */
 
             /* Find next node */
-            return if (state == ITERATE_NODE) {
+            return when (state) {
 
-                reportNode()
+                ITERATE_NODE -> reportNode()
 
-            } else if (state == ITERATE_CHILDREN) {
+                ITERATE_CHILDREN -> hasChildrenLeft()
 
-                /* Only the iterator of the node returned by the last call to next() has not
-                 * started its children iteration yet, so the subtree skip belongs to it. The
-                 * terminal state keeps the subtree skipped when the parent polls again. */
-                if (skipSubtree && childrenIterator == null) {
+                ITERATE_DONE -> false
 
-                    skipSubtree = false
-
-                    state = ITERATE_DONE
-
-                    return false
-                }
-
-                if (childrenIterator == null)
-                    childrenIterator = visitedNode!!.iterateChildren()
-
-                var hasNext = iterateChildren(childrenIterator!!)
-
-                if (!hasNext && visitedNode!!.hasQualifier() && !options.isOmitQualifiers()) {
-                    state = ITERATE_QUALIFIER
-                    childrenIterator = null
-                    hasNext = hasNext()
-                }
-
-                hasNext
-
-            } else if (state == ITERATE_DONE) {
-
-                false
-
-            } else {
-
-                if (childrenIterator == null)
-                    childrenIterator = visitedNode!!.iterateQualifier()
-
-                iterateChildren(childrenIterator!!)
+                else -> hasQualifiersLeft()
             }
+        }
+
+        /**
+         * Prepares the next property while iterating the children of the visited node.
+         */
+        private fun hasChildrenLeft(): Boolean {
+
+            val node = requireNotNull(visitedNode)
+
+            /* Only the iterator of the node returned by the last call to next() has not
+             * started its children iteration yet, so the subtree skip belongs to it. The
+             * terminal state keeps the subtree skipped when the parent polls again. */
+            if (skipSubtree && childrenIterator == null) {
+
+                skipSubtree = false
+
+                state = ITERATE_DONE
+
+                return false
+            }
+
+            val iterator = childrenIterator ?: node.iterateChildren().also { childrenIterator = it }
+
+            var hasNext = iterateChildren(iterator)
+
+            if (!hasNext && node.hasQualifier() && !options.isOmitQualifiers()) {
+
+                state = ITERATE_QUALIFIER
+
+                childrenIterator = null
+
+                hasNext = hasNext()
+            }
+
+            return hasNext
+        }
+
+        /**
+         * Prepares the next property while iterating the qualifiers of the visited node.
+         */
+        private fun hasQualifiersLeft(): Boolean {
+
+            val node = requireNotNull(visitedNode)
+
+            val iterator = childrenIterator ?: node.iterateQualifier().also { childrenIterator = it }
+
+            return iterateChildren(iterator)
         }
 
         /**
@@ -401,11 +418,11 @@ public class XMPIterator(
             if (!hasNext())
                 throw NoSuchElementException("There are no more nodes to return")
 
-            val result = returnProperty
+            val result = requireNotNull(returnProperty)
 
             returnProperty = null
 
-            return result!!
+            return result
         }
 
         /**
@@ -416,12 +433,15 @@ public class XMPIterator(
          */
         protected fun accumulatePath(currNode: XMPNode, parentPath: String?, currentIndex: Int): String? {
 
+            val parent = currNode.parent
+
+            if (parent == null || currNode.options.isSchemaNode())
+                return null
+
             val separator: String
             val segmentName: String?
 
-            if (currNode.parent == null || currNode.options.isSchemaNode()) {
-                return null
-            } else if (currNode.parent!!.options.isArray()) {
+            if (parent.options.isArray()) {
                 separator = ""
                 segmentName = "[$currentIndex]"
             } else {
@@ -435,10 +455,12 @@ public class XMPIterator(
 
             } else if (options.isJustLeafname()) {
 
-                if (!segmentName!!.startsWith("?"))
-                    segmentName
+                val name = requireNotNull(segmentName)
+
+                if (!name.startsWith("?"))
+                    name
                 else
-                    segmentName.substring(1) // Qualifier
+                    name.substring(1) /* Qualifier */
 
             } else {
 

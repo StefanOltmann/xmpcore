@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp
 
 import de.stefan_oltmann.xmp.XMPConst.NS_MWG_RS
@@ -54,7 +56,43 @@ public class XMPMeta internal constructor() {
      */
     private var packetHeader: String? = null
 
+    /**
+     * Namespace URIs that parsing has registered automatically for this document so far.
+     * Used to bound how many unknown namespaces one input can introduce (see
+     * [MAX_AUTO_REGISTERED_NAMESPACES_PER_DOCUMENT]), independent of anything other
+     * documents have parsed before.
+     */
+    private val autoRegisteredNamespaces: MutableSet<String> = mutableSetOf()
+
     private val arrayOptions = PropertyOptions().setArray(true)
+
+    /**
+     * Registers a namespace that parsing encountered in this document rather than through an
+     * explicit client call. Fails with [XMPErrorConst.BADSCHEMA] once this document alone
+     * introduced [MAX_AUTO_REGISTERED_NAMESPACES_PER_DOCUMENT] namespaces.
+     *
+     * The registration is permanent for the process, like in the Adobe original; see the memory
+     * note on [XMPSchemaRegistry].
+     *
+     * @param namespaceURI    The URI for the namespace. Must be a valid XML URI.
+     * @param suggestedPrefix The suggested prefix to be used if the URI is not yet registered.
+     * @return Returns the registered prefix for this URI.
+     */
+    internal fun autoRegisterNamespace(namespaceURI: String, suggestedPrefix: String): String {
+
+        if (namespaceURI !in autoRegisteredNamespaces &&
+            autoRegisteredNamespaces.size >= MAX_AUTO_REGISTERED_NAMESPACES_PER_DOCUMENT
+        )
+            throw XMPException(
+                "Cannot register '$namespaceURI': a single document may not introduce more than "
+                    + "$MAX_AUTO_REGISTERED_NAMESPACES_PER_DOCUMENT namespaces",
+                XMPErrorConst.BADSCHEMA
+            )
+
+        autoRegisteredNamespaces.add(namespaceURI)
+
+        return XMPSchemaRegistry.registerNamespace(namespaceURI, suggestedPrefix)
+    }
 
     /*
      * ---------------------------------------------------------------------------------------------
@@ -146,7 +184,7 @@ public class XMPMeta internal constructor() {
 
             XMPValueType.DOUBLE -> convertToDouble(propNode.value)
 
-            XMPValueType.BASE64 -> decodeBase64(propNode.value!!)
+            XMPValueType.BASE64 -> decodeBase64(propNode.value.orEmpty())
 
             /*
              * Leaf values return empty string instead of null
@@ -355,7 +393,7 @@ public class XMPMeta internal constructor() {
             xmpTree = this.root,
             xpath = expandXPath(schemaNS, propName),
             createNodes = true,
-            leafOptions = verifySetOptions(options, propValue)
+            leafOptions = verifiedOptions
         ) ?: throw XMPException("Specified property does not exist", XMPErrorConst.BADXPATH)
 
         setNode(propNode, propValue, verifiedOptions, false)
@@ -1023,19 +1061,21 @@ public class XMPMeta internal constructor() {
 
         return if (match != XMPNodeUtils.CLT_NO_VALUES) {
 
+            val node = requireNotNull(itemNode)
+
             object : XMPProperty {
 
                 override fun getValue(): String =
-                    itemNode!!.value!!
+                    node.value.orEmpty()
 
                 override fun getOptions(): PropertyOptions =
-                    itemNode!!.options
+                    node.options
 
                 override fun getLanguage(): String =
-                    itemNode!!.getQualifier(1).value!!
+                    node.getQualifier(1).value.orEmpty()
 
                 override fun toString(): String =
-                    itemNode!!.value.toString()
+                    node.value.toString()
             }
 
         } else {
@@ -1162,20 +1202,30 @@ public class XMPMeta internal constructor() {
 
             XMPNodeUtils.CLT_SPECIFIC_MATCH -> if (!specificXDefault) {
 
+                val node = requireNotNull(itemNode)
+
                 /* Update the specific item, update x-default if it matches the old value. */
-                val updateXDefault = haveXDefault && xdItem != itemNode && xdItem != null &&
-                    xdItem.value == itemNode!!.value
+                val updateXDefault = haveXDefault && xdItem != node && xdItem != null &&
+                    xdItem.value == node.value
 
                 if (updateXDefault)
                     xdItem.value = itemValue
 
                 /* ! Do this after the x-default check! */
-                itemNode!!.value = itemValue
+                node.value = itemValue
 
             } else {
 
-                /* Update all items whose values match the old x-default value. */
-                check(haveXDefault && xdItem == itemNode)
+                /*
+                 * Update all items whose values match the old x-default value. Only XMPException
+                 * may escape this public API, so the impossible state is reported as an internal
+                 * failure instead of an IllegalStateException from check().
+                 */
+                if (!haveXDefault || xdItem != itemNode)
+                    throw XMPException(
+                        "Unexpected result from ChooseLocalizedText",
+                        XMPErrorConst.INTERNALFAILURE
+                    )
 
                 val it = arrayNode.iterateChildren()
 
@@ -1196,15 +1246,17 @@ public class XMPMeta internal constructor() {
 
             XMPNodeUtils.CLT_SINGLE_GENERIC -> {
 
+                val node = requireNotNull(itemNode)
+
                 /* Update the generic item, update x-default if it matches the old value. */
-                val updateXDefault = haveXDefault && xdItem != itemNode && xdItem != null &&
-                    xdItem.value == itemNode!!.value
+                val updateXDefault = haveXDefault && xdItem != node && xdItem != null &&
+                    xdItem.value == node.value
 
                 if (updateXDefault)
                     xdItem.value = itemValue
 
                 /* ! Do this after the x-default check! */
-                itemNode!!.value = itemValue
+                node.value = itemValue
             }
 
             XMPNodeUtils.CLT_FIRST_ITEM, XMPNodeUtils.CLT_MULTIPLE_GENERIC -> {
@@ -1224,7 +1276,10 @@ public class XMPMeta internal constructor() {
                 appendLangItem(arrayNode, normalizedSpecificLang, itemValue)
             }
 
-            else -> // Does not happen under normal circumstances
+            /*
+             * Does not happen under normal circumstances.
+             */
+            else ->
                 throw XMPException(
                     "Unexpected result from ChooseLocalizedText",
                     XMPErrorConst.INTERNALFAILURE
@@ -1484,9 +1539,11 @@ public class XMPMeta internal constructor() {
         packetHeader
 
     /**
-     * Sets the packetHeader attributes, only used by the parser.
+     * Sets the packet header content captured during parsing.
+     * Only the parser needs this; clients must not desynchronize the header from the parsed
+     * content, so the mutation point stays module-internal.
      */
-    public fun setPacketHeader(packetHeader: String?) {
+    internal fun setPacketHeader(packetHeader: String?) {
         this.packetHeader = packetHeader
     }
 
@@ -1518,34 +1575,77 @@ public class XMPMeta internal constructor() {
      * Note that these are not standard API for XMP Core.
      */
 
-    /** Returns the ISO date string. */
+    /**
+     * Returns the ISO date string of exif:DateTimeOriginal,
+     * the moment the picture was originally taken.
+     *
+     * @return Returns the ISO date string or null if the property is not present.
+     */
     public fun getDateTimeOriginal(): String? =
         getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal")
 
+    /**
+     * Sets exif:DateTimeOriginal from an ISO date string.
+     *
+     * @param isoDate The ISO date string to set.
+     */
     public fun setDateTimeOriginal(isoDate: String): Unit =
         setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", isoDate)
 
+    /**
+     * Deletes exif:DateTimeOriginal.
+     * It is not an error if the property does not exist.
+     */
     public fun deleteDateTimeOriginal(): Unit =
         deleteProperty(XMPConst.NS_EXIF, "DateTimeOriginal")
 
+    /**
+     * @return Returns tiff:Orientation as integer or null if the property is not present.
+     */
     public fun getOrientation(): Int? =
         getPropertyInteger(XMPConst.NS_TIFF, "Orientation")
 
+    /**
+     * Sets tiff:Orientation as integer.
+     *
+     * @param orientation The orientation value to set.
+     */
     public fun setOrientation(orientation: Int): Unit =
         setPropertyInteger(XMPConst.NS_TIFF, "Orientation", orientation)
 
+    /**
+     * @return Returns xmp:Rating as integer or null if the property is not present.
+     */
     public fun getRating(): Int? =
         getPropertyInteger(XMPConst.NS_XMP, "Rating")
 
+    /**
+     * Sets xmp:Rating as integer.
+     *
+     * @param rating The rating value to set.
+     */
     public fun setRating(rating: Int): Unit =
         setPropertyInteger(XMPConst.NS_XMP, "Rating", rating)
 
+    /**
+     * @return Returns exif:GPSLatitude in DDM format or null if the property is not present.
+     */
     public fun getGpsLatitude(): String? =
         getPropertyString(XMPConst.NS_EXIF, "GPSLatitude")
 
+    /**
+     * @return Returns exif:GPSLongitude in DDM format or null if the property is not present.
+     */
     public fun getGpsLongitude(): String? =
         getPropertyString(XMPConst.NS_EXIF, "GPSLongitude")
 
+    /**
+     * Writes the GPS coordinates in DDM format together with the GPSVersionID
+     * that ExifTool expects next to them.
+     *
+     * @param latitudeDdm The latitude in DDM format.
+     * @param longitudeDdm The longitude in DDM format.
+     */
     public fun setGpsCoordinates(
         latitudeDdm: String,
         longitudeDdm: String
@@ -1558,6 +1658,10 @@ public class XMPMeta internal constructor() {
         setProperty(XMPConst.NS_EXIF, "GPSLongitude", longitudeDdm)
     }
 
+    /**
+     * Deletes the GPS coordinates and the accompanying GPSVersionID.
+     * It is not an error if the properties do not exist.
+     */
     public fun deleteGpsCoordinates() {
 
         deleteProperty(XMPConst.NS_EXIF, "GPSVersionID")
@@ -1642,6 +1746,12 @@ public class XMPMeta internal constructor() {
         return keywords
     }
 
+    /**
+     * Replaces dc:subject with a bag containing the given keywords.
+     * The keywords are written sorted; passing an empty set deletes the property.
+     *
+     * @param keywords The keywords to set.
+     */
     public fun setKeywords(keywords: Set<String>) {
 
         /* Delete existing entries, if any */
@@ -1698,6 +1808,13 @@ public class XMPMeta internal constructor() {
         return keywords
     }
 
+    /**
+     * Returns the faces stored in mwg-rs:Regions, keyed by their region name.
+     * Regions without type "Face" or with incomplete area data are skipped;
+     * duplicate names keep the last region.
+     *
+     * @return Returns the face regions or an empty map if none are present.
+     */
     public fun getFaces(): Map<String, XMPRegionArea> {
 
         val regionListExists = doesPropertyExist(XMPConst.NS_MWG_RS, XMP_MWG_RS_REGION_LIST)
@@ -1740,6 +1857,14 @@ public class XMPMeta internal constructor() {
         return faces
     }
 
+    /**
+     * Replaces mwg-rs:Regions with face regions normalized to the given image size.
+     * Passing an empty map deletes the Regions structure.
+     *
+     * @param faces The face regions keyed by name.
+     * @param widthPx The image width in pixels the areas are normalized to.
+     * @param heightPx The image height in pixels the areas are normalized to.
+     */
     public fun setFaces(
         faces: Map<String, XMPRegionArea>,
         widthPx: Int,
@@ -1847,6 +1972,9 @@ public class XMPMeta internal constructor() {
         }
     }
 
+    /**
+     * @return Returns the names stored in Iptc4xmpExt:PersonInImage or an empty set.
+     */
     public fun getPersonsInImage(): Set<String> {
 
         val personsInImageCount =
@@ -1871,6 +1999,12 @@ public class XMPMeta internal constructor() {
         return personsInImage
     }
 
+    /**
+     * Replaces Iptc4xmpExt:PersonInImage with a bag containing the given names.
+     * The names are written sorted; passing an empty set deletes the property.
+     *
+     * @param personsInImage The person names to set.
+     */
     public fun setPersonsInImage(
         personsInImage: Set<String>
     ): Unit {
@@ -1925,21 +2059,13 @@ public class XMPMeta internal constructor() {
                 options = null
             )
 
-            @Suppress("LoopWithTooManyJumpStatements")
-            while (iterator.hasNext()) {
-
-                val propertyInfo = iterator.next()
-
-                if (!propertyInfo.getOptions().hasQualifiers())
-                    continue
-
-                val value = propertyInfo.getValue()
-
-                if (value.isNullOrBlank())
-                    continue
-
-                locationName = value
-            }
+            /* Like getTitle() the first non-empty localization wins. */
+            locationName = iterator.asSequence()
+                .firstOrNull { propertyInfo ->
+                    propertyInfo.getOptions().hasQualifiers() &&
+                        !propertyInfo.getValue().isNullOrBlank()
+                }
+                ?.getValue()
 
             location =
                 getPropertyString(
@@ -2006,6 +2132,15 @@ public class XMPMeta internal constructor() {
 
     /*
      * Remove old location informations and set them to the specified.
+     */
+
+    /**
+     * Removes all location information and writes them to the specified value.
+     * The data is stored in Iptc4xmpExt:LocationShown, with the older
+     * Iptc4xmpCore:Location and photoshop:City/State/Country fields written
+     * for completeness. Passing null only deletes the existing entries.
+     *
+     * @param xmpLocation The location to set or null to delete all locations.
      */
     public fun setLocation(
         xmpLocation: XMPLocation?
@@ -2121,6 +2256,9 @@ public class XMPMeta internal constructor() {
             setProperty(XMPConst.NS_PHOTOSHOP, "Country", xmpLocation.country)
     }
 
+    /**
+     * @return Returns the first non-empty localization of dc:title or null if absent.
+     */
     public fun getTitle(): String? {
 
         val iterator: XMPIterator = iterator(
@@ -2148,6 +2286,12 @@ public class XMPMeta internal constructor() {
         return null
     }
 
+    /**
+     * Replaces dc:title with a single x-default localized text.
+     * Passing null deletes the property.
+     *
+     * @param title The title to set or null to delete it.
+     */
     public fun setTitle(title: String?) {
 
         deleteProperty(XMPConst.NS_DC, "title")
@@ -2178,6 +2322,9 @@ public class XMPMeta internal constructor() {
         )
     }
 
+    /**
+     * @return Returns the first non-empty localization of dc:description or null if absent.
+     */
     public fun getDescription(): String? {
 
         val iterator: XMPIterator = iterator(
@@ -2205,6 +2352,12 @@ public class XMPMeta internal constructor() {
         return null
     }
 
+    /**
+     * Replaces dc:description with a single x-default localized text.
+     * Passing null deletes the property.
+     *
+     * @param description The description to set or null to delete it.
+     */
     public fun setDescription(description: String?) {
 
         deleteProperty(XMPConst.NS_DC, "description")
@@ -2233,6 +2386,20 @@ public class XMPMeta internal constructor() {
             qualName = "lang",
             qualValue = XMPConst.X_DEFAULT
         )
+    }
+
+    public companion object {
+
+        /**
+         * Maximum number of namespaces a single document may register automatically while
+         * being parsed.
+         *
+         * Legitimate files declare a handful of well-known namespaces, while hostile input can
+         * contain unlimited unique ones. Bounding the registrations per document keeps the
+         * worst-case registry snapshot-copy work negligible without ever failing a valid
+         * document because of what other documents registered before.
+         */
+        internal const val MAX_AUTO_REGISTERED_NAMESPACES_PER_DOCUMENT = 1024
     }
 
     private enum class XMPValueType {

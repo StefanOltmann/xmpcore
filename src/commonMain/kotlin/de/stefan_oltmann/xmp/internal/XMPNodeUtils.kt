@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPConst
@@ -60,6 +62,9 @@ internal object XMPNodeUtils {
         /* Make sure that its the root */
         require(tree.parent == null)
 
+        if (namespaceURI == null)
+            return null
+
         var schemaNode = tree.findChildByName(namespaceURI)
 
         if (schemaNode == null && createNodes) {
@@ -73,7 +78,7 @@ internal object XMPNodeUtils {
             schemaNode.isImplicit = true
 
             /* Only previously registered schema namespaces are allowed in the XMP tree. */
-            var prefix = XMPSchemaRegistry.getNamespacePrefix(namespaceURI!!)
+            var prefix = XMPSchemaRegistry.getNamespacePrefix(namespaceURI)
 
             if (prefix == null) {
 
@@ -168,8 +173,9 @@ internal object XMPNodeUtils {
 
         if (currNode.isImplicit) {
 
-            currNode.isImplicit = false // Clear the implicit node bit.
-            rootImplicitNode = currNode // Save the top most implicit node.
+            currNode.isImplicit = false /* Clear the implicit node bit. */
+
+            rootImplicitNode = currNode /* Save the top most implicit node. */
         }
 
         /* Now follow the remaining steps of the original XMPPath. */
@@ -177,39 +183,45 @@ internal object XMPNodeUtils {
 
             for (index in 1 until xpath.size()) {
 
-                currNode = followXPathStep(currNode!!, xpath.getSegment(index), createNodes)
+                val parentNode = requireNotNull(currNode)
 
-                if (currNode == null) {
+                val stepNode = followXPathStep(parentNode, xpath.getSegment(index), createNodes)
+
+                if (stepNode == null) {
 
                     /* Delete implicitly created nodes, if any */
                     if (createNodes && rootImplicitNode != null)
                         deleteNode(rootImplicitNode)
 
                     return null
+                }
 
-                } else if (currNode.isImplicit) {
+                currNode = stepNode
+
+                if (stepNode.isImplicit) {
 
                     /* Clear the implicit node flag */
-                    currNode.isImplicit = false
+                    stepNode.isImplicit = false
 
                     /*
                      * If node is an ALIAS (can be only in root step, auto-create array
                      * when the path has been resolved from a not simple alias type
                      */
-                    if (index == 1 &&
-                        xpath.getSegment(index).isAlias && xpath.getSegment(index).aliasForm != 0
-                    ) {
-                        currNode.options.setOption(xpath.getSegment(index).aliasForm, true)
-                    } else if ( // "CheckImplicitStruct" in C++
+                    val segment = xpath.getSegment(index)
+
+                    if (index == 1 && segment.isAlias && segment.aliasForm != 0) {
+                        stepNode.options.setOption(segment.aliasForm, true)
+                    } else if (
+                    /* "CheckImplicitStruct" in C++ */
                         index < xpath.size() - 1 &&
-                        xpath.getSegment(index).kind == XMPPath.STRUCT_FIELD_STEP &&
-                        !currNode.options.isCompositeProperty()
+                        segment.kind == XMPPath.STRUCT_FIELD_STEP &&
+                        !stepNode.options.isCompositeProperty()
                     ) {
-                        currNode.options.setStruct(true)
+                        stepNode.options.setStruct(true)
                     }
 
                     if (rootImplicitNode == null)
-                        rootImplicitNode = currNode // Save the top most implicit node.
+                        rootImplicitNode = stepNode /* Save the top most implicit node. */
                 }
             }
 
@@ -223,10 +235,12 @@ internal object XMPNodeUtils {
         }
 
         /* Set options only if a node has been successful created */
-        if (rootImplicitNode != null && leafOptions != null)
-            currNode.options.mergeWith(leafOptions)
+        val resultNode = requireNotNull(currNode)
 
-        return currNode
+        if (rootImplicitNode != null && leafOptions != null)
+            resultNode.options.mergeWith(leafOptions)
+
+        return resultNode
     }
 
     /**
@@ -238,16 +252,20 @@ internal object XMPNodeUtils {
     @kotlin.jvm.JvmStatic
     fun deleteNode(node: XMPNode) {
 
-        val parent = node.parent
+        val parent = requireNotNull(node.parent) { "Deleted node has no parent" }
 
         if (node.options.isQualifier())
-            parent!!.removeQualifier(node)
+            parent.removeQualifier(node)
         else
-            parent!!.removeChild(node)
+            parent.removeChild(node)
 
         /* Delete empty Schema nodes */
-        if (!parent.hasChildren() && parent.options.isSchemaNode())
-            parent.parent!!.removeChild(parent)
+        if (!parent.hasChildren() && parent.options.isSchemaNode()) {
+
+            val schemaParent = requireNotNull(parent.parent)
+
+            schemaParent.removeChild(parent)
+        }
     }
 
     /**
@@ -261,10 +279,10 @@ internal object XMPNodeUtils {
 
         val strValue = serializeNodeValue(value)
 
-        if (!(node.options.isQualifier() && XMPConst.XML_LANG == node.name))
-            node.value = strValue
+        node.value = if (node.options.isQualifier() && XMPConst.XML_LANG == node.name)
+            normalizeLangValue(requireNotNull(strValue))
         else
-            node.value = normalizeLangValue(strValue!!)
+            strValue
     }
 
     /**
@@ -344,24 +362,29 @@ internal object XMPNodeUtils {
         if (stepKind == XMPPath.STRUCT_FIELD_STEP) {
             nextNode = findChildNode(parentNode, nextStep.name, createNodes)
         } else if (stepKind == XMPPath.QUALIFIER_STEP) {
-            nextNode = findQualifierNode(parentNode, nextStep.name!!.substring(1), createNodes)
+            nextNode = findQualifierNode(parentNode, requireNotNull(nextStep.name).substring(1), createNodes)
         } else {
 
-            /* This is an array indexing step. First get the index, then get the node. */
+            /*
+             * This is an array indexing step. First get the index, then get the node.
+             * All indexing steps carry a name, only their kind differs.
+             */
             if (!parentNode.options.isArray())
                 throw XMPException("Indexing applied to non-array", XMPErrorConst.BADXPATH)
+
+            val stepName = requireNotNull(nextStep.name)
 
             val index = when (stepKind) {
 
                 XMPPath.ARRAY_INDEX_STEP ->
-                    findIndexedItem(parentNode, nextStep.name!!, createNodes)
+                    findIndexedItem(parentNode, stepName, createNodes)
 
                 XMPPath.ARRAY_LAST_STEP ->
                     parentNode.getChildrenLength()
 
                 XMPPath.FIELD_SELECTOR_STEP -> {
 
-                    val result = splitNameAndValue(nextStep.name!!)
+                    val result = splitNameAndValue(stepName)
                     val fieldName = result[0]
                     val fieldValue = result[1]
 
@@ -370,7 +393,7 @@ internal object XMPNodeUtils {
 
                 XMPPath.QUAL_SELECTOR_STEP -> {
 
-                    val result = splitNameAndValue(nextStep.name!!)
+                    val result = splitNameAndValue(stepName)
                     val qualName = result[0]
                     val qualValue = result[1]
 
@@ -398,11 +421,11 @@ internal object XMPNodeUtils {
      *
      * *Note:* On entry, the qualName parameter must not have the leading '?' from the XMPPath step.
      */
-    private fun findQualifierNode(parent: XMPNode?, qualName: String, createNodes: Boolean): XMPNode? {
+    private fun findQualifierNode(parent: XMPNode, qualName: String, createNodes: Boolean): XMPNode? {
 
         require(!qualName.startsWith("?"))
 
-        var qualNode = parent!!.findQualifierByName(qualName)
+        var qualNode = parent.findQualifierByName(qualName)
 
         if (qualNode == null && createNodes) {
             qualNode = XMPNode(qualName, null)
@@ -459,12 +482,12 @@ internal object XMPNodeUtils {
      * @param fieldValue
      * @return Returns the index of the field if found, otherwise -1.
      */
-    private fun lookupFieldSelector(arrayNode: XMPNode?, fieldName: String, fieldValue: String): Int {
+    private fun lookupFieldSelector(arrayNode: XMPNode, fieldName: String, fieldValue: String): Int {
 
         var result = -1
         var index = 1
 
-        while (index <= arrayNode!!.getChildrenLength() && result < 0) {
+        while (index <= arrayNode.getChildrenLength() && result < 0) {
 
             val currItem = arrayNode.getChild(index)
 
@@ -657,7 +680,7 @@ internal object XMPNodeUtils {
                 specificLang == currLang ->
                     return arrayOf(CLT_SPECIFIC_MATCH, currItem)
 
-                genericLang != null && currLang!!.startsWith(genericLang) -> {
+                genericLang != null && currLang?.startsWith(genericLang) == true -> {
 
                     if (resultNode == null)
                         resultNode = currItem
@@ -683,7 +706,10 @@ internal object XMPNodeUtils {
             xDefault != null ->
                 arrayOf(CLT_XDEFAULT, xDefault)
 
-            else -> // Everything failed, choose the first item.
+            /*
+             * Everything failed, choose the first item.
+             */
+            else ->
                 arrayOf(CLT_FIRST_ITEM, arrayNode.getChild(1))
         }
     }
@@ -692,9 +718,9 @@ internal object XMPNodeUtils {
      * Looks for the appropriate language item in a text alternative array.item
      * Returns the index if the language has been found, -1 otherwise.
      */
-    fun lookupLanguageItem(arrayNode: XMPNode?, language: String): Int {
+    fun lookupLanguageItem(arrayNode: XMPNode, language: String): Int {
 
-        if (!arrayNode!!.options.isArray())
+        if (!arrayNode.options.isArray())
             throw XMPException("Language item must be used on array", XMPErrorConst.BADXPATH)
 
         for (index in 1..arrayNode.getChildrenLength()) {

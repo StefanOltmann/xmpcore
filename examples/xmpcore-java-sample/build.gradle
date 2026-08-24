@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'de.stefan-oltmann:xmpcore:1.7.0'
+    implementation 'de.stefan-oltmann:xmpcore:1.7.4'
 }
 
 // Needed to make it work for the Gradle java plugin
@@ -20,7 +20,10 @@ dependencies {
 def platformAttr = Attribute.of("org.jetbrains.kotlin.platform.type", String)
 
 configurations.configureEach {
-    attributes {
-        attribute platformAttr, "jvm"
+    /* Only resolvable configurations may receive attributes in current Gradle versions. */
+    if (canBeResolved) {
+        attributes {
+            attribute platformAttr, "jvm"
+        }
     }
 }

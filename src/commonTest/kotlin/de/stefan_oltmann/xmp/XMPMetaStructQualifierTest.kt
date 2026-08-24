@@ -27,7 +27,9 @@ class XMPMetaStructQualifierTest {
         assertTrue(xmpMeta.doesStructFieldExist(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "title"))
         assertEquals(
             expected = "Titel",
-            actual = xmpMeta.getStructField(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "title")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getStructField(XMPConst.NS_XMP, "struct", XMPConst.NS_DC, "title")
+            ).getValue()
         )
     }
 
@@ -115,7 +117,9 @@ class XMPMetaStructQualifierTest {
         assertTrue(xmpMeta.doesQualifierExist(XMPConst.NS_XMP, "prop", qualifierNamespace, "custom"))
         assertEquals(
             expected = "qualValue",
-            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", qualifierNamespace, "custom")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", qualifierNamespace, "custom")
+            ).getValue()
         )
     }
 
@@ -191,7 +195,9 @@ class XMPMetaStructQualifierTest {
 
         assertEquals(
             expected = "v",
-            actual = xmpMeta.getQualifier(XMPConst.NS_DC, "subject[1]", qualifierNamespace, "custom")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getQualifier(XMPConst.NS_DC, "subject[1]", qualifierNamespace, "custom")
+            ).getValue()
         )
     }
 
@@ -207,7 +213,9 @@ class XMPMetaStructQualifierTest {
 
         assertEquals(
             expected = "x-default",
-            actual = xmpMeta.getQualifier(XMPConst.NS_DC, "title[1]", XMPConst.NS_XML, "lang")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getQualifier(XMPConst.NS_DC, "title[1]", XMPConst.NS_XML, "lang")
+            ).getValue()
         )
     }
 }

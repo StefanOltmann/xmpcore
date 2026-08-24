@@ -191,7 +191,7 @@ class XMPSchemaRegistryFeaturesTest {
             AliasOptions().setArrayAltText(true)
         )
 
-        val alias = XMPSchemaRegistry.resolveAlias(namespace, "AltProp")!!
+        val alias = checkNotNull(XMPSchemaRegistry.resolveAlias(namespace, "AltProp"))
 
         assertTrue(alias.getAliasForm().isArrayAltText())
         assertTrue(alias.getAliasForm().isArray())
@@ -354,7 +354,7 @@ class XMPSchemaRegistryFeaturesTest {
     @Test
     fun testAliasInfoToString() {
 
-        val alias = XMPSchemaRegistry.resolveAlias(XMPConst.NS_XMP, "Title")!!
+        val alias = checkNotNull(XMPSchemaRegistry.resolveAlias(XMPConst.NS_XMP, "Title"))
 
         val stringForm = alias.toString()
 

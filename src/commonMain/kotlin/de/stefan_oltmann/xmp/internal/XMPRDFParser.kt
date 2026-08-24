@@ -1,17 +1,20 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPConst
 import de.stefan_oltmann.xmp.XMPException
 import de.stefan_oltmann.xmp.XMPMeta
 import de.stefan_oltmann.xmp.XMPSchemaRegistry
+import de.stefan_oltmann.xmp.internal.XMPRDFParser.MAX_NESTING_DEPTH
 import de.stefan_oltmann.xmp.options.ParseOptions
 import de.stefan_oltmann.xmp.options.PropertyOptions
 import nl.adaptivity.xmlutil.dom.NodeConsts
@@ -110,6 +113,13 @@ internal object XMPRDFParser {
     private const val MAX_PROPERTY_ATTRIBUTES = 3
 
     /**
+     * Maximum nesting depth of RDF node and property elements. Real-world XMP stays far below
+     * this, while uncrafted input can nest arbitrarily deep and would exhaust the stack through
+     * the recursive descent parser.
+     */
+    private const val MAX_NESTING_DEPTH = 512
+
+    /**
      * The main parsing method. The XML tree is walked through from the root node and and XMP tree
      * is created. This is a raw parse, the normalisation of the XMP tree happens outside.
      *
@@ -145,14 +155,41 @@ internal object XMPRDFParser {
 
         for (index in 0 until rdfRdfNode.childNodes.length) {
 
-            val child = rdfRdfNode.childNodes.item(index)!!
+            val child = requireNotNull(rdfRdfNode.childNodes.item(index))
 
             /* Filter whitespace nodes. */
             if (isWhitespaceNode(child))
                 continue
 
-            parseRdfNodeElement(xmp, xmp.root, child as Element, true, options)
+            /*
+             * Skip comments, they carry no data. This matches the tolerance
+             * of parseRdfPropertyElementList.
+             */
+            if (child.nodeType == NodeConsts.COMMENT_NODE)
+                continue
+
+            if (child.nodeType != NodeConsts.ELEMENT_NODE)
+                throw XMPException(
+                    "Expected element node not found. Found type: ${child.nodeType}",
+                    XMPErrorConst.BADRDF
+                )
+
+            parseRdfNodeElement(xmp, xmp.root, child as Element, true, options, 0)
         }
+    }
+
+    /**
+     * Rejects input whose element nesting exceeds [MAX_NESTING_DEPTH] before the recursion can
+     * exhaust the stack, so hostile files fail with a normal parse error instead of a
+     * `StackOverflowError`.
+     */
+    private fun checkNestingDepth(depth: Int) {
+
+        if (depth > MAX_NESTING_DEPTH)
+            throw XMPException(
+                "Maximum nesting depth of $MAX_NESTING_DEPTH exceeded",
+                XMPErrorConst.BADRDF
+            )
     }
 
     /**
@@ -167,14 +204,24 @@ internal object XMPRDFParser {
      *
      * A node element URI is rdf:Description or anything else that is not an RDF
      * term.
+     *
+     * @param xmp        the xmp metadata object that is generated
+     * @param xmpParent  the parent xmp node
+     * @param xmlNode    the XML node element
+     * @param isTopLevel flag if the node is a top-level node
+     * @param options    ParseOptions to indicate the parse options provided by the client
+     * @param depth      current element nesting depth, used to bound the recursion
      */
     private fun parseRdfNodeElement(
         xmp: XMPMeta,
         xmpParent: XMPNode,
         xmlNode: Element,
         isTopLevel: Boolean,
-        options: ParseOptions
+        options: ParseOptions,
+        depth: Int
     ) {
+
+        checkNestingDepth(depth)
 
         val nodeTerm = getRDFTermKind(xmlNode)
 
@@ -185,7 +232,7 @@ internal object XMPRDFParser {
             throw XMPException("Top level typed node not allowed", XMPErrorConst.BADXMP)
 
         parseRdfNodeElementAttrs(xmp, xmpParent, xmlNode, isTopLevel)
-        parseRdfPropertyElementList(xmp, xmpParent, xmlNode, isTopLevel, options)
+        parseRdfPropertyElementList(xmp, xmpParent, xmlNode, isTopLevel, options, depth + 1)
     }
 
     /**
@@ -263,9 +310,11 @@ internal object XMPRDFParser {
          * the XMP tree name if it doesn't have a name yet. Make sure this name
          * matches the XMP tree name.
          */
-        if (xmpParent.name != null && xmpParent.name!!.isNotEmpty()) {
+        val existingName = xmpParent.name
 
-            if (xmpParent.name != attribute.value)
+        if (!existingName.isNullOrEmpty()) {
+
+            if (existingName != attribute.value)
                 throw XMPException(
                     "Mismatched top level rdf:about values",
                     XMPErrorConst.BADXMP
@@ -285,19 +334,21 @@ internal object XMPRDFParser {
      * @param xmlParent  the currently processed XML node
      * @param isTopLevel Flag if the node is a top-level node
      * @param options    ParseOptions to indicate the parse options provided by the client
+     * @param depth      current element nesting depth, used to bound the recursion
      */
     @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
     private fun parseRdfPropertyElementList(
         xmp: XMPMeta,
         xmpParent: XMPNode,
-        xmlParent: Node?,
+        xmlParent: Node,
         isTopLevel: Boolean,
-        options: ParseOptions
+        options: ParseOptions,
+        depth: Int
     ) {
 
-        for (index in 0 until xmlParent!!.childNodes.length) {
+        for (index in 0 until xmlParent.childNodes.length) {
 
-            val childNode = xmlParent.childNodes.item(index)!!
+            val childNode = requireNotNull(xmlParent.childNodes.item(index))
 
             /* Skip whitespaces */
             if (isWhitespaceNode(childNode))
@@ -318,7 +369,7 @@ internal object XMPRDFParser {
                     XMPErrorConst.BADRDF
                 )
 
-            parseRdfPropertyElement(xmp, xmpParent, childNode as Element, isTopLevel, options)
+            parseRdfPropertyElement(xmp, xmpParent, childNode as Element, isTopLevel, options, depth)
         }
     }
 
@@ -374,6 +425,13 @@ internal object XMPRDFParser {
      *
      * NOTE: The RDF syntax does not explicitly include the xml:lang attribute although it can
      * appear in many of these. We have to allow for it in the attibute counts below.
+     *
+     * @param xmp        the xmp metadata object that is generated
+     * @param xmpParent  the parent xmp node
+     * @param xmlNode    the XML property element
+     * @param isTopLevel flag if the node is a top-level node
+     * @param options    ParseOptions to indicate the parse options provided by the client
+     * @param depth      current element nesting depth, used to bound the recursion
      */
     @Suppress("NestedBlockDepth", "UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
     private fun parseRdfPropertyElement(
@@ -381,8 +439,11 @@ internal object XMPRDFParser {
         xmpParent: XMPNode,
         xmlNode: Element,
         isTopLevel: Boolean,
-        options: ParseOptions
+        options: ParseOptions,
+        depth: Int
     ) {
+
+        checkNestingDepth(depth)
 
         val nodeTerm = getRDFTermKind(xmlNode)
 
@@ -450,7 +511,7 @@ internal object XMPRDFParser {
                             throw XMPException("Literal property element not allowed", XMPErrorConst.BADXMP)
 
                         "Resource" == attrValue ->
-                            parseTypeResourcePropertyElement(xmp, xmpParent, xmlNode, isTopLevel, options)
+                            parseTypeResourcePropertyElement(xmp, xmpParent, xmlNode, isTopLevel, options, depth)
 
                         "Collection" == attrValue ->
                             throw XMPException("Collection property element forbidden", XMPErrorConst.BADXMP)
@@ -475,7 +536,7 @@ internal object XMPRDFParser {
 
                     if (currentChild?.nodeType != NodeConsts.TEXT_NODE) {
 
-                        parseRdfResourcePropertyElement(xmp, xmpParent, xmlNode, isTopLevel, options)
+                        parseRdfResourcePropertyElement(xmp, xmpParent, xmlNode, isTopLevel, options, depth)
 
                         return
                     }
@@ -499,13 +560,21 @@ internal object XMPRDFParser {
      * This handles structs using an rdf:Description node,
      * arrays using rdf:Bag/Seq/Alt, and typedNodes. It also catches and cleans up qualified
      * properties written with rdf:Description and rdf:value.
+     *
+     * @param xmp        the xmp metadata object that is generated
+     * @param xmpParent  the parent xmp node
+     * @param xmlNode    the XML property element
+     * @param isTopLevel flag if the node is a top-level node
+     * @param options    ParseOptions to indicate the parse options provided by the client
+     * @param depth      current element nesting depth, used to bound the recursion
      */
     private fun parseRdfResourcePropertyElement(
         xmp: XMPMeta,
         xmpParent: XMPNode,
         xmlNode: Element,
         isTopLevel: Boolean,
-        options: ParseOptions
+        options: ParseOptions,
+        depth: Int
     ) {
 
         /* Strip old "punchcard" chaff which has on the prefix "iX:". */
@@ -536,7 +605,7 @@ internal object XMPRDFParser {
 
         for (index in 0 until xmlNode.childNodes.length) {
 
-            val currentChild = xmlNode.childNodes.item(index)!!
+            val currentChild = requireNotNull(xmlNode.childNodes.item(index))
 
             if (isWhitespaceNode(currentChild))
                 continue
@@ -546,7 +615,7 @@ internal object XMPRDFParser {
 
             if (currentChild.nodeType == NodeConsts.ELEMENT_NODE) {
 
-                processResourcePropertyChild(xmp, newCompound, currentChild as Element, options)
+                processResourcePropertyChild(xmp, newCompound, currentChild as Element, options, depth)
 
                 found = true
 
@@ -570,12 +639,14 @@ internal object XMPRDFParser {
      * @param newCompound  the compound node of the resource property element
      * @param currentChild the XML child element
      * @param options      ParseOptions to indicate the parse options provided by the client
+     * @param depth        current element nesting depth, used to bound the recursion
      */
     private fun processResourcePropertyChild(
         xmp: XMPMeta,
         newCompound: XMPNode,
         currentChild: Element,
-        options: ParseOptions
+        options: ParseOptions,
+        depth: Int
     ) {
 
         val isRDF = XMPConst.NS_RDF == currentChild.namespaceURI
@@ -611,7 +682,7 @@ internal object XMPRDFParser {
             }
         }
 
-        parseRdfNodeElement(xmp, newCompound, currentChild, false, options)
+        parseRdfNodeElement(xmp, newCompound, currentChild, false, options, depth + 1)
 
         if (newCompound.hasValueChild)
             fixupQualifiedNode(newCompound)
@@ -656,7 +727,11 @@ internal object XMPRDFParser {
                 throw XMPException("Invalid attribute for literal property element", XMPErrorConst.BADRDF)
         }
 
-        var textValue = ""
+        /*
+         * Literal elements can arrive as many adjacent text chunks (e.g. split CDATA sections),
+         * so the chunks are appended into one builder instead of copying the buffer per chunk.
+         */
+        val textValue = StringBuilder()
 
         for (index in 0 until xmlNode.childNodes.length) {
 
@@ -667,10 +742,10 @@ internal object XMPRDFParser {
 
             child as Text
 
-            textValue += child.data
+            textValue.append(child.data)
         }
 
-        newChild.value = textValue
+        newChild.value = textValue.toString()
     }
 
     /**
@@ -682,13 +757,21 @@ internal object XMPRDFParser {
      *
      * Add a new struct node with a qualifier for the possible rdf:ID attribute.
      * Then process the XML child nodes to get the struct fields.
+     *
+     * @param xmp        the xmp metadata object that is generated
+     * @param xmpParent  the parent xmp node
+     * @param xmlNode    the XML property element
+     * @param isTopLevel flag if the node is a top-level node
+     * @param options    ParseOptions to indicate the parse options provided by the client
+     * @param depth      current element nesting depth, used to bound the recursion
      */
     private fun parseTypeResourcePropertyElement(
         xmp: XMPMeta,
         xmpParent: XMPNode,
         xmlNode: Element,
         isTopLevel: Boolean,
-        options: ParseOptions
+        options: ParseOptions,
+        depth: Int
     ) {
 
         val newStruct = addChildNode(xmp, xmpParent, xmlNode, "", isTopLevel)
@@ -709,7 +792,8 @@ internal object XMPRDFParser {
                 XMPConst.NS_RDF == attribute.namespaceURI &&
                 ("ID" == attribute.localName || "parseType" == attribute.localName)
             ) {
-                continue // The caller ensured the value is "Resource". Ignore all rdf:ID attributes.
+                /* The caller ensured the value is "Resource". Ignore all rdf:ID attributes. */
+                continue
             } else {
                 throw XMPException(
                     "Invalid attribute for ParseTypeResource property element", XMPErrorConst.BADRDF
@@ -717,7 +801,7 @@ internal object XMPRDFParser {
             }
         }
 
-        parseRdfPropertyElementList(xmp, newStruct, xmlNode, false, options)
+        parseRdfPropertyElementList(xmp, newStruct, xmlNode, false, options, depth + 1)
 
         if (newStruct.hasValueChild)
             fixupQualifiedNode(newStruct)
@@ -765,7 +849,7 @@ internal object XMPRDFParser {
         var hasResourceAttr = false
         var hasNodeIDAttr = false
         var hasValueAttr = false
-        var valueNode: Node? = null // ! Can come from rdf:value or rdf:resource.
+        var valueNode: Node? = null /* Can come from rdf:value or rdf:resource. */
 
         if (xmlNode.childNodes.length > 0)
             throw XMPException(
@@ -969,7 +1053,7 @@ internal object XMPRDFParser {
             else
                 DEFAULT_PREFIX
 
-            prefix = XMPSchemaRegistry.registerNamespace(namespace, prefix)
+            prefix = xmp.autoRegisterNamespace(namespace, prefix)
         }
 
         val xmlNodeLocalName = when {
@@ -1000,7 +1084,7 @@ internal object XMPRDFParser {
 
             checkNotNull(schemaNode) { "SchemaNode should have been created." }
 
-            schemaNode.isImplicit = false // Clear the implicit node bit.
+            schemaNode.isImplicit = false /* Clear the implicit node bit. */
 
             /*
              * *** Should use "opt &= ~flag" (no conditional),

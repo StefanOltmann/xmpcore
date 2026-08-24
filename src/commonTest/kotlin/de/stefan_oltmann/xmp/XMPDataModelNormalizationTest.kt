@@ -28,7 +28,7 @@ class XMPDataModelNormalizationTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(1, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
-        assertEquals("fox", xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)!!.getValue())
+        assertEquals("fox", checkNotNull(xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", 1)).getValue())
     }
 
     /**
@@ -52,7 +52,9 @@ class XMPDataModelNormalizationTest {
 
         assertEquals(
             expected = "Titel",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, XMPConst.X_DEFAULT)
+            ).getValue()
         )
     }
 
@@ -81,7 +83,9 @@ class XMPDataModelNormalizationTest {
 
         assertEquals(
             expected = "Ein Kommentar",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_EXIF, "UserComment", null, "x-repair")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_EXIF, "UserComment", null, "x-repair")
+            ).getValue()
         )
     }
 
@@ -114,7 +118,9 @@ class XMPDataModelNormalizationTest {
         assertEquals(1, xmpMeta.countArrayItems(XMPConst.NS_EXIF, "UserComment"))
         assertEquals(
             expected = "Behalten",
-            actual = xmpMeta.getLocalizedText(XMPConst.NS_EXIF, "UserComment", null, "x-repair")!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(XMPConst.NS_EXIF, "UserComment", null, "x-repair")
+            ).getValue()
         )
     }
 
@@ -142,12 +148,14 @@ class XMPDataModelNormalizationTest {
 
         assertEquals(
             expected = "Nutzungsbedingungen",
-            actual = xmpMeta.getLocalizedText(
-                XMPConst.NS_XMP_RIGHTS,
-                "UsageTerms",
-                null,
-                "x-repair"
-            )!!.getValue()
+            actual = checkNotNull(
+                xmpMeta.getLocalizedText(
+                    XMPConst.NS_XMP_RIGHTS,
+                    "UsageTerms",
+                    null,
+                    "x-repair"
+                )
+            ).getValue()
         )
     }
 

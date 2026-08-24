@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPConst
@@ -63,9 +65,11 @@ internal object XMPNormalizer {
      */
     private fun tweakOldXMP(tree: XMPNode) {
 
-        if (tree.name != null && tree.name!!.length >= Utils.UUID_LENGTH) {
+        val treeName = tree.name ?: return
 
-            var nameStr = tree.name!!.lowercase()
+        if (treeName.length >= Utils.UUID_LENGTH) {
+
+            var nameStr = treeName.lowercase()
 
             if (nameStr.startsWith(UUID_PREFIX))
                 nameStr = nameStr.removePrefix(UUID_PREFIX)
@@ -144,8 +148,17 @@ internal object XMPNormalizer {
 
             } else if (currProp.options.isSimple()) {
 
-                /* Create a new array and add the current property as child, if it was formerly simple */
-                val newArray = XMPNode(currProp.name, null, arrayForm)
+                /*
+                 * Create a new array and add the current property as child, if it was formerly simple.
+                 * The form template is copied: handing the shared instance to a live node would let
+                 * any later option mutation (clients can reach node options through getProperty())
+                 * corrupt the process-global templates and silently change all future normalizations.
+                 */
+                val newArray = XMPNode(
+                    name = currProp.name,
+                    value = null,
+                    options = PropertyOptions(arrayForm.getOptions())
+                )
 
                 currProp.name = XMPConst.ARRAY_ITEM_NAME
                 newArray.addChild(currProp)
@@ -188,8 +201,9 @@ internal object XMPNormalizer {
      */
     private fun repairAltText(arrayNode: XMPNode?) {
 
+        /* Already OK or not even an array. */
         if (arrayNode == null || !arrayNode.options.isArray())
-            return // Already OK or not even an array.
+            return
 
         /* Fix options */
         arrayNode.options.setArrayOrdered(true).setArrayAlternate(true).setArrayAltText(true)
@@ -282,7 +296,7 @@ internal object XMPNormalizer {
     ) {
 
         /* Find the base path, look for the base schema and root node. */
-        val info = XMPSchemaRegistry.findAlias(currProp.name!!)
+        val info = XMPSchemaRegistry.findAlias(requireNotNull(currProp.name))
 
         if (info != null) {
 

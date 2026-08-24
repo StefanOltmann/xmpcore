@@ -37,7 +37,7 @@ class XMPQualifiedPropertyTest {
         assertTrue(xmpMeta.doesQualifierExist(XMPConst.NS_XMP, "prop", XMPConst.NS_DC, "sub"))
         assertEquals(
             expected = "Sub",
-            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_DC, "sub")!!.getValue()
+            actual = checkNotNull(xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_DC, "sub")).getValue()
         )
     }
 
@@ -62,7 +62,7 @@ class XMPQualifiedPropertyTest {
         assertEquals(5, xmpMeta.getPropertyInteger(XMPConst.NS_XMP, "Rating"))
         assertEquals(
             expected = "n1",
-            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "Rating", XMPConst.NS_XMP, "note")!!.getValue()
+            actual = checkNotNull(xmpMeta.getQualifier(XMPConst.NS_XMP, "Rating", XMPConst.NS_XMP, "note")).getValue()
         )
     }
 
@@ -89,7 +89,7 @@ class XMPQualifiedPropertyTest {
         assertEquals("Titel", xmpMeta.getPropertyString(XMPConst.NS_XMP, "prop"))
         assertEquals(
             expected = "de",
-            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_XML, "lang")!!.getValue()
+            actual = checkNotNull(xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_XML, "lang")).getValue()
         )
     }
 
@@ -118,7 +118,7 @@ class XMPQualifiedPropertyTest {
         assertEquals("Wert", xmpMeta.getPropertyString(XMPConst.NS_XMP, "prop"))
         assertEquals(
             expected = "de",
-            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_XML, "lang")!!.getValue()
+            actual = checkNotNull(xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_XML, "lang")).getValue()
         )
     }
 
@@ -148,11 +148,11 @@ class XMPQualifiedPropertyTest {
 
         assertEquals(
             expected = "v1",
-            actual = xmpMeta.getStructField(XMPConst.NS_XMP, "prop", XMPConst.NS_DC, "q")!!.getValue()
+            actual = checkNotNull(xmpMeta.getStructField(XMPConst.NS_XMP, "prop", XMPConst.NS_DC, "q")).getValue()
         )
         assertEquals(
             expected = "v2",
-            actual = xmpMeta.getStructField(XMPConst.NS_XMP, "prop", XMPConst.NS_XMP, "r")!!.getValue()
+            actual = checkNotNull(xmpMeta.getStructField(XMPConst.NS_XMP, "prop", XMPConst.NS_XMP, "r")).getValue()
         )
     }
 
@@ -180,13 +180,13 @@ class XMPQualifiedPropertyTest {
 
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
-        val property = xmpMeta.getProperty(XMPConst.NS_XMP, "prop")!!
+        val property = checkNotNull(xmpMeta.getProperty(XMPConst.NS_XMP, "prop"))
 
         assertEquals("u", property.getValue())
         assertTrue(property.getOptions().isURI())
         assertEquals(
             expected = "v",
-            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_DC, "q")!!.getValue()
+            actual = checkNotNull(xmpMeta.getQualifier(XMPConst.NS_XMP, "prop", XMPConst.NS_DC, "q")).getValue()
         )
     }
 
@@ -213,13 +213,13 @@ class XMPQualifiedPropertyTest {
 
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
-        val property = xmpMeta.getProperty(XMPConst.NS_XMP, "p")!!
+        val property = checkNotNull(xmpMeta.getProperty(XMPConst.NS_XMP, "p"))
 
         assertEquals("u", property.getValue())
         assertTrue(property.getOptions().isURI())
         assertEquals(
             expected = "v",
-            actual = xmpMeta.getQualifier(XMPConst.NS_XMP, "p", qualifierNamespace, "q")!!.getValue()
+            actual = checkNotNull(xmpMeta.getQualifier(XMPConst.NS_XMP, "p", qualifierNamespace, "q")).getValue()
         )
     }
 
@@ -295,7 +295,7 @@ class XMPQualifiedPropertyTest {
 
         assertEquals(
             expected = "v",
-            actual = xmpMeta.getStructField(XMPConst.NS_XMP, "s", XMPConst.NS_DC, "f")!!.getValue()
+            actual = checkNotNull(xmpMeta.getStructField(XMPConst.NS_XMP, "s", XMPConst.NS_DC, "f")).getValue()
         )
         assertTrue(xmpMeta.doesQualifierExist(XMPConst.NS_XMP, "s", XMPConst.NS_XML, "lang"))
     }

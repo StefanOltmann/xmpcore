@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.internal
 
 import de.stefan_oltmann.xmp.XMPException
@@ -17,6 +19,11 @@ import kotlin.io.encoding.ExperimentalEncodingApi
  * Java default conversion utilities.
  */
 internal object XMPUtils {
+
+    /**
+     * The XML whitespace characters that Adobe's base64 decoder ignores.
+     */
+    private val BASE64_WHITESPACE = charArrayOf(' ', '\t', '\r', '\n')
 
     /**
      * Convert from string to Boolean.
@@ -38,16 +45,23 @@ internal object XMPUtils {
 
         val valueLowercase = value.lowercase()
 
-        try {
+        /* First try interpretation as Integer (anything not 0 is true) */
+        val asInteger = valueLowercase.toIntOrNull()
 
-            /* First try interpretation as Integer (anything not 0 is true) */
-            return valueLowercase.toInt() != 0
+        if (asInteger != null)
+            return asInteger != 0
 
-        } catch (ex: NumberFormatException) {
+        return when (valueLowercase) {
 
-            /* Fallback to other common true values */
-            return "true" == valueLowercase || "t" == valueLowercase ||
-                "on" == valueLowercase || "yes" == valueLowercase
+            "true", "t", "on", "yes" -> true
+
+            "false", "f", "off", "no" -> false
+
+            /*
+             * Like Adobe, an unrecognized string must surface as an error instead of
+             * silently reporting a confident false for corrupted property values.
+             */
+            else -> throw XMPException("Invalid Boolean string", XMPErrorConst.BADVALUE)
         }
     }
 
@@ -110,9 +124,20 @@ internal object XMPUtils {
     @kotlin.jvm.JvmStatic
     fun decodeBase64(base64String: String): ByteArray {
 
+        /*
+         * Real-world packets wrap long base64 values across lines. XML whitespace inside the
+         * data must be ignored like Adobe's decoder does; every other character outside the
+         * alphabet stays an error so corrupted values are not silently accepted.
+         */
+        val compactBase64 = buildString {
+            for (char in base64String)
+                if (char !in BASE64_WHITESPACE)
+                    append(char)
+        }
+
         try {
 
-            return Base64.decode(base64String.encodeToByteArray())
+            return Base64.decode(compactBase64.encodeToByteArray())
 
         } catch (ex: Throwable) {
             throw XMPException("Invalid base64 string", XMPErrorConst.BADVALUE, ex)

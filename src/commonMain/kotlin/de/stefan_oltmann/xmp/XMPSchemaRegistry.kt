@@ -1,13 +1,17 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp
 
+import de.stefan_oltmann.xmp.XMPSchemaRegistry.registerStandardAliases
+import de.stefan_oltmann.xmp.internal.SnapshotRef
 import de.stefan_oltmann.xmp.internal.Utils.isXMLNameNS
 import de.stefan_oltmann.xmp.internal.XMPErrorConst
 import de.stefan_oltmann.xmp.internal.XMPNodeUtils
@@ -40,25 +44,55 @@ import de.stefan_oltmann.xmp.options.AliasOptions
  * first item of an array of structures.
  *
  * There is only one single instance used by the toolkit.
+ *
+ * Thread safety: parsing mutates this process-global registry whenever it encounters
+ * an unknown namespace, possibly from multiple threads at once. Every mutation therefore
+ * publishes a new immutable [Snapshot] through an atomic reference. Readers work on a
+ * consistent snapshot without locking and writers retry on conflict, so no update can be
+ * lost or interleaved. This restores the safety of the synchronized methods of the ported
+ * Adobe original.
+ *
+ * Memory note: namespaces that parsing discovers in unknown files are registered permanently,
+ * so a service that parses very large numbers of files with ever-changing namespaces will see
+ * this process-global registry grow slowly over time. This matches the Adobe original; callers
+ * with such workloads need to account for it. Removing entries later through [deleteNamespace]
+ * is only safe once no parsed `XMPMeta` object that uses the namespace is still serialized.
  */
 @Suppress("TooManyFunctions")
 public object XMPSchemaRegistry {
 
     /**
-     * a map from a namespace URI to its registered prefix.
+     * Immutable snapshot of all registered namespaces, prefixes and aliases.
+     * A snapshot is never modified after publication.
      */
-    private val namespaceToPrefixMap: MutableMap<String, String> = mutableMapOf()
+    private class Snapshot(
+
+        /**
+         * a map from a namespace URI to its registered prefix (with trailing colon).
+         */
+        val namespaceToPrefix: Map<String, String>,
+
+        /**
+         * a map from a prefix (with trailing colon) to the associated namespace URI.
+         */
+        val prefixToNamespace: Map<String, String>,
+
+        /**
+         * a map of all registered aliases from a qname to an [XMPAliasInfo]-object.
+         */
+        val aliases: Map<String, XMPAliasInfo>
+    )
 
     /**
-     * a map from a prefix to the associated namespace URI.
+     * The currently published snapshot, replaced atomically on every mutation.
      */
-    private val prefixToNamespaceMap: MutableMap<String, String> = mutableMapOf()
-
-    /**
-     * a map of all registered aliases.
-     * The map is a relationship from a qname to an `XMPAliasInfo`-object.
-     */
-    private val aliasMap: MutableMap<String, XMPAliasInfo> = mutableMapOf()
+    private val snapshot = SnapshotRef(
+        Snapshot(
+            namespaceToPrefix = emptyMap(),
+            prefixToNamespace = emptyMap(),
+            aliases = emptyMap()
+        )
+    )
 
     /**
      * The pattern that must not be contained in simple properties.
@@ -117,37 +151,43 @@ public object XMPSchemaRegistry {
         if (!isXMLNameNS(actualSuggestedPrefix.substring(0, actualSuggestedPrefix.length - 1)))
             throw XMPException("The prefix is a bad XML name", XMPErrorConst.BADXML)
 
-        val registeredPrefix = namespaceToPrefixMap[namespaceURI]
-        val registeredNS = prefixToNamespaceMap[actualSuggestedPrefix]
+        /* Retry loop: compute against a snapshot, swap atomically, retry on concurrent change. */
 
-        /* Return the actual prefix */
-        if (registeredPrefix != null)
-            return registeredPrefix
+        while (true) {
 
-        if (registeredNS != null) {
+            val current = snapshot.value
 
-            /*
-             * The namespace is new, but the prefix is already engaged,
-             * we generate a new prefix out of the suggested
-             */
-            var generatedPrefix = actualSuggestedPrefix
+            /* Return the existing prefix if the URI is already registered. */
+            val registeredPrefix = current.namespaceToPrefix[namespaceURI]
 
-            var i = 1
+            if (registeredPrefix != null)
+                return registeredPrefix
 
-            while (prefixToNamespaceMap.containsKey(generatedPrefix)) {
-                generatedPrefix =
-                    actualSuggestedPrefix.substring(0, actualSuggestedPrefix.length - 1) + "_" + i + "_:"
-                i++
+            var prefix = actualSuggestedPrefix
+
+            if (current.prefixToNamespace.containsKey(prefix)) {
+
+                /*
+                 * The namespace is new, but the prefix is already engaged,
+                 * we generate a new prefix out of the suggested
+                 */
+                var i = 1
+
+                while (current.prefixToNamespace.containsKey(prefix)) {
+                    prefix = actualSuggestedPrefix.dropLast(1) + "_" + i + "_:"
+                    i++
+                }
             }
 
-            actualSuggestedPrefix = generatedPrefix
+            val next = Snapshot(
+                namespaceToPrefix = current.namespaceToPrefix + (namespaceURI to prefix),
+                prefixToNamespace = current.prefixToNamespace + (prefix to namespaceURI),
+                aliases = current.aliases
+            )
+
+            if (snapshot.compareAndSet(current, next))
+                return prefix
         }
-
-        prefixToNamespaceMap[actualSuggestedPrefix] = namespaceURI
-        namespaceToPrefixMap[namespaceURI] = actualSuggestedPrefix
-
-        /* Return the suggested prefix */
-        return actualSuggestedPrefix
     }
 
     /**
@@ -159,7 +199,7 @@ public object XMPSchemaRegistry {
      * @return Returns the prefix registered for this namespace URI or null.
      */
     public fun getNamespacePrefix(namespaceURI: String): String? =
-        namespaceToPrefixMap[namespaceURI]
+        snapshot.value.namespaceToPrefix[namespaceURI]
 
     /**
      * Obtain the URI for a registered namespace prefix.
@@ -176,15 +216,15 @@ public object XMPSchemaRegistry {
         if (!actualNamespacePrefix.endsWith(":"))
             actualNamespacePrefix += ":"
 
-        return prefixToNamespaceMap[actualNamespacePrefix]
+        return snapshot.value.prefixToNamespace[actualNamespacePrefix]
     }
 
     /**
-     * @return Returns the registered prefix/namespace-pairs as map, where the keys are the
-     * namespaces and the values are the prefixes.
+     * @return Returns the registered prefix/namespace-pairs as read-only map,
+     * where the keys are the namespaces and the values are the prefixes.
      */
     public fun getNamespaces(): Map<String, String> =
-        namespaceToPrefixMap
+        snapshot.value.namespaceToPrefix
 
     /**
      * Deletes a namespace from the registry.
@@ -196,19 +236,36 @@ public object XMPSchemaRegistry {
      */
     public fun deleteNamespace(namespaceURI: String): Unit {
 
-        val prefixToDelete = getNamespacePrefix(namespaceURI) ?: return
+        /* Retry loop: remove both entries from one snapshot, swap atomically, retry on conflict. */
 
-        namespaceToPrefixMap.remove(namespaceURI)
-        prefixToNamespaceMap.remove(prefixToDelete)
+        while (true) {
+
+            val current = snapshot.value
+
+            val prefixToDelete = current.namespaceToPrefix[namespaceURI] ?: return
+
+            val next = Snapshot(
+                namespaceToPrefix = current.namespaceToPrefix - namespaceURI,
+                prefixToNamespace = current.prefixToNamespace - prefixToDelete,
+                aliases = current.aliases
+            )
+
+            if (snapshot.compareAndSet(current, next))
+                return
+        }
     }
 
+    /**
+     * @return Returns the registered namespace/prefix-pairs as read-only map,
+     * where the keys are the prefixes and the values are the namespaces.
+     */
     public fun getPrefixes(): Map<String, String> =
-        prefixToNamespaceMap
+        snapshot.value.prefixToNamespace
 
     /**
      * Register the standard namespaces of schemas and types that are included in the XMP
      * Specification and some other Adobe private namespaces.
-     * Note: This method is not lock because only called by the constructor.
+     * Note: This method is only called by the constructor.
      */
     private fun registerStandardNamespaces() {
 
@@ -307,7 +364,7 @@ public object XMPSchemaRegistry {
 
         val aliasPrefix = getNamespacePrefix(aliasNS) ?: return null
 
-        return aliasMap[aliasPrefix + aliasProp]
+        return snapshot.value.aliases[aliasPrefix + aliasProp]
     }
 
     /**
@@ -318,32 +375,27 @@ public object XMPSchemaRegistry {
      *         schema and property is registered.
      */
     public fun findAlias(qname: String): XMPAliasInfo? =
-        aliasMap[qname]
+        snapshot.value.aliases[qname]
 
     /**
      * Collects all aliases that are contained in the provided namespace.
-     * If nothing is found, an empty array is returned.
+     * If nothing is found, an empty set is returned.
      *
      * @param aliasNS a schema namespace URI
      * @return Returns all alias infos from aliases that are contained in the provided namespace.
      */
     public fun findAliases(aliasNS: String): Set<XMPAliasInfo> {
 
-        val prefix = getNamespacePrefix(aliasNS)
+        val current = snapshot.value
 
-        if (prefix == null)
-            return emptySet()
+        val prefix = current.namespaceToPrefix[aliasNS] ?: return emptySet()
 
         val result = mutableSetOf<XMPAliasInfo>()
 
-        for (qname in aliasMap.keys) {
+        for ((qname, alias) in current.aliases) {
 
-            if (qname.startsWith(prefix)) {
-
-                val alias = findAlias(qname) ?: continue
-
+            if (qname.startsWith(prefix))
                 result.add(alias)
-            }
         }
 
         return result
@@ -359,9 +411,8 @@ public object XMPSchemaRegistry {
      * first item in the array, or to the 'x-default' item in an alt-text array.
      * Multiple alias names may map to the same actual, as long as the forms
      * match. It is a no-op to reregister an alias in an identical fashion.
-     * Note: This method is not locking because only called by registerStandardAliases
-     * which is only called by the constructor.
-     * Note2: The method is only package-private so that it can be tested with unittests
+     * Note: This method is only called by [registerStandardAliases] during
+     * initialisation and by clients registering custom aliases.
      *
      * @param aliasNS    The namespace URI for the alias. Must not be null or the empty
      * string.
@@ -413,52 +464,65 @@ public object XMPSchemaRegistry {
         if (simplePropertyPattern.containsMatchIn(aliasProp) || simplePropertyPattern.containsMatchIn(actualProp))
             throw XMPException("Alias and actual property names must be simple", XMPErrorConst.BADXPATH)
 
-        /* Check if both namespaces are registered */
-        val aliasPrefix = getNamespacePrefix(aliasNS)
-        val actualPrefix = getNamespacePrefix(actualNS)
+        /* Retry loop: validate against a snapshot, swap atomically, retry on concurrent change. */
 
-        if (aliasPrefix == null)
-            throw XMPException("Alias namespace is not registered", XMPErrorConst.BADSCHEMA)
-        else if (actualPrefix == null)
-            throw XMPException("Actual namespace is not registered", XMPErrorConst.BADSCHEMA)
+        while (true) {
 
-        val key = aliasPrefix + aliasProp
+            val current = snapshot.value
 
-        /* Check if alias is already existing */
-        if (aliasMap.containsKey(key))
-            throw XMPException("Alias is already existing", XMPErrorConst.BADPARAM)
-        else if (aliasMap.containsKey(actualPrefix + actualProp))
-            throw XMPException(
-                "Actual property is already an alias, use the base property", XMPErrorConst.BADPARAM
+            /* Check if both namespaces are registered */
+            val aliasPrefix = current.namespaceToPrefix[aliasNS]
+                ?: throw XMPException("Alias namespace is not registered", XMPErrorConst.BADSCHEMA)
+
+            val actualPrefix = current.namespaceToPrefix[actualNS]
+                ?: throw XMPException("Actual namespace is not registered", XMPErrorConst.BADSCHEMA)
+
+            val key = aliasPrefix + aliasProp
+
+            /* Check if alias is already existing */
+            if (current.aliases.containsKey(key))
+                throw XMPException("Alias is already existing", XMPErrorConst.BADPARAM)
+
+            if (current.aliases.containsKey(actualPrefix + actualProp))
+                throw XMPException(
+                    "Actual property is already an alias, use the base property", XMPErrorConst.BADPARAM
+                )
+
+            val aliasInfo: XMPAliasInfo = object : XMPAliasInfo {
+
+                override fun getNamespace(): String = actualNS
+
+                override fun getPrefix(): String = actualPrefix
+
+                override fun getPropName(): String = actualProp
+
+                override fun getAliasForm(): AliasOptions = aliasOpts
+
+                override fun toString(): String =
+                    actualPrefix + actualProp + " NS(" + actualNS + "), FORM (" + getAliasForm() + ")"
+            }
+
+            val next = Snapshot(
+                namespaceToPrefix = current.namespaceToPrefix,
+                prefixToNamespace = current.prefixToNamespace,
+                aliases = current.aliases + (key to aliasInfo)
             )
 
-        val aliasInfo: XMPAliasInfo = object : XMPAliasInfo {
-
-            override fun getNamespace(): String = actualNS
-
-            override fun getPrefix(): String = actualPrefix
-
-            override fun getPropName(): String = actualProp
-
-            override fun getAliasForm(): AliasOptions = aliasOpts
-
-            override fun toString(): String =
-                actualPrefix + actualProp + " NS(" + actualNS + "), FORM (" + getAliasForm() + ")"
+            if (snapshot.compareAndSet(current, next))
+                return
         }
-
-        aliasMap[key] = aliasInfo
     }
 
     /**
-     * @return Returns the registered aliases as map, where the key is the "qname" (prefix and name)
-     * and the value an `XMPAliasInfo`-object.
+     * @return Returns the registered aliases as read-only map, where the key is the "qname"
+     * (prefix and name) and the value an `XMPAliasInfo`-object.
      */
     public fun getAliases(): Map<String, XMPAliasInfo> =
-        aliasMap
+        snapshot.value.aliases
 
     /**
      * Register the standard aliases.
-     * Note: This method is not lock because only called by the constructor.
+     * Note: This method is only called by the constructor.
      */
     @Suppress("StringLiteralDuplication", "LongMethod")
     private fun registerStandardAliases() {

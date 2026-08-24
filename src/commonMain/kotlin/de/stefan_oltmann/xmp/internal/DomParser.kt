@@ -15,13 +15,45 @@ internal object DomParser {
     private const val SINGLE_SELF_CLOSING_RDF_TAG =
         """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>"""
 
+    /**
+     * Marker of an XML DOCTYPE declaration. The keyword is case-sensitive per the XML
+     * specification, so this exact spelling covers every well-formed declaration.
+     */
+    private const val DOCTYPE_MARKER = "<!DOCTYPE"
+
     @OptIn(XmlUtilInternal::class, ExperimentalXmlUtilApi::class)
-    fun parseDocumentFromString(input: String): Document =
-        try {
+    fun parseDocumentFromString(input: String): Document {
+
+        /*
+         * Checked on the raw input before anything else, so neither the initial parse nor the
+         * corrupted-file recovery can process or salvage a DOCTYPE-carrying document by
+         * slicing around the declaration.
+         */
+        rejectDoctype(input)
+
+        return try {
             parseDocumentFromStringInternal(input)
         } catch (ex: Exception) {
             parseCorruptedDocument(input, ex)
         }
+    }
+
+    /**
+     * Rejects documents containing a DOCTYPE declaration.
+     *
+     * XMP never uses DTDs. Untrusted input declaring internal or external entities must be
+     * turned away before any parsing happens, so entities can never be expanded (billion
+     * laughs) or resolved (XXE). Checking the raw input up front also keeps the corrupted-file
+     * recovery below from salvaging a DOCTYPE document by slicing around the declaration.
+     */
+    private fun rejectDoctype(input: String) {
+
+        if (input.contains(DOCTYPE_MARKER))
+            throw XMPException(
+                "DTD declarations are not supported in XMP.",
+                XMPErrorConst.BADSTREAM
+            )
+    }
 
     /**
      * Parses a document that failed the full parse, tolerating junk around the RDF part.
@@ -96,6 +128,8 @@ internal object DomParser {
 
     @OptIn(ExperimentalXmlUtilApi::class)
     private fun parseDocumentFromStringInternal(input: String): Document {
+
+        rejectDoctype(input)
 
         if (input.isBlank())
             throw XMPException("XMP is empty.", XMPErrorConst.BADXMP)

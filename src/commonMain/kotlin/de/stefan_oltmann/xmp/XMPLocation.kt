@@ -1,6 +1,8 @@
 package de.stefan_oltmann.xmp
 
-/** As used in Iptc4xmpExt. */
+/**
+ * As used in Iptc4xmpExt.
+ */
 public data class XMPLocation(
 
     /**

@@ -73,16 +73,20 @@ class XMPMetaTypedValuesTest {
     }
 
     /**
-     * An unrecognized non-numeric value converts to false instead of failing.
+     * An unrecognized value is reported as data corruption instead of a silent false.
      */
     @Test
-    fun testGetBooleanFallbackForUnknownValue() {
+    fun testGetBooleanOnUnknownValueThrows() {
 
         val xmpMeta = XMPMetaFactory.create()
 
         xmpMeta.setProperty(XMPConst.NS_XMP, "flag", "xyz")
 
-        assertEquals(false, xmpMeta.getPropertyBoolean(XMPConst.NS_XMP, "flag"))
+        val ex = assertFailsWith<XMPException> {
+            xmpMeta.getPropertyBoolean(XMPConst.NS_XMP, "flag")
+        }
+
+        assertEquals(XMPErrorConst.BADVALUE, ex.errorCode)
     }
 
     /**
@@ -340,7 +344,7 @@ class XMPMetaTypedValuesTest {
 
         xmpMeta.setProperty(XMPConst.NS_XMP, "prop", "value")
 
-        val property = xmpMeta.getProperty(XMPConst.NS_XMP, "prop")!!
+        val property = checkNotNull(xmpMeta.getProperty(XMPConst.NS_XMP, "prop"))
 
         assertEquals("value", property.getValue())
         assertEquals(PropertyOptions(), property.getOptions())

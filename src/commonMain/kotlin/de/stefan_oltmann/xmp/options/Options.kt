@@ -1,11 +1,13 @@
-// =================================================================================================
-// ADOBE SYSTEMS INCORPORATED
-// Copyright 2006 Adobe Systems Incorporated
-// All Rights Reserved
-//
-// NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
-// of the Adobe license agreement accompanying it.
-// =================================================================================================
+/*
+ * =================================================================================================
+ * ADOBE SYSTEMS INCORPORATED
+ * Copyright 2006 Adobe Systems Incorporated
+ * All Rights Reserved
+ *
+ * NOTICE:  Adobe permits you to use, modify, and distribute this file in accordance with the terms
+ * of the Adobe license agreement accompanying it.
+ * =================================================================================================
+ */
 package de.stefan_oltmann.xmp.options
 
 import de.stefan_oltmann.xmp.XMPException
@@ -63,6 +65,12 @@ public abstract class Options {
      */
     public fun getOptions(): Int = valueBits
 
+    /**
+     * Replaces the complete option bit mask after validating it.
+     *
+     * @param options The options to set.
+     * @throws XMPException If undefined or inconsistent option bits are set.
+     */
     public fun setOptions(options: Int) {
 
         assertOptionsValid(options)
@@ -140,7 +148,7 @@ public abstract class Options {
      * @param options the bitmask to check.
      *
      */
-    protected open fun assertConsistency(options: Int): Unit = Unit // Empty, no checks
+    protected open fun assertConsistency(options: Int): Unit = Unit
 
     /**
      * Checks options before they are set.
