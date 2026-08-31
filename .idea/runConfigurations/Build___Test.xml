@@ -11,7 +11,7 @@
       <option name="taskNames">
         <list>
           <option value="build" />
-          <option value="allTests" />
+          <option value="check" />
         </list>
       </option>
       <option name="vmOptions" />

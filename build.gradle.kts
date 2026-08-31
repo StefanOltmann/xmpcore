@@ -1,8 +1,9 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBinary
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
 
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
@@ -68,12 +69,17 @@ kover {
 }
 
 /*
- * The coverage bound above only takes effect when koverVerify runs, which no
- * lifecycle task does by default. Hooking it into "check" enforces the bound
- * for every "build", locally and in CI.
+ * Run Kover & Detekt as part of the checks.
+ *
+ * "allTests" should be already included, but I like to make it explicit.
  */
 tasks.named("check") {
-    dependsOn(tasks.named("koverVerify"))
+    dependsOn(
+        tasks.named("allTests"),
+        tasks.named("koverVerify"),
+        tasks.named("detekt"),
+        tasks.named("checkTextFiles")
+    )
 }
 
 kotlin {
@@ -99,20 +105,8 @@ kotlin {
         withHostTest {}
     }
 
-    /*
-     * Windows reserves only ~1 MiB of stack for executables by default. The recursive RDF
-     * parser legitimately recurses up to its nesting limit, which does not fit into that
-     * budget, so the stack reservation is raised for Windows binaries and test runners.
-     * Reserving more stack does not commit physical memory.
-     */
     mingwX64("win") {
         binaries {
-
-            configureEach {
-                if (this is NativeBinary)
-                    linkerOpts("-Wl,--stack,16777216")
-            }
-
             executable(setOf(NativeBuildType.RELEASE)) {
                 entryPoint = "de.stefan_oltmann.xmp.main"
             }
@@ -143,10 +137,14 @@ kotlin {
         }
     }
 
-    js()
+    js {
+        nodejs()
+    }
 
     @OptIn(ExperimentalWasmDsl::class)
-    wasmJs()
+    wasmJs {
+        nodejs()
+    }
 
     @Suppress("UnusedPrivateMember") // False positive
     val commonMain = sourceSets.getByName("commonMain") {
@@ -263,7 +261,9 @@ val writeVersion = tasks.register("writeVersion") {
     group = "build"
     description = "Writes the current version to version.txt"
     doLast {
-        File("build/version.txt").writeText(project.version.toString())
+        val file = File("build/version.txt")
+        file.parentFile.mkdirs()
+        file.writeText(project.version.toString())
     }
 }
 
@@ -319,6 +319,85 @@ mavenPublishing {
             url = "https://github.com/StefanOltmann/xmpcore"
             connection = "scm:git:git://github.com/StefanOltmann/xmpcore.git"
         }
+    }
+}
+// endregion
+
+// region Check text files
+/*
+ * Check-only guard so wrong line endings or encodings cannot slip in unnoticed: fails when a
+ * checked file is not UTF-8 without BOM, does not use LF line endings or does not end with a
+ * newline. It never rewrites anything - `.editorconfig` is the policy this mirrors.
+ */
+val checkTextFiles = tasks.register("checkTextFiles") {
+
+    group = "verification"
+    description =
+        "Checks every *.kt, *.kts, *.svg, *.txt, *.xml and *.md file for UTF-8 (no BOM), LF line " +
+            "endings and a final newline - see .editorconfig."
+
+    doLast {
+
+        val checkedExtensions = setOf("kt", "kts", "svg", "txt", "xml", "md")
+        val ignoredDirectoryNames = setOf(".git", ".gradle", ".idea", ".kotlin", "build")
+
+        val violations = mutableListOf<String>()
+
+        rootDir.walkTopDown()
+            .onEnter { it.name !in ignoredDirectoryNames }
+            .filter { it.isFile && it.extension.lowercase() in checkedExtensions }
+            .forEach { file ->
+
+                val relativePath = file.toRelativeString(rootDir).replace('\\', '/')
+
+                val bytes = file.readBytes()
+
+                if (bytes.copyOf(3).contentEquals(byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte()))) {
+                    violations += "$relativePath: starts with a UTF-8 BOM"
+                    return@forEach
+                }
+
+                val text = try {
+
+                    Charsets.UTF_8.newDecoder()
+                        .onMalformedInput(CodingErrorAction.REPORT)
+                        .onUnmappableCharacter(CodingErrorAction.REPORT)
+                        .decode(ByteBuffer.wrap(bytes))
+                        .toString()
+
+                } catch (_: CharacterCodingException) {
+
+                    violations += "$relativePath: is not valid UTF-8"
+                    return@forEach
+                }
+
+                if ('\uFFFD' in text)
+                    violations += "$relativePath: contains a U+FFFD replacement character"
+
+                if ('\r' in text)
+                    violations += "$relativePath: contains a CR; line endings must be LF"
+
+                if (bytes.isNotEmpty() && bytes.last() != '\n'.code.toByte())
+                    violations += "$relativePath: missing final newline"
+            }
+
+        if (violations.isEmpty())
+            return@doLast
+
+        violations.sort()
+
+        val shown = violations.take(50).joinToString("\n") { "  $it" }
+
+        val more = if (violations.size > 50)
+            "\n  ... and ${violations.size - 50} more"
+        else
+            ""
+
+        throw GradleException(
+            "${violations.size} text file violation(s) - expected UTF-8 without BOM, LF line " +
+                "endings and a final newline (see .editorconfig); fix the files, the check " +
+                "never rewrites them:\n$shown$more"
+        )
     }
 }
 // endregion

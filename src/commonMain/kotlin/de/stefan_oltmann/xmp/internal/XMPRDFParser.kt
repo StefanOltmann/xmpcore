@@ -114,10 +114,11 @@ internal object XMPRDFParser {
 
     /**
      * Maximum nesting depth of RDF node and property elements. Real-world XMP stays far below
-     * this, while uncrafted input can nest arbitrarily deep and would exhaust the stack through
-     * the recursive descent parser.
+     * this. Attention: Windows native binaries reserve about 1 MiB of stack, and each nested
+     * property walks several parser frames, so this cap must reject input before that budget
+     * is exhausted and the process aborts.
      */
-    private const val MAX_NESTING_DEPTH = 512
+    private const val MAX_NESTING_DEPTH = 128
 
     /**
      * The main parsing method. The XML tree is walked through from the root node and and XMP tree

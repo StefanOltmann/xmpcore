@@ -45,7 +45,7 @@ class XMPMetaDeepNestingTest {
     @Test
     fun testExcessiveRdfNestingIsRejected() {
 
-        val input = buildNestedRdf(depth = 2000)
+        val input = buildNestedRdf(depth = 200)
 
         val ex = assertFailsWith<XMPException> {
             XMPMetaFactory.parseFromString(input)
@@ -60,7 +60,7 @@ class XMPMetaDeepNestingTest {
     @Test
     fun testModerateRdfNestingStillParses() {
 
-        val input = buildNestedRdf(depth = 200)
+        val input = buildNestedRdf(depth = 64)
 
         val xmpMeta = XMPMetaFactory.parseFromString(input)
 

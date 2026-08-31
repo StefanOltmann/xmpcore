@@ -55,7 +55,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           chmod +x ./gradlew
-          ./gradlew build allTests detekt assembleXCFramework --parallel
+          ./gradlew build check assembleXCFramework
       - name: Set RELEASE_VERSION variable
         # Later steps can use $RELEASE_VERSION; the env context only refreshes between steps.
         run: |
