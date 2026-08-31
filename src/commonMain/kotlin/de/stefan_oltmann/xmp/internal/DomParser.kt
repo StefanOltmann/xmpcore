@@ -7,6 +7,7 @@ import nl.adaptivity.xmlutil.XmlUtilInternal
 import nl.adaptivity.xmlutil.dom2.Document
 import nl.adaptivity.xmlutil.writeCurrent
 import nl.adaptivity.xmlutil.xmlStreaming
+import kotlin.coroutines.cancellation.CancellationException
 
 internal object DomParser {
 
@@ -21,6 +22,13 @@ internal object DomParser {
      */
     private const val DOCTYPE_MARKER = "<!DOCTYPE"
 
+    /**
+     * Maximum element nesting while the XML events are written into the DOM. Attention: Windows
+     * native binaries reserve about 1 MiB of stack, and xmlutil's DOM writer recurses per start
+     * tag, so namespaced RDF elements abort the process long before the RDF parser can reject them.
+     */
+    private const val MAX_ELEMENT_DEPTH = 256
+
     @OptIn(XmlUtilInternal::class, ExperimentalXmlUtilApi::class)
     fun parseDocumentFromString(input: String): Document {
 
@@ -31,10 +39,25 @@ internal object DomParser {
          */
         rejectDoctype(input)
 
-        return try {
-            parseDocumentFromStringInternal(input)
+        try {
+
+            return parseDocumentFromStringInternal(input)
+
+        } catch (ex: CancellationException) {
+            throw ex
+        } catch (ex: XMPException) {
+
+            /*
+             * Malformed XML is wrapped as BADSTREAM and may still contain a usable RDF
+             * island. Other XMP errors (including nesting limits) must not be salvaged.
+             */
+            if (ex.errorCode == XMPErrorConst.BADSTREAM)
+                return parseCorruptedDocument(input, ex)
+
+            throw ex
+
         } catch (ex: Exception) {
-            parseCorruptedDocument(input, ex)
+            return parseCorruptedDocument(input, ex)
         }
     }
 
@@ -119,12 +142,18 @@ internal object DomParser {
     /**
      * Parses the input or returns null if the input cannot be parsed.
      */
-    private fun parseDocumentOrNull(input: String): Document? =
+    private fun parseDocumentOrNull(input: String): Document? {
+
         try {
-            parseDocumentFromStringInternal(input)
+
+            return parseDocumentFromStringInternal(input)
+
+        } catch (ex: CancellationException) {
+            throw ex
         } catch (ignored: Exception) {
-            null
+            return null
         }
+    }
 
     @OptIn(ExperimentalXmlUtilApi::class)
     private fun parseDocumentFromStringInternal(input: String): Document {
@@ -146,13 +175,34 @@ internal object DomParser {
 
             val reader = xmlStreaming.newReader(input)
 
+            var elementDepth = 0
+
             do {
+
                 val event = reader.next()
+
+                if (event == EventType.START_ELEMENT) {
+
+                    elementDepth++
+
+                    if (elementDepth > MAX_ELEMENT_DEPTH)
+                        throw XMPException(
+                            "Maximum nesting depth of $MAX_ELEMENT_DEPTH exceeded",
+                            XMPErrorConst.BADXMP
+                        )
+                } else if (event == EventType.END_ELEMENT) {
+                    elementDepth--
+                }
+
                 reader.writeCurrent(writer)
             } while (event != EventType.END_DOCUMENT)
 
             return document
 
+        } catch (ex: CancellationException) {
+            throw ex
+        } catch (ex: XMPException) {
+            throw ex
         } catch (ex: Exception) {
             throw XMPException("Error reading the XML file: ${ex.message}", XMPErrorConst.BADSTREAM, ex)
         }
