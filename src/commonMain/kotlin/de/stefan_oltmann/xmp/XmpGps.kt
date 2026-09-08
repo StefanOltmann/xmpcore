@@ -1,5 +1,6 @@
 package de.stefan_oltmann.xmp
 
+import de.stefan_oltmann.xmp.XmpGps.Companion.DDM_FRACTION_DIGITS
 import kotlin.math.abs
 import kotlin.math.roundToLong
 
