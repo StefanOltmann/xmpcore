@@ -51,17 +51,15 @@ internal object XMPUtils {
         if (asInteger != null)
             return asInteger != 0
 
+        /*
+         * Unrecognized strings return false like in Adobe's original, so callers reading
+         * arbitrary text as a boolean get a value instead of a hard failure.
+         */
         return when (valueLowercase) {
 
             "true", "t", "on", "yes" -> true
 
-            "false", "f", "off", "no" -> false
-
-            /*
-             * Like Adobe, an unrecognized string must surface as an error instead of
-             * silently reporting a confident false for corrupted property values.
-             */
-            else -> throw XMPException("Invalid Boolean string", XMPErrorConst.BADVALUE)
+            else -> false
         }
     }
 

@@ -44,19 +44,15 @@ class XMPUtilsTest {
     }
 
     /**
-     * Unrecognized values like garbage or hex integers are rejected like Adobe does,
-     * empty values too.
+     * Unrecognized values like garbage or hex integers return false like in Adobe's
+     * original, only empty values are rejected.
      */
     @Test
     fun testConvertToBooleanInvalid() {
 
-        assertFailsWith<XMPException> {
-            XMPUtils.convertToBoolean("xyz")
-        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
+        assertFalse(XMPUtils.convertToBoolean("xyz"))
 
-        assertFailsWith<XMPException> {
-            XMPUtils.convertToBoolean("0x0")
-        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
+        assertFalse(XMPUtils.convertToBoolean("0x0"))
 
         val ex = assertFailsWith<XMPException> {
             XMPUtils.convertToBoolean("")
