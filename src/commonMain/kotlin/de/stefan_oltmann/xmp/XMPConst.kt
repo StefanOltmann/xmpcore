@@ -298,6 +298,11 @@ public object XMPConst {
     public const val FLAGGED_TAG_ADOBE_TRUE: String = "1"
     public const val FLAGGED_TAG_ADOBE_FALSE: String = "0"
 
+    /* <xmpDM:good>true</xmpDM:good> or <xmpDM:good>false</xmpDM:good> */
+    public const val FLAGGED_TAG_ADOBE_GOOD_NAME: String = "good"
+    public const val FLAGGED_TAG_ADOBE_GOOD_TRUE: String = TRUE_STRING
+    public const val FLAGGED_TAG_ADOBE_GOOD_FALSE: String = FALSE_STRING
+
     /* <acdsee:tagged>True</acdsee:tagged> or <acdsee:tagged>False</acdsee:tagged> */
     public const val FLAGGED_TAG_ACDSEE_NAME: String = "tagged"
     public const val FLAGGED_TAG_ACDSEE_TRUE: String = TRUE_STRING

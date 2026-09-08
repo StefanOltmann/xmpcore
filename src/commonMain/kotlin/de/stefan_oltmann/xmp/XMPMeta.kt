@@ -1674,12 +1674,15 @@ public class XMPMeta internal constructor() {
      */
     public fun isFlagged(): Boolean =
         getPropertyBoolean(XMPConst.NS_DM, XMPConst.FLAGGED_TAG_ADOBE_NAME) == true ||
+            getPropertyBoolean(XMPConst.NS_DM, XMPConst.FLAGGED_TAG_ADOBE_GOOD_NAME) == true ||
             getPropertyBoolean(XMPConst.NS_ACDSEE, XMPConst.FLAGGED_TAG_ACDSEE_NAME) == true ||
             getPropertyBoolean(XMPConst.NS_MYLIO, XMPConst.FLAGGED_TAG_MYLIO_NAME) == true ||
             getPropertyBoolean(XMPConst.NS_NARRATIVE, XMPConst.FLAGGED_TAG_NARRATIVE_NAME) == true
 
     /**
      * Sets flagged/tagged/picked marker for standard schema and other commonly used fields by popular tools.
+     * Alongside xmpDM:pick the xmpDM:good property is written, so tools reading either
+     * variant recognize the pick state.
      */
     public fun setFlagged(flagged: Boolean) {
 
@@ -1691,6 +1694,15 @@ public class XMPMeta internal constructor() {
                 XMPConst.FLAGGED_TAG_ADOBE_TRUE
             else
                 XMPConst.FLAGGED_TAG_ADOBE_FALSE
+        )
+
+        setProperty(
+            schemaNS = XMPConst.NS_DM,
+            propName = XMPConst.FLAGGED_TAG_ADOBE_GOOD_NAME,
+            propValue = if (flagged)
+                XMPConst.FLAGGED_TAG_ADOBE_GOOD_TRUE
+            else
+                XMPConst.FLAGGED_TAG_ADOBE_GOOD_FALSE
         )
 
         setProperty(

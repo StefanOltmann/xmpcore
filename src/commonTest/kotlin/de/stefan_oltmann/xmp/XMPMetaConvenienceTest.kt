@@ -107,6 +107,7 @@ class XMPMetaConvenienceTest {
 
         assertTrue(xmpMeta.isFlagged())
         assertEquals("1", xmpMeta.getPropertyString(XMPConst.NS_DM, "pick"))
+        assertEquals("True", xmpMeta.getPropertyString(XMPConst.NS_DM, "good"))
         assertEquals("True", xmpMeta.getPropertyString(XMPConst.NS_ACDSEE, "tagged"))
         assertEquals("true", xmpMeta.getPropertyString(XMPConst.NS_MYLIO, "flag"))
         assertEquals("True", xmpMeta.getPropertyString(XMPConst.NS_NARRATIVE, "Tagged"))
@@ -125,6 +126,7 @@ class XMPMetaConvenienceTest {
 
         assertFalse(xmpMeta.isFlagged())
         assertEquals("0", xmpMeta.getPropertyString(XMPConst.NS_DM, "pick"))
+        assertEquals("False", xmpMeta.getPropertyString(XMPConst.NS_DM, "good"))
     }
 
     /**
@@ -136,6 +138,20 @@ class XMPMetaConvenienceTest {
         val xmpMeta = XMPMetaFactory.create()
 
         xmpMeta.setPropertyBoolean(XMPConst.NS_ACDSEE, "tagged", true)
+
+        assertTrue(xmpMeta.isFlagged())
+    }
+
+    /**
+     * A file with only xmpDM:good set is recognized as flagged, because
+     * picking tools may write the good property instead of pick.
+     */
+    @Test
+    fun testIsFlaggedForXmpDmGood() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setPropertyBoolean(XMPConst.NS_DM, "good", true)
 
         assertTrue(xmpMeta.isFlagged())
     }
