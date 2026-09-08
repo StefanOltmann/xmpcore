@@ -45,7 +45,8 @@ public object XMPPathFactory {
      * @param arrayName The name of the array.
      *                  May be a general path expression, must not be `null` or the empty string.
      * @param itemIndex The index of the desired item. Arrays in XMP are indexed from 1.
-     *                  0 and below means last array item and renders as `[last()]`.
+     *                  Only [XMPConst.ARRAY_LAST_ITEM] (-1) selects the last item and renders
+     *                  as `[last()]`; any other non-positive index throws.
      * @return Returns the composed path basing on fullPath. This will be of the form
      *         <tt>ns:arrayName[i]</tt>, where &quot;ns&quot; is the prefix for schemaNS and
      *         &quot;i&quot; is the decimal representation of itemIndex.
@@ -63,8 +64,8 @@ public object XMPPathFactory {
     }
 
     /**
-     * Compose the path expression for a field in a struct. The result can be added to the
-     * path of
+     * Compose the path expression for a field in a struct. The result can be appended to the
+     * path of the struct.
      *
      * @param fieldNS   The namespace URI for the field. Must not be `null` or the empty string.
      * @param fieldName The name of the field. Must be a simple XML name,

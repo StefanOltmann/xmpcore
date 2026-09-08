@@ -369,8 +369,9 @@ public class XMPMeta internal constructor() {
      * @param propValue the value for the property (only leaf properties have a value).
      * Arrays and non-leaf levels of structs do not have values.
      * Must be `null` if the value is not relevant.
-     * The value is automatically detected: Boolean, Integer, Long, Double, XMPDateTime and
-     * byte[] are handled, on all other `toString()` is called.
+     * The value is automatically detected: Boolean, Integer, Long, Double and ByteArray are
+     * handled, on all other values `toString()` is called - dates must therefore be passed as
+     * ISO 8601 strings, like [XmpDate] renders them.
      * @param options   Option flags describing the property. See the earlier description.
      */
     @kotlin.jvm.JvmOverloads
@@ -1885,7 +1886,7 @@ public class XMPMeta internal constructor() {
         @Suppress("LoopWithTooManyJumpStatements")
         for (index in 1..regionCount) {
 
-            val prefix = "Regions/mwg-rs:RegionList[$index]/mwg-rs"
+            val prefix = "$XMP_MWG_RS_REGION_LIST[$index]/mwg-rs"
 
             val regionType = getPropertyString(XMPConst.NS_MWG_RS, "$prefix:Type")
 
