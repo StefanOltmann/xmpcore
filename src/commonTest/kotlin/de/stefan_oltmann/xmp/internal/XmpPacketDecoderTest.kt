@@ -111,7 +111,7 @@ class XmpPacketDecoderTest {
     fun testRejectsUnpairedHighSurrogateInUtf16() {
 
         val bytes = byteArrayOf(0xFF.toByte(), 0xFE.toByte()) +
-            encodeUtf16("a\ud83db", littleEndian = true)
+            encodeUtf16("a" + Char(0xD83D) + "b", littleEndian = true)
 
         assertFailsWith<IllegalArgumentException> {
             XmpPacketDecoder.decode(bytes)
@@ -125,7 +125,7 @@ class XmpPacketDecoderTest {
     fun testRejectsTrailingHighSurrogateInUtf16() {
 
         val bytes = byteArrayOf(0xFF.toByte(), 0xFE.toByte()) +
-            encodeUtf16("\ud83d", littleEndian = true)
+            encodeUtf16(Char(0xD83D).toString(), littleEndian = true)
 
         assertFailsWith<IllegalArgumentException> {
             XmpPacketDecoder.decode(bytes)
@@ -139,7 +139,7 @@ class XmpPacketDecoderTest {
     fun testRejectsUnpairedLowSurrogateInUtf16() {
 
         val bytes = byteArrayOf(0xFF.toByte(), 0xFE.toByte()) +
-            encodeUtf16("\ude00", littleEndian = true)
+            encodeUtf16(Char(0xDE00).toString(), littleEndian = true)
 
         assertFailsWith<IllegalArgumentException> {
             XmpPacketDecoder.decode(bytes)
