@@ -38,6 +38,11 @@ public object XMPMetaFactory {
     /**
      * Creates an `XMPMeta`-object from a string.
      *
+     * If the input contains more than one complete XMP packet, for example because a
+     * container concatenated several packets, the first complete packet is parsed and the
+     * remaining data is ignored, exactly like ExifTool does it. The same holds for junk
+     * before the first packet, like the NUL padding of corrupted files.
+     *
      * @param packet A String containing an XMP-file.
      * @param options Options controlling the parsing.
      * @return Returns the `XMPMeta`-object created from the input.
