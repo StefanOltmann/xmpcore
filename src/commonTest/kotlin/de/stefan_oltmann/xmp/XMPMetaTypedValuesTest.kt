@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 /**
@@ -73,20 +74,16 @@ class XMPMetaTypedValuesTest {
     }
 
     /**
-     * An unrecognized value is reported as data corruption instead of a silent false.
+     * An unrecognized value returns false like in Adobe's original instead of failing.
      */
     @Test
-    fun testGetBooleanOnUnknownValueThrows() {
+    fun testGetBooleanOnUnknownValueReturnsFalse() {
 
         val xmpMeta = XMPMetaFactory.create()
 
         xmpMeta.setProperty(XMPConst.NS_XMP, "flag", "xyz")
 
-        val ex = assertFailsWith<XMPException> {
-            xmpMeta.getPropertyBoolean(XMPConst.NS_XMP, "flag")
-        }
-
-        assertEquals(XMPErrorConst.BADVALUE, ex.errorCode)
+        assertFalse(xmpMeta.getPropertyBoolean(XMPConst.NS_XMP, "flag") == true)
     }
 
     /**

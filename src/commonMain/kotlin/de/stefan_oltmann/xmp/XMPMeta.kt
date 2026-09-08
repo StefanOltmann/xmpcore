@@ -369,8 +369,9 @@ public class XMPMeta internal constructor() {
      * @param propValue the value for the property (only leaf properties have a value).
      * Arrays and non-leaf levels of structs do not have values.
      * Must be `null` if the value is not relevant.
-     * The value is automatically detected: Boolean, Integer, Long, Double, XMPDateTime and
-     * byte[] are handled, on all other `toString()` is called.
+     * The value is automatically detected: Boolean, Integer, Long, Double and ByteArray are
+     * handled, on all other values `toString()` is called - dates must therefore be passed as
+     * ISO 8601 strings, like [XmpDate] renders them.
      * @param options   Option flags describing the property. See the earlier description.
      */
     @kotlin.jvm.JvmOverloads
@@ -1628,6 +1629,29 @@ public class XMPMeta internal constructor() {
         setPropertyInteger(XMPConst.NS_XMP, "Rating", rating)
 
     /**
+     * @return Returns xmp:Label or null if the property is not present.
+     */
+    public fun getLabel(): String? =
+        getPropertyString(XMPConst.NS_XMP, "Label")
+
+    /**
+     * Sets xmp:Label as used by Adobe Bridge and Lightroom,
+     * for example "Red", "Yellow" or "Green".
+     * Passing null deletes the property.
+     *
+     * @param label The label to set or null to delete it.
+     */
+    public fun setLabel(label: String?) {
+
+        if (label == null) {
+            deleteProperty(XMPConst.NS_XMP, "Label")
+            return
+        }
+
+        setProperty(XMPConst.NS_XMP, "Label", label)
+    }
+
+    /**
      * @return Returns exif:GPSLatitude in DDM format or null if the property is not present.
      */
     public fun getGpsLatitude(): String? =
@@ -1638,6 +1662,24 @@ public class XMPMeta internal constructor() {
      */
     public fun getGpsLongitude(): String? =
         getPropertyString(XMPConst.NS_EXIF, "GPSLongitude")
+
+    /**
+     * Returns the GPS coordinates parsed and range validated.
+     *
+     * @return Returns the coordinates, or null if the properties are absent, unparseable, or
+     * outside the valid sphere range.
+     */
+    public fun getGpsCoordinates(): XmpGps? =
+        XmpGps.parse(getGpsLatitude(), getGpsLongitude())
+
+    /**
+     * Writes the GPS coordinates in DDM format together with the GPSVersionID that ExifTool
+     * expects next to them.
+     *
+     * @param gps The coordinates to write.
+     */
+    public fun setGpsCoordinates(gps: XmpGps): Unit =
+        setGpsCoordinates(gps.toLatitudeDdm(), gps.toLongitudeDdm())
 
     /**
      * Writes the GPS coordinates in DDM format together with the GPSVersionID
@@ -1674,12 +1716,15 @@ public class XMPMeta internal constructor() {
      */
     public fun isFlagged(): Boolean =
         getPropertyBoolean(XMPConst.NS_DM, XMPConst.FLAGGED_TAG_ADOBE_NAME) == true ||
+            getPropertyBoolean(XMPConst.NS_DM, XMPConst.FLAGGED_TAG_ADOBE_GOOD_NAME) == true ||
             getPropertyBoolean(XMPConst.NS_ACDSEE, XMPConst.FLAGGED_TAG_ACDSEE_NAME) == true ||
             getPropertyBoolean(XMPConst.NS_MYLIO, XMPConst.FLAGGED_TAG_MYLIO_NAME) == true ||
             getPropertyBoolean(XMPConst.NS_NARRATIVE, XMPConst.FLAGGED_TAG_NARRATIVE_NAME) == true
 
     /**
      * Sets flagged/tagged/picked marker for standard schema and other commonly used fields by popular tools.
+     * Alongside xmpDM:pick the xmpDM:good property is written, so tools reading either
+     * variant recognize the pick state.
      */
     public fun setFlagged(flagged: Boolean) {
 
@@ -1691,6 +1736,15 @@ public class XMPMeta internal constructor() {
                 XMPConst.FLAGGED_TAG_ADOBE_TRUE
             else
                 XMPConst.FLAGGED_TAG_ADOBE_FALSE
+        )
+
+        setProperty(
+            schemaNS = XMPConst.NS_DM,
+            propName = XMPConst.FLAGGED_TAG_ADOBE_GOOD_NAME,
+            propValue = if (flagged)
+                XMPConst.FLAGGED_TAG_ADOBE_GOOD_TRUE
+            else
+                XMPConst.FLAGGED_TAG_ADOBE_GOOD_FALSE
         )
 
         setProperty(
@@ -1832,7 +1886,7 @@ public class XMPMeta internal constructor() {
         @Suppress("LoopWithTooManyJumpStatements")
         for (index in 1..regionCount) {
 
-            val prefix = "Regions/mwg-rs:RegionList[$index]/mwg-rs"
+            val prefix = "$XMP_MWG_RS_REGION_LIST[$index]/mwg-rs"
 
             val regionType = getPropertyString(XMPConst.NS_MWG_RS, "$prefix:Type")
 

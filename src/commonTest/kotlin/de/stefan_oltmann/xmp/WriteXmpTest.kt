@@ -114,6 +114,7 @@ class WriteXmpTest {
                   exif:GPSVersionID="2.3.0.0"
                   narrative:Tagged="True"
                   xmp:Rating="3"
+                  xmpDM:good="True"
                   xmpDM:pick="1">
                   <dc:subject>
                     <rdf:Bag>
@@ -241,6 +242,7 @@ class WriteXmpTest {
                   exif:GPSVersionID="2.3.0.0"
                   narrative:Tagged="True"
                   xmp:Rating="3"
+                  xmpDM:good="True"
                   xmpDM:pick="1">
                   <dc:subject>
                     <rdf:Bag>

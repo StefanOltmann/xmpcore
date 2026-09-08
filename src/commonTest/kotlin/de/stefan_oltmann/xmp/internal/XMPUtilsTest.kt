@@ -44,19 +44,15 @@ class XMPUtilsTest {
     }
 
     /**
-     * Unrecognized values like garbage or hex integers are rejected like Adobe does,
-     * empty values too.
+     * Unrecognized values like garbage or hex integers return false like in Adobe's
+     * original, only empty values are rejected.
      */
     @Test
     fun testConvertToBooleanInvalid() {
 
-        assertFailsWith<XMPException> {
-            XMPUtils.convertToBoolean("xyz")
-        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
+        assertFalse(XMPUtils.convertToBoolean("xyz"))
 
-        assertFailsWith<XMPException> {
-            XMPUtils.convertToBoolean("0x0")
-        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
+        assertFalse(XMPUtils.convertToBoolean("0x0"))
 
         val ex = assertFailsWith<XMPException> {
             XMPUtils.convertToBoolean("")
@@ -181,6 +177,35 @@ class XMPUtilsTest {
         /* Other junk between the alphabet characters remains an error. */
         assertFailsWith<XMPException> {
             XMPUtils.decodeBase64("AQ!ID")
+        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
+    }
+
+    /**
+     * Trailing groups without padding decode like Adobe's decoder does, which tolerates
+     * missing padding on the last group.
+     */
+    @Test
+    fun testDecodeBase64WithoutPadding() {
+
+        assertContentEquals(byteArrayOf(0x41), XMPUtils.decodeBase64("QQ"))
+
+        assertEquals(2, XMPUtils.decodeBase64("QQQ").size)
+
+        /* Unpadded multi-group data decodes too. */
+        assertContentEquals(
+            byteArrayOf(1, 2, 3, 4, 5),
+            XMPUtils.decodeBase64("AQIDBAU")
+        )
+    }
+
+    /**
+     * A length with a remainder of one cannot form valid base64 data and stays rejected.
+     */
+    @Test
+    fun testDecodeBase64InvalidLength() {
+
+        assertFailsWith<XMPException> {
+            XMPUtils.decodeBase64("Q")
         }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
     }
 }

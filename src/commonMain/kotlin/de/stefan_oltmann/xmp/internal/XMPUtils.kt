@@ -51,17 +51,15 @@ internal object XMPUtils {
         if (asInteger != null)
             return asInteger != 0
 
+        /*
+         * Unrecognized strings return false like in Adobe's original, so callers reading
+         * arbitrary text as a boolean get a value instead of a hard failure.
+         */
         return when (valueLowercase) {
 
             "true", "t", "on", "yes" -> true
 
-            "false", "f", "off", "no" -> false
-
-            /*
-             * Like Adobe, an unrecognized string must surface as an error instead of
-             * silently reporting a confident false for corrupted property values.
-             */
-            else -> throw XMPException("Invalid Boolean string", XMPErrorConst.BADVALUE)
+            else -> false
         }
     }
 
@@ -135,9 +133,24 @@ internal object XMPUtils {
                     append(char)
         }
 
+        /*
+         * Adobe's decoder (commons-codec) accepts trailing groups without padding while the
+         * Kotlin encoder requires proper padding, so missing padding is added here. A length
+         * with a remainder of one cannot form valid base64 data and keeps failing in the
+         * decode below.
+         */
+        val paddedBase64 = when (compactBase64.length % 4) {
+
+            2 -> "$compactBase64=="
+
+            3 -> "$compactBase64="
+
+            else -> compactBase64
+        }
+
         try {
 
-            return Base64.decode(compactBase64.encodeToByteArray())
+            return Base64.decode(paddedBase64.encodeToByteArray())
 
         } catch (ex: Throwable) {
             throw XMPException("Invalid base64 string", XMPErrorConst.BADVALUE, ex)

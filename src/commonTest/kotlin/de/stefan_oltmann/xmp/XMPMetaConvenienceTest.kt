@@ -29,6 +29,26 @@ class XMPMetaConvenienceTest {
     }
 
     /**
+     * The label convenience methods read, write and delete the xmp:Label property.
+     */
+    @Test
+    fun testLabelRoundTrip() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        assertNull(xmpMeta.getLabel())
+
+        xmpMeta.setLabel("Green")
+
+        assertEquals("Green", xmpMeta.getLabel())
+
+        xmpMeta.setLabel(null)
+
+        assertNull(xmpMeta.getLabel())
+        assertFalse(xmpMeta.doesPropertyExist(XMPConst.NS_XMP, "Label"))
+    }
+
+    /**
      * The orientation convenience methods read and write the tiff:Orientation property.
      */
     @Test
@@ -107,6 +127,7 @@ class XMPMetaConvenienceTest {
 
         assertTrue(xmpMeta.isFlagged())
         assertEquals("1", xmpMeta.getPropertyString(XMPConst.NS_DM, "pick"))
+        assertEquals("True", xmpMeta.getPropertyString(XMPConst.NS_DM, "good"))
         assertEquals("True", xmpMeta.getPropertyString(XMPConst.NS_ACDSEE, "tagged"))
         assertEquals("true", xmpMeta.getPropertyString(XMPConst.NS_MYLIO, "flag"))
         assertEquals("True", xmpMeta.getPropertyString(XMPConst.NS_NARRATIVE, "Tagged"))
@@ -125,6 +146,7 @@ class XMPMetaConvenienceTest {
 
         assertFalse(xmpMeta.isFlagged())
         assertEquals("0", xmpMeta.getPropertyString(XMPConst.NS_DM, "pick"))
+        assertEquals("False", xmpMeta.getPropertyString(XMPConst.NS_DM, "good"))
     }
 
     /**
@@ -136,6 +158,20 @@ class XMPMetaConvenienceTest {
         val xmpMeta = XMPMetaFactory.create()
 
         xmpMeta.setPropertyBoolean(XMPConst.NS_ACDSEE, "tagged", true)
+
+        assertTrue(xmpMeta.isFlagged())
+    }
+
+    /**
+     * A file with only xmpDM:good set is recognized as flagged, because
+     * picking tools may write the good property instead of pick.
+     */
+    @Test
+    fun testIsFlaggedForXmpDmGood() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setPropertyBoolean(XMPConst.NS_DM, "good", true)
 
         assertTrue(xmpMeta.isFlagged())
     }
