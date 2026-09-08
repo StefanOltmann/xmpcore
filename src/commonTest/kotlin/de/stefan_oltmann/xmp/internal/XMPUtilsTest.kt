@@ -179,4 +179,33 @@ class XMPUtilsTest {
             XMPUtils.decodeBase64("AQ!ID")
         }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
     }
+
+    /**
+     * Trailing groups without padding decode like Adobe's decoder does, which tolerates
+     * missing padding on the last group.
+     */
+    @Test
+    fun testDecodeBase64WithoutPadding() {
+
+        assertContentEquals(byteArrayOf(0x41), XMPUtils.decodeBase64("QQ"))
+
+        assertEquals(2, XMPUtils.decodeBase64("QQQ").size)
+
+        /* Unpadded multi-group data decodes too. */
+        assertContentEquals(
+            byteArrayOf(1, 2, 3, 4, 5),
+            XMPUtils.decodeBase64("AQIDBAU")
+        )
+    }
+
+    /**
+     * A length with a remainder of one cannot form valid base64 data and stays rejected.
+     */
+    @Test
+    fun testDecodeBase64InvalidLength() {
+
+        assertFailsWith<XMPException> {
+            XMPUtils.decodeBase64("Q")
+        }.let { assertEquals(XMPErrorConst.BADVALUE, it.errorCode) }
+    }
 }

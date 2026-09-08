@@ -133,9 +133,24 @@ internal object XMPUtils {
                     append(char)
         }
 
+        /*
+         * Adobe's decoder (commons-codec) accepts trailing groups without padding while the
+         * Kotlin encoder requires proper padding, so missing padding is added here. A length
+         * with a remainder of one cannot form valid base64 data and keeps failing in the
+         * decode below.
+         */
+        val paddedBase64 = when (compactBase64.length % 4) {
+
+            2 -> "$compactBase64=="
+
+            3 -> "$compactBase64="
+
+            else -> compactBase64
+        }
+
         try {
 
-            return Base64.decode(compactBase64.encodeToByteArray())
+            return Base64.decode(paddedBase64.encodeToByteArray())
 
         } catch (ex: Throwable) {
             throw XMPException("Invalid base64 string", XMPErrorConst.BADVALUE, ex)
