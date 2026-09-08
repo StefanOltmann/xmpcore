@@ -29,6 +29,26 @@ class XMPMetaConvenienceTest {
     }
 
     /**
+     * The label convenience methods read, write and delete the xmp:Label property.
+     */
+    @Test
+    fun testLabelRoundTrip() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        assertNull(xmpMeta.getLabel())
+
+        xmpMeta.setLabel("Green")
+
+        assertEquals("Green", xmpMeta.getLabel())
+
+        xmpMeta.setLabel(null)
+
+        assertNull(xmpMeta.getLabel())
+        assertFalse(xmpMeta.doesPropertyExist(XMPConst.NS_XMP, "Label"))
+    }
+
+    /**
      * The orientation convenience methods read and write the tiff:Orientation property.
      */
     @Test

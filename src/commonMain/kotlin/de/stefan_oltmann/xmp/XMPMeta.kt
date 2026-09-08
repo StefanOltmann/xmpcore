@@ -1628,6 +1628,29 @@ public class XMPMeta internal constructor() {
         setPropertyInteger(XMPConst.NS_XMP, "Rating", rating)
 
     /**
+     * @return Returns xmp:Label or null if the property is not present.
+     */
+    public fun getLabel(): String? =
+        getPropertyString(XMPConst.NS_XMP, "Label")
+
+    /**
+     * Sets xmp:Label as used by Adobe Bridge and Lightroom,
+     * for example "Red", "Yellow" or "Green".
+     * Passing null deletes the property.
+     *
+     * @param label The label to set or null to delete it.
+     */
+    public fun setLabel(label: String?) {
+
+        if (label == null) {
+            deleteProperty(XMPConst.NS_XMP, "Label")
+            return
+        }
+
+        setProperty(XMPConst.NS_XMP, "Label", label)
+    }
+
+    /**
      * @return Returns exif:GPSLatitude in DDM format or null if the property is not present.
      */
     public fun getGpsLatitude(): String? =
