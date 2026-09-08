@@ -1663,6 +1663,24 @@ public class XMPMeta internal constructor() {
         getPropertyString(XMPConst.NS_EXIF, "GPSLongitude")
 
     /**
+     * Returns the GPS coordinates parsed and range validated.
+     *
+     * @return Returns the coordinates, or null if the properties are absent, unparseable, or
+     * outside the valid sphere range.
+     */
+    public fun getGpsCoordinates(): XmpGps? =
+        XmpGps.parse(getGpsLatitude(), getGpsLongitude())
+
+    /**
+     * Writes the GPS coordinates in DDM format together with the GPSVersionID that ExifTool
+     * expects next to them.
+     *
+     * @param gps The coordinates to write.
+     */
+    public fun setGpsCoordinates(gps: XmpGps): Unit =
+        setGpsCoordinates(gps.toLatitudeDdm(), gps.toLongitudeDdm())
+
+    /**
      * Writes the GPS coordinates in DDM format together with the GPSVersionID
      * that ExifTool expects next to them.
      *
