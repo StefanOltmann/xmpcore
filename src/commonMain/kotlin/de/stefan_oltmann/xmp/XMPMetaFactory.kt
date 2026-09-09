@@ -123,9 +123,11 @@ public object XMPMetaFactory {
      * keeps as many whole `rdf:Description` blocks as fit and references the remaining data
      * through `xmpNote:HasExtendedXMP`; the moved blocks are serialized into chunks that
      * carry the MD5 GUID of the extended data, its total length and one slice of the data
-     * each. A stale reference from a previous write is removed, and in-place editing padding
-     * is stripped, because both would distort the size measurement. Packets that fit are
-     * returned without extended chunks.
+     * each. A stale reference from a previous write is always removed, and a missing line
+     * break before the packet terminator is added, so the terminator always starts its own
+     * line. Packets that fit are otherwise returned with their original bytes; only an
+     * oversized packet has its in-place editing padding collapsed into that line break,
+     * because the padding would distort the size measurement.
      *
      * @param packet A String containing the XMP packet to split.
      * @param maxMainPacketBytes The maximum UTF-8 byte size of the main packet. For a JPEG

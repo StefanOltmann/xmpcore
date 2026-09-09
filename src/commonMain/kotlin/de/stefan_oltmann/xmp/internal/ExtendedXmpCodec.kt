@@ -75,10 +75,13 @@ internal object ExtendedXmpCodec {
         Regex("""<xmpNote:HasExtendedXMP>\s*[0-9A-Fa-f]{32}\s*</xmpNote:HasExtendedXMP>""")
 
     /**
-     * Splits the given packet when it exceeds [maxMainPacketBytes]. Packets that fit are
-     * returned without extended chunks. A stale reference from a previous write is removed
-     * before the packet is classified, and in-place editing padding is stripped, because
-     * both would distort the size measurement or point at chunks that are never emitted.
+     * Splits the given packet when it exceeds [maxMainPacketBytes]. The packet terminator
+     * always starts its own line in the returned main packet. Packets that fit are returned
+     * without extended chunks and keep their original bytes, so a container rewrite stays
+     * byte-identical apart from a removed stale reference, which would point at chunks that
+     * are never emitted. Only a packet that exceeds the limit has its in-place editing
+     * padding collapsed into the canonical line break, because the padding would distort
+     * the size measurement.
      *
      * @param packet the serialized XMP packet to split.
      * @param maxMainPacketBytes the maximum UTF-8 byte size of the main packet.
@@ -98,12 +101,19 @@ internal object ExtendedXmpCodec {
 
         require(maxExtendedChunkBytes > 0) { "Max extended chunk bytes must be positive: $maxExtendedChunkBytes" }
 
-        val cleanedPacket = removeStaleExtendedXmpReference(stripPadding(packet))
+        val withoutStaleReference = removeStaleExtendedXmpReference(packet)
 
-        if (cleanedPacket.encodeToByteArray().size <= maxMainPacketBytes)
-            return XmpPacketPartition(cleanedPacket, emptyList())
+        val canonicalPacket = ensureTerminatorOnOwnLine(withoutStaleReference)
 
-        return splitPacket(cleanedPacket, maxMainPacketBytes, maxExtendedChunkBytes)
+        if (canonicalPacket.encodeToByteArray().size <= maxMainPacketBytes)
+            return XmpPacketPartition(canonicalPacket, emptyList())
+
+        val strippedPacket = stripPadding(withoutStaleReference)
+
+        if (strippedPacket.encodeToByteArray().size <= maxMainPacketBytes)
+            return XmpPacketPartition(strippedPacket, emptyList())
+
+        return splitPacket(strippedPacket, maxMainPacketBytes, maxExtendedChunkBytes)
     }
 
     /**
@@ -454,9 +464,34 @@ internal object ExtendedXmpCodec {
             .replace(staleElementReferenceRegex, "")
 
     /**
-     * Removes the whitespace padding between the XMP content and the packet terminator
-     * processing instruction. Padding exists so tools can edit a packet in place; it carries
-     * no information and would distort the size measurement of the partitioning.
+     * Adds the line break before the packet terminator processing instruction when the
+     * terminator does not already start on its own line, so every returned packet keeps the
+     * canonical layout. Whitespace that shares the content's line is replaced, while
+     * in-place editing padding with line breaks of its own stays untouched.
+     */
+    private fun ensureTerminatorOnOwnLine(packet: String): String {
+
+        val endIndex = packet.indexOf(PACKET_END_MARKER)
+
+        if (endIndex == -1)
+            return packet
+
+        var runStart = endIndex
+
+        while (runStart > 0 && packet[runStart - 1].isWhitespace())
+            runStart--
+
+        if (packet.indexOf('\n', runStart) in runStart until endIndex)
+            return packet
+
+        return packet.substring(0, runStart) + "\n" + packet.substring(endIndex)
+    }
+
+    /**
+     * Collapses the in-place editing padding between the XMP content and the packet terminator
+     * processing instruction into the single canonical line break, so `</x:xmpmeta>` and the
+     * terminator keep sitting on their own lines. The padding itself carries no information
+     * and must not distort the size measurement of the partitioning.
      */
     private fun stripPadding(packet: String): String {
 
@@ -470,7 +505,7 @@ internal object ExtendedXmpCodec {
         while (contentEnd > 0 && packet[contentEnd - 1].isWhitespace())
             contentEnd--
 
-        return packet.substring(0, contentEnd) + packet.substring(endIndex)
+        return packet.substring(0, contentEnd) + "\n" + packet.substring(endIndex)
     }
 
     /**
