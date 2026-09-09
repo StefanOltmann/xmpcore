@@ -35,8 +35,8 @@ class XMPMetaExtendedXmpTest {
     )
 
     /**
-     * A packet that fits into the size limit needs no extended chunks and survives unchanged
-     * apart from the removed in-place editing padding.
+     * A packet that fits into the size limit needs no extended chunks and is returned with
+     * its original bytes, so a container rewrite stays byte-identical.
      */
     @Test
     fun testPartitionSmallPacketNeedsNoChunks() {
@@ -50,7 +50,52 @@ class XMPMetaExtendedXmpTest {
         )
 
         assertTrue(partition.extendedChunks.isEmpty())
-        assertFalse(partition.mainPacket.contains("HasExtendedXMP"))
+
+        assertEquals(packet, partition.mainPacket)
+    }
+
+    /**
+     * The in-place editing padding of a packet that fits is preserved, so rewriting a
+     * container does not shrink the editable reserve a packet written by another tool has.
+     */
+    @Test
+    fun testPartitionKeepsPaddingWhenPacketFits() {
+
+        val packet = createPacket(schemaCount = 1, propertiesPerSchema = 2)
+            .replace("<?xpacket end=", "\n" + " ".repeat(32) + "<?xpacket end=")
+
+        assertTrue(packet.encodeToByteArray().size <= maxMainPacketBytes)
+
+        val partition = XMPMetaFactory.partitionPacket(
+            packet,
+            maxMainPacketBytes,
+            maxExtendedChunkBytes
+        )
+
+        assertTrue(partition.extendedChunks.isEmpty())
+
+        assertEquals(packet, partition.mainPacket)
+    }
+
+    /**
+     * A packet whose terminator shares the line with the packet content is normalized to
+     * the canonical layout, so every returned packet keeps the terminator on its own line.
+     */
+    @Test
+    fun testPartitionAddsMissingTerminatorLineBreak() {
+
+        val packet = createPacket(schemaCount = 1, propertiesPerSchema = 2)
+            .replace("</x:xmpmeta>\n<?xpacket end=", "</x:xmpmeta><?xpacket end=")
+
+        val partition = XMPMetaFactory.partitionPacket(
+            packet,
+            maxMainPacketBytes,
+            maxExtendedChunkBytes
+        )
+
+        assertTrue(partition.extendedChunks.isEmpty())
+
+        assertTrue(partition.mainPacket.contains("</x:xmpmeta>\n<?xpacket end="))
     }
 
     /**
@@ -193,7 +238,8 @@ class XMPMetaExtendedXmpTest {
 
     /**
      * In-place editing padding carries no information and must not push an otherwise small
-     * packet over the size limit.
+     * packet over the size limit. The canonical line break before the packet terminator
+     * survives the collapsing of the padding.
      */
     @Test
     fun testPartitionStripsPaddingBeforeMeasuring() {
@@ -216,6 +262,26 @@ class XMPMetaExtendedXmpTest {
         assertTrue(partition.extendedChunks.isEmpty())
 
         assertFalse(partition.mainPacket.contains(" ".repeat(10)))
+
+        assertTrue(partition.mainPacket.contains("</x:xmpmeta>\n<?xpacket end="))
+    }
+
+    /**
+     * The main packet of a split keeps the canonical packet layout: the `x:xmpmeta` end tag
+     * and the packet terminator processing instruction stay on their own lines.
+     */
+    @Test
+    fun testOversizedMainPacketKeepsCanonicalTerminatorLine() {
+
+        val partition = XMPMetaFactory.partitionPacket(
+            createPacket(schemaCount = schemaNamespaces.size, propertiesPerSchema = 5),
+            maxMainPacketBytes,
+            maxExtendedChunkBytes
+        )
+
+        assertTrue(partition.extendedChunks.isNotEmpty())
+
+        assertTrue(partition.mainPacket.contains("</x:xmpmeta>\n<?xpacket end="))
     }
 
     /**
