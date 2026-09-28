@@ -23,6 +23,7 @@
       exif:BitsPerSample="8, 8, 8"
       exif:Compression="JPEG compression"
       exif:DateTime="2013:05:24 14:08:48"
+      exif:DateTimeDigitized="2000:01:01 00:08:04"
       exif:DateTimeOriginal="2000:01:01 00:08:04"
       exif:ExifVersion="Exif Version 2.3"
       exif:ExposureBiasValue="0,00 EV"

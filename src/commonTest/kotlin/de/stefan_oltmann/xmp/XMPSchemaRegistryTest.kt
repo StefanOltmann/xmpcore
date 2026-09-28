@@ -4,6 +4,7 @@ import de.stefan_oltmann.xmp.internal.XMPErrorConst
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -142,5 +143,33 @@ class XMPSchemaRegistryTest {
             "zzColl_2_:",
             XMPSchemaRegistry.getNamespacePrefix("https://example.org/reg-test/fake-dc/")
         )
+    }
+
+    /**
+     * exif:DateTimeDigitized is not aliased, exactly like the Adobe original: parsing
+     * keeps the property in exif instead of moving it to xmp:CreateDate.
+     */
+    @Test
+    fun testExifDateTimeDigitizedIsNotAliased() {
+
+        assertNull(XMPSchemaRegistry.findAlias("exif:DateTimeDigitized"))
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:exif="http://ns.adobe.com/exif/1.0/"
+                exif:DateTimeDigitized="2004-11-18T10:50:00-05:00"/>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals(
+            "2004-11-18T10:50:00-05:00",
+            xmpMeta.getPropertyString(XMPConst.NS_EXIF, "DateTimeDigitized")
+        )
+
+        assertNull(xmpMeta.getPropertyString(XMPConst.NS_XMP, "CreateDate"))
     }
 }

@@ -2,8 +2,7 @@
 <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="XMP Core for KMP 1.8.1">
   <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <rdf:Description rdf:about=""
-        xmlns:exif="http://ns.adobe.com/exif/1.0/"
-        xmlns:xmp="http://ns.adobe.com/xap/1.0/">
+        xmlns:exif="http://ns.adobe.com/exif/1.0/">
       <exif:BrightnessValue>5,48 EV (152,72 cd/m^2)</exif:BrightnessValue>
       <exif:ColorSpace>sRGB</exif:ColorSpace>
       <exif:ComponentsConfiguration>
@@ -16,6 +15,7 @@
       <exif:Contrast>Normal</exif:Contrast>
       <exif:CustomRendered>Normal process</exif:CustomRendered>
       <exif:DateTime>2014:04:05 12:39:31</exif:DateTime>
+      <exif:DateTimeDigitized>2014:04:05 12:39:31</exif:DateTimeDigitized>
       <exif:DateTimeOriginal>2014:04:05 12:39:31</exif:DateTimeOriginal>
       <exif:DigitalZoomRatio>1,00</exif:DigitalZoomRatio>
       <exif:ExifVersion>Unknown Exif Version</exif:ExifVersion>
@@ -60,7 +60,6 @@
       <exif:XResolution>72</exif:XResolution>
       <exif:YCbCrPositioning>Co-sited</exif:YCbCrPositioning>
       <exif:YResolution>72</exif:YResolution>
-      <xmp:CreateDate>2014:04:05 12:39:31</xmp:CreateDate>
     </rdf:Description>
   </rdf:RDF>
 </x:xmpmeta>
