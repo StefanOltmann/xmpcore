@@ -541,7 +541,6 @@ public object XMPUtils {
      * values are separated by spaces, semicolons and commas, quoted values keep their
      * separators and doubled quotes undouble, and a matching old value is kept instead of
      * being duplicated.
-     *
      * @param xmp              the metadata object that holds the array.
      * @param schemaNS         the schema namespace of the array.
      * @param arrayName        the name of the array.
@@ -629,6 +628,18 @@ public object XMPUtils {
                 arrayNode.addChild(XMPNode(XMPConst.ARRAY_ITEM_NAME, itemValue))
         }
     }
+
+    /**
+     * Checks whether a character kind forces quoting of the value.
+     *
+     * @param charKind    the character kind to check.
+     * @param allowCommas count commas as part of the values instead of as separators.
+     * @return Returns true when the character kind requires quoting.
+     */
+    private fun isSeparatorNeedingQuotes(charKind: Int, allowCommas: Boolean): Boolean =
+
+        charKind == UCK_SEMICOLON || charKind == UCK_CONTROL ||
+            (charKind == UCK_COMMA && !allowCommas)
 
     /**
      * Checks whether a character kind belongs to the value during a scan, which depends
@@ -900,4 +911,223 @@ public object XMPUtils {
     private fun isClosingQuote(ch: Char, openQuote: Char, closeQuote: Char): Boolean =
 
         ch == closeQuote || (openQuote == '\u301D' && (ch == '\u301E' || ch == '\u301F'))
+
+    /**
+     * Catenates the items of an array into one string, quoting items that contain
+     * separators so that [separateArrayItems] round trips them back.
+     *
+     * @param xmp         the metadata object that holds the array.
+     * @param schemaNS    the schema namespace of the array.
+     * @param arrayName   the name of the array.
+     * @param separator   the separator string with exactly one semicolon, "; " by default.
+     * @param quotes      the opening and closing quote pair, "\"" by default.
+     * @param allowCommas count commas as part of the values instead of as separators.
+     * @return Returns the concatenated string, empty when the array does not exist.
+     * @throws XMPException If the property is not a non-alternate array, an item is not
+     * simple, or separator and quotes are invalid.
+     */
+    public fun catenateArrayItems(
+        xmp: XMPMeta,
+        schemaNS: String,
+        arrayName: String,
+        separator: String?,
+        quotes: String?,
+        allowCommas: Boolean
+    ): String {
+
+        val actualSeparator = if (separator.isNullOrEmpty()) "; " else separator
+        val actualQuotes = if (quotes.isNullOrEmpty()) "\"" else quotes
+
+        /* Return an empty result if the array does not exist, hurl if it isn't the right
+         * form. */
+        val arrayPath = expandXPath(schemaNS, arrayName)
+
+        val arrayNode = findNode(xmp.root, arrayPath, false, null)
+            ?: return ""
+
+        if (!arrayNode.options.isArray() || arrayNode.options.isArrayAlternate())
+            throw XMPException("Named property must be non-alternate array", XMPErrorConst.BADPARAM)
+
+        /* Make sure the separator is OK. */
+        checkSeparator(actualSeparator)
+
+        /* Make sure the open and close quotes are a legitimate pair. */
+        val openQuote = actualQuotes[0]
+        val closeQuote = checkQuotes(actualQuotes, openQuote)
+
+        /* Build the result, quoting the array items and adding separators. Hurl if any
+         * item isn't simple. */
+        val catenated = StringBuilder()
+
+        val items = arrayNode.iterateChildren()
+
+        while (items.hasNext()) {
+
+            val currItem = items.next()
+
+            if (currItem.options.isCompositeProperty())
+                throw XMPException("Array items must be simple", XMPErrorConst.BADPARAM)
+
+            catenated.append(applyQuotes(currItem.value, openQuote, closeQuote, allowCommas))
+
+            if (items.hasNext())
+                catenated.append(actualSeparator)
+        }
+
+        return catenated.toString()
+    }
+
+    /**
+     * Checks that the separator is one semicolon surrounded by zero or more spaces, any
+     * of the recognized semicolons and spaces.
+     *
+     * @param separator the separator string.
+     * @throws XMPException If the separator has not exactly one semicolon.
+     */
+    private fun checkSeparator(separator: String) {
+
+        var haveSemicolon = false
+
+        for (ch in separator) {
+
+            val charKind = classifyCharacter(ch)
+
+            if (charKind == UCK_SEMICOLON) {
+
+                if (haveSemicolon)
+                    throw XMPException("Separator can have only one semicolon", XMPErrorConst.BADPARAM)
+
+                haveSemicolon = true
+            } else if (charKind != UCK_SPACE) {
+                throw XMPException(
+                    "Separator can have only spaces and one semicolon",
+                    XMPErrorConst.BADPARAM
+                )
+            }
+        }
+
+        if (!haveSemicolon)
+            throw XMPException("Separator must have one semicolon", XMPErrorConst.BADPARAM)
+    }
+
+    /**
+     * Checks that the open and close quotes are a legitimate pair and returns the correct
+     * closing quote.
+     *
+     * @param quotes    the opening and closing quote in a string.
+     * @param openQuote the opening quote.
+     * @return Returns the corresponding closing quote.
+     * @throws XMPException If the quoting characters are invalid or the pair mismatches.
+     */
+    private fun checkQuotes(quotes: String, openQuote: Char): Char {
+
+        val charKind = classifyCharacter(openQuote)
+
+        if (charKind != UCK_QUOTE)
+            throw XMPException("Invalid quoting character", XMPErrorConst.BADPARAM)
+
+        val closeQuote = if (quotes.length == 1) {
+            openQuote
+        } else {
+            val explicitCloseQuote = quotes[1]
+
+            if (classifyCharacter(explicitCloseQuote) != UCK_QUOTE)
+                throw XMPException("Invalid quoting character", XMPErrorConst.BADPARAM)
+
+            explicitCloseQuote
+        }
+
+        if (closeQuote != getClosingQuote(openQuote))
+            throw XMPException("Mismatched quote pair", XMPErrorConst.BADPARAM)
+
+        return closeQuote
+    }
+
+    /**
+     * Quotes the item when it contains separators, doubling internal quotes that match
+     * the outer pair. Internal quotes alone, as in - Irving "Bud" Jones - do not need
+     * quoting; a leading quote would make the value look quoted and is quoted therefore.
+     *
+     * Note: The Java 5.1.3 original scans item.charAt(i) instead of
+     * item.charAt(splitPoint) in the quote-search; this port implements the intended scan
+     * of the Adobe C++ original.
+     *
+     * @param item        the value to quote, null is treated as empty.
+     * @param openQuote   the opening quote character.
+     * @param closeQuote  the closing quote character.
+     * @param allowCommas flag if commas are allowed unquoted.
+     * @return Returns the value in quotes when quoting is needed.
+     */
+    private fun applyQuotes(
+        item: String?,
+        openQuote: Char,
+        closeQuote: Char,
+        allowCommas: Boolean
+    ): String {
+
+        val value = item ?: ""
+
+        var prevSpace = false
+
+        /* See if there are any separators in the value, stopping at the first occurrence.
+         * The purpose of quoting is that catenate and separate round trip properly. */
+
+        var i = 0
+
+        while (i < value.length) {
+
+            val charKind = classifyCharacter(value[i])
+
+            if (i == 0 && charKind == UCK_QUOTE)
+                break
+
+            if (charKind == UCK_SPACE) {
+
+                /* Multiple spaces are a separator. */
+                if (prevSpace)
+                    break
+
+                prevSpace = true
+            } else {
+
+                prevSpace = false
+
+                if (isSeparatorNeedingQuotes(charKind, allowCommas))
+                    break
+            }
+
+            i++
+        }
+
+        if (i < value.length) {
+
+            /* Create a quoted copy, doubling any internal quotes that match the outer
+             * ones. Rescan the front of the string for quotes. */
+
+            var splitPoint = 0
+
+            while (splitPoint < i && classifyCharacter(value[splitPoint]) != UCK_QUOTE)
+                splitPoint++
+
+            val newItem = StringBuilder(value.length + 2)
+
+            newItem.append(openQuote).append(value, 0, splitPoint)
+
+            for (charOffset in splitPoint until value.length) {
+
+                newItem.append(value[charOffset])
+
+                if (classifyCharacter(value[charOffset]) == UCK_QUOTE &&
+                    isSurroundingQuote(value[charOffset], openQuote, closeQuote)
+                )
+                    newItem.append(value[charOffset])
+            }
+
+            newItem.append(closeQuote)
+
+            return newItem.toString()
+        }
+
+        return value
+    }
 }
