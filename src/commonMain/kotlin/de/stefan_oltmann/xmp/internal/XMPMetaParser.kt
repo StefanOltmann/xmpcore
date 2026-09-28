@@ -13,17 +13,21 @@ package de.stefan_oltmann.xmp.internal
 import de.stefan_oltmann.xmp.XMPConst
 import de.stefan_oltmann.xmp.XMPException
 import de.stefan_oltmann.xmp.XMPMeta
+import de.stefan_oltmann.xmp.XMPSchemaRegistry
 import de.stefan_oltmann.xmp.internal.XMPNormalizer.normalize
 import de.stefan_oltmann.xmp.options.ParseOptions
 import nl.adaptivity.xmlutil.dom.NodeConsts
+import nl.adaptivity.xmlutil.dom2.Attr
 import nl.adaptivity.xmlutil.dom2.Element
 import nl.adaptivity.xmlutil.dom2.Node
 import nl.adaptivity.xmlutil.dom2.ProcessingInstruction
+import nl.adaptivity.xmlutil.dom2.attributes
 import nl.adaptivity.xmlutil.dom2.childNodes
 import nl.adaptivity.xmlutil.dom2.length
 import nl.adaptivity.xmlutil.dom2.localName
 import nl.adaptivity.xmlutil.dom2.namespaceURI
 import nl.adaptivity.xmlutil.dom2.nodeType
+import nl.adaptivity.xmlutil.dom2.prefix
 
 /**
  * This class replaces the `ExpatAdapter.cpp` and does the XML-parsing and fixes the prefix.
@@ -68,7 +72,11 @@ internal object XMPMetaParser {
             throw XMPException("XMP RDF was not found.", XMPErrorConst.BADXMP)
 
         @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
-        val xmp = XMPRDFParser.parse(result[0] as Node, actualOptions)
+        val rdfRoot = result[0] as Node
+
+        preRegisterNamespaces(rdfRoot)
+
+        val xmp = XMPRDFParser.parse(rdfRoot, actualOptions)
 
         xmp.setPacketHeader(result[2] as? String)
 
@@ -191,5 +199,99 @@ internal object XMPMetaParser {
 
         /* Return NULL if no appropriate node has been found. */
         return null
+    }
+
+    /**
+     * Registers the namespaces the RDF subtree uses before the tree is walked. The walk
+     * itself registers namespaces lazily in DOM attribute order, which is not specified and
+     * differs between platforms, so namespaces whose suggested prefixes collide would
+     * receive different generated prefixes on each platform. Sorting the pre-registration by
+     * URI makes the assignment deterministic on every platform.
+     *
+     * @param rdfRoot The rdf:RDF-node the metadata is parsed from.
+     */
+    private fun preRegisterNamespaces(rdfRoot: Node) {
+
+        val namespaceToPrefix = mutableMapOf<String, String>()
+
+        collectUsedNamespaces(rdfRoot, 0, namespaceToPrefix)
+
+        var newCount = 0
+
+        for (namespaceURI in namespaceToPrefix.keys.sorted()) {
+
+            if (XMPSchemaRegistry.getNamespacePrefix(namespaceURI) != null)
+                continue
+
+            if (newCount >= XMPMeta.MAX_AUTO_REGISTERED_NAMESPACES_PER_DOCUMENT)
+                throw XMPException(
+                    "Cannot register '$namespaceURI': a single document may not introduce more than "
+                        + "${XMPMeta.MAX_AUTO_REGISTERED_NAMESPACES_PER_DOCUMENT} namespaces",
+                    XMPErrorConst.BADSCHEMA
+                )
+
+            newCount++
+
+            XMPSchemaRegistry.registerNamespace(namespaceURI, requireNotNull(namespaceToPrefix[namespaceURI]))
+        }
+    }
+
+    /**
+     * Collects one suggested prefix per namespace URI used in the subtree. If a namespace is
+     * declared under several prefixes, the lexicographically smallest one wins, so the
+     * choice does not depend on the DOM attribute order.
+     */
+    @Suppress("UNCHECKED_CAST_TO_EXTERNAL_INTERFACE")
+    private fun collectUsedNamespaces(
+        node: Node,
+        depth: Int,
+        into: MutableMap<String, String>
+    ) {
+
+        if (depth > MAX_SEARCH_DEPTH)
+            throw XMPException(
+                "Maximum nesting depth of $MAX_SEARCH_DEPTH exceeded",
+                XMPErrorConst.BADXMP
+            )
+
+        if (node.nodeType == NodeConsts.ELEMENT_NODE) {
+
+            val element = node as Element
+
+            rememberNamespace(element.namespaceURI, element.prefix, into)
+
+            val attributes = element.attributes
+
+            for (index in 0 until attributes.getLength()) {
+
+                val attribute = attributes.item(index) ?: continue
+
+                rememberNamespace(attribute.namespaceURI, attribute.prefix, into)
+            }
+        }
+
+        for (index in 0 until node.childNodes.length) {
+
+            val child = requireNotNull(node.childNodes.item(index))
+
+            if (child.nodeType == NodeConsts.ELEMENT_NODE)
+                collectUsedNamespaces(child, depth + 1, into)
+        }
+    }
+
+    private fun rememberNamespace(
+        namespaceURI: String?,
+        prefix: String?,
+        into: MutableMap<String, String>
+    ) {
+
+        /* The declaration namespace itself and prefix-less namespaces need no registration. */
+        if (namespaceURI.isNullOrEmpty() || prefix.isNullOrEmpty() || prefix == "xmlns")
+            return
+
+        val existing = into[namespaceURI]
+
+        if (existing == null || prefix < existing)
+            into[namespaceURI] = prefix
     }
 }
