@@ -365,4 +365,33 @@ internal class XMPNode(
 
         return qualifierList.indexOfFirst { it.name == qualifierName }
     }
+
+    /**
+     * Creates a deep copy of this node, including all children and qualifiers.
+     *
+     * @return Returns the new copy without any parent link.
+     */
+    fun clone(): XMPNode {
+
+        val newNode = XMPNode(name, value, PropertyOptions(options.getOptions()))
+
+        cloneSubtree(newNode)
+
+        return newNode
+    }
+
+    /**
+     * Adds deep copies of all children and qualifiers of this node to the destination
+     * node.
+     *
+     * @param destination the node that receives the copies.
+     */
+    fun cloneSubtree(destination: XMPNode) {
+
+        for (child in getChildren())
+            destination.addChild(child.clone())
+
+        for (qualifier in getQualifier())
+            destination.addQualifier(qualifier.clone())
+    }
 }

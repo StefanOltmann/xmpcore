@@ -403,7 +403,7 @@ public class XMPMeta internal constructor() {
     /**
      * The internals for setProperty() and related calls, used after the node is found or created.
      */
-    private fun setNode(
+    internal fun setNode(
         node: XMPNode,
         value: Any?,
         newOptions: PropertyOptions,
