@@ -118,6 +118,20 @@ public object XMPMetaFactory {
     }
 
     /**
+     * Parses an existing XMP packet, or creates an empty `XMPMeta`-object when the input is
+     * null. Writers that update existing metadata no longer branch between [parseFromString]
+     * and [create]. Corrupt input throws, so the caller keeps control over fallback strategies.
+     *
+     * @param packet A String containing an XMP-file, or null when there is no packet.
+     * @return Returns the parsed [XMPMeta], or a new empty one when the input is null.
+     * @throws XMPException If the packet is not well-formed XML or the parsing fails.
+     */
+    @kotlin.jvm.JvmStatic
+    @Throws(XMPException::class)
+    public fun parseOrCreate(packet: String?): XMPMeta =
+        if (packet == null) create() else parseFromString(packet)
+
+    /**
      * Splits a serialized XMP packet that exceeds a size limit into a main packet and Adobe
      * extended XMP chunks, exactly like ExifTool and the Adobe SDK do it: the main packet
      * keeps as many whole `rdf:Description` blocks as fit and references the remaining data

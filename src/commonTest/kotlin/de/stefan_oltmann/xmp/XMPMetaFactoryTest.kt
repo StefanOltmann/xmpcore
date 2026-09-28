@@ -123,6 +123,50 @@ class XMPMetaFactoryTest {
     }
 
     /**
+     * Parsing a null input returns a fresh empty metadata object.
+     */
+    @Test
+    fun testParseOrCreateReturnsNewMetaForNull() {
+
+        val xmpMeta = XMPMetaFactory.parseOrCreate(null)
+
+        assertEquals("", xmpMeta.getObjectName())
+        assertNotNull(xmpMeta.iterator())
+        assertTrue(!xmpMeta.iterator().hasNext())
+    }
+
+    /**
+     * An existing packet is parsed, exactly like parseFromString does it.
+     */
+    @Test
+    fun testParseOrCreateParsesExistingPacket() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                xmp:Rating="3"/>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertEquals(3, XMPMetaFactory.parseOrCreate(testXmp).getRating())
+    }
+
+    /**
+     * Corrupt input throws instead of silently falling back to an empty object.
+     */
+    @Test
+    fun testParseOrCreateThrowsForCorruptPacket() {
+
+        val ex = assertFailsWith<XMPException> {
+            XMPMetaFactory.parseOrCreate("this is not xml")
+        }
+
+        assertEquals(XMPErrorConst.BADSTREAM, ex.errorCode)
+    }
+
+    /**
      * The legacy x:xapmeta element is accepted as envelope.
      */
     @Test
