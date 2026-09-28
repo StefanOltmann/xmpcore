@@ -117,7 +117,7 @@ public abstract class Options {
      * @return Returns the options as hex bitmask.
      */
     override fun toString(): String =
-        "0x" + valueBits.toString(Utils.HEX_RADIX)
+        "0x" + valueBits.toUInt().toString(Utils.HEX_RADIX)
 
     /**
      * To be implemeted by inheritants.
@@ -161,7 +161,8 @@ public abstract class Options {
 
         if (invalidOptions != 0)
             throw XMPException(
-                "The option bit(s) 0x" + invalidOptions.toString(Utils.HEX_RADIX) + " + are invalid!",
+                "The option bit(s) 0x" + invalidOptions.toUInt().toString(Utils.HEX_RADIX) +
+                    " are invalid!",
                 XMPErrorConst.BADOPTIONS
             )
 

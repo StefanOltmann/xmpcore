@@ -446,4 +446,33 @@ class OptionsTest {
 
         assertEquals("<option name not defined>", options.getOptionsString())
     }
+
+    /**
+     * The error message for invalid options renders the invalid bits as an unsigned hex
+     * value like the Adobe original, without the stray plus sign of the old port.
+     */
+    @Test
+    fun testInvalidOptionsMessageUsesPositiveHex() {
+
+        val ex = assertFailsWith<XMPException> {
+            SerializeOptions().setOptions(-0x7FFFFFF5)
+        }
+
+        assertTrue(ex.message!!.contains("0x8000000b are invalid!"))
+
+        assertTrue(!ex.message!!.contains("+ are"))
+    }
+
+    /**
+     * [Options.toString] renders the bits as an unsigned hex value.
+     */
+    @Test
+    fun testToStringUsesPositiveHex() {
+
+        val options = PropertyOptions()
+
+        options.setOptions(Int.MIN_VALUE)
+
+        assertEquals("0x80000000", options.toString())
+    }
 }

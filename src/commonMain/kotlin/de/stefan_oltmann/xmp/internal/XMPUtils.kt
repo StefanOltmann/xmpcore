@@ -124,12 +124,14 @@ internal object XMPUtils {
 
         /*
          * Real-world packets wrap long base64 values across lines. XML whitespace inside the
-         * data must be ignored like Adobe's decoder does; every other character outside the
-         * alphabet stays an error so corrupted values are not silently accepted.
+         * data must be ignored like Adobe's decoder does, and '=' characters are dropped
+         * anywhere in the value, since Adobe's decoder ignores them everywhere. Every other
+         * character outside the alphabet stays an error so corrupted values are not silently
+         * accepted.
          */
         val compactBase64 = buildString {
             for (char in base64String)
-                if (char !in BASE64_WHITESPACE)
+                if (char !in BASE64_WHITESPACE && char != '=')
                     append(char)
         }
 

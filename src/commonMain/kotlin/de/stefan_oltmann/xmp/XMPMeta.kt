@@ -184,7 +184,9 @@ public class XMPMeta internal constructor() {
 
             XMPValueType.DOUBLE -> convertToDouble(propNode.value)
 
-            XMPValueType.BASE64 -> decodeBase64(propNode.value.orEmpty())
+            XMPValueType.BASE64 -> decodeBase64(
+                propNode.value ?: throw XMPException("Invalid base64 string", XMPErrorConst.BADVALUE)
+            )
 
             /*
              * Leaf values return empty string instead of null
