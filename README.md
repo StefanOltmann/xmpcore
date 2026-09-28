@@ -62,6 +62,23 @@ Namespaces discovered while parsing are registered permanently in a process-glob
 entries behind. Applications that parse very large numbers of files with many changing namespaces
 over long uptime should keep this in mind.
 
+### Deviations from the Adobe XMP Core
+
+This port aims to behave like the Adobe original. A few deliberate deviations remain:
+
+* **Fail-fast instead of swallowing errors.** The Adobe original ignores errors inside all
+  `delete*` methods and returns `false` from the `doesPropertyExist*` methods when the arguments
+  are invalid or a namespace is unknown. This port throws `XMPException` in those cases, because
+  treating invalid input as a no-op masks programming errors.
+* **Dates.** `XMPDateTime` is replaced by `XmpDate`, which parses strictly without silently
+  clamping values and always renders the seconds of a time.
+* **Streams.** Only `String` input and output exists. The `ByteArray`/`InputStream`/
+  `OutputStream` API of the original, including the `exactPacketLength` and thumbnail padding
+  options, is not ported.
+* **Deterministic namespaces.** Namespace prefixes discovered while parsing are assigned in
+  namespace URI order, so the serialized output does not depend on the platform's DOM attribute
+  order.
+
 ## Contributions
 
 Contributions to this project are welcome! If you encounter any issues, have suggestions for

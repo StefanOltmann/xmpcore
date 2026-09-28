@@ -738,6 +738,10 @@ public class XMPMeta internal constructor() {
      * Deletes the given XMP subtree rooted at the given property.
      * It is not an error if the property does not exist.
      *
+     * Attention: Unlike the Adobe original, which swallows every error inside the delete
+     * methods, invalid arguments and unknown namespaces throw an XMPException. This
+     * fail-fast is deliberate, see the "Deviations" section in the README.
+     *
      * @param schemaNS The namespace URI for the property. Has the same usage as in `getProperty()`.
      * @param propName The name of the property. Has the same usage as in getProperty.
      */
@@ -847,6 +851,10 @@ public class XMPMeta internal constructor() {
 
     /**
      * Returns whether the property exists.
+     *
+     * Attention: Unlike the Adobe original, which returns false for invalid arguments and
+     * unknown namespaces, invalid input throws an XMPException. This fail-fast is
+     * deliberate, see the "Deviations" section in the README.
      *
      * @param schemaNS The namespace URI for the property. Has the same usage as in getProperty()`.
      * @param propName The name of the property. Has the same usage as in `getProperty()`.
