@@ -12,6 +12,9 @@ package de.stefan_oltmann.xmp.options
 
 /**
  * Options for [de.stefan_oltmann.xmp.XMPMetaFactory.serializeToString].
+ *
+ * Instances are immutable: the fluent setters return a modified copy and leave the receiver
+ * unchanged, so one shared instance can be reused from concurrent writers without locking.
  */
 public class SerializeOptions : Options {
 
@@ -26,28 +29,33 @@ public class SerializeOptions : Options {
      * requested, because sidecar files (the primary use case here) are rewritten as a whole
      * and existing consumers rely on the current output.
      */
-    private var padding: Int = 0
+    private val padding: Int
 
     /**
      * The string to be used as line terminator in the serialized output.
      */
-    private var newline: String = "\n"
+    private val newline: String
 
     /**
      * The string to be used for each level of indentation in the serialized output.
      */
-    private var indent: String = "  "
+    private val indent: String
 
     /**
      * The number of levels of indentation for the outermost XML element in the serialized
      * output.
      */
-    private var baseIndent: Int = 0
+    private val baseIndent: Int
 
     /**
      * Default constructor.
      */
-    public constructor()
+    public constructor() : super() {
+        padding = 0
+        newline = "\n"
+        indent = "  "
+        baseIndent = 0
+    }
 
     /**
      * Constructor using inital options.
@@ -55,7 +63,28 @@ public class SerializeOptions : Options {
      * @param options the inital options
      *
      */
-    internal constructor(options: Int) : super(options)
+    internal constructor(options: Int) : super(options) {
+        padding = 0
+        newline = "\n"
+        indent = "  "
+        baseIndent = 0
+    }
+
+    /**
+     * Copies all values of an existing instance.
+     */
+    private constructor(
+        options: Int,
+        padding: Int,
+        newline: String,
+        indent: String,
+        baseIndent: Int
+    ) : super(options) {
+        this.padding = padding
+        this.newline = newline
+        this.indent = indent
+        this.baseIndent = baseIndent
+    }
 
     /**
      * @return Returns whether the `<?xpacket ...?>` packet wrapper shall be omitted.
@@ -65,12 +94,10 @@ public class SerializeOptions : Options {
 
     /**
      * @param value the value to set
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
-    public fun setOmitPacketWrapper(value: Boolean): SerializeOptions {
-        setOption(OMIT_PACKET_WRAPPER, value)
-        return this
-    }
+    public fun setOmitPacketWrapper(value: Boolean): SerializeOptions =
+        withOption(OMIT_PACKET_WRAPPER, value)
 
     /**
      * @return Returns whether the `x:xmpmeta` element shall be omitted.
@@ -80,12 +107,10 @@ public class SerializeOptions : Options {
 
     /**
      * @param value the value to set
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
-    public fun setOmitXmpMetaElement(value: Boolean): SerializeOptions {
-        setOption(OMIT_XMPMETA_ELEMENT, value)
-        return this
-    }
+    public fun setOmitXmpMetaElement(value: Boolean): SerializeOptions =
+        withOption(OMIT_XMPMETA_ELEMENT, value)
 
     /**
      * @return Returns whether the packet is marked as read-only.
@@ -95,12 +120,10 @@ public class SerializeOptions : Options {
 
     /**
      * @param value the value to set
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
-    public fun setReadOnlyPacket(value: Boolean): SerializeOptions {
-        setOption(READONLY_PACKET, value)
-        return this
-    }
+    public fun setReadOnlyPacket(value: Boolean): SerializeOptions =
+        withOption(READONLY_PACKET, value)
 
     /**
      * @return Returns whether the compact form of RDF is requested.
@@ -110,12 +133,10 @@ public class SerializeOptions : Options {
 
     /**
      * @param value the value to set
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
-    public fun setUseCompactFormat(value: Boolean): SerializeOptions {
-        setOption(USE_COMPACT_FORMAT, value)
-        return this
-    }
+    public fun setUseCompactFormat(value: Boolean): SerializeOptions =
+        withOption(USE_COMPACT_FORMAT, value)
 
     /**
      * @return Returns whether the canonical form of RDF is requested.
@@ -125,12 +146,10 @@ public class SerializeOptions : Options {
 
     /**
      * @param value the value to set
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
-    public fun setUseCanonicalFormat(value: Boolean): SerializeOptions {
-        setOption(USE_CANONICAL_FORMAT, value)
-        return this
-    }
+    public fun setUseCanonicalFormat(value: Boolean): SerializeOptions =
+        withOption(USE_CANONICAL_FORMAT, value)
 
     /**
      * @return Returns whether the data model is sorted before serializing.
@@ -140,12 +159,10 @@ public class SerializeOptions : Options {
 
     /**
      * @param value the value to set
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
-    public fun setSort(value: Boolean): SerializeOptions {
-        setOption(SORT, value)
-        return this
-    }
+    public fun setSort(value: Boolean): SerializeOptions =
+        withOption(SORT, value)
 
     /**
      * @return Returns the padding.
@@ -155,14 +172,13 @@ public class SerializeOptions : Options {
 
     /**
      * @param value The amount of padding. Must not be negative.
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
     public fun setPadding(value: Int): SerializeOptions {
 
         require(value >= 0) { "Padding must not be negative: $value" }
 
-        padding = value
-        return this
+        return copyOf(padding = value)
     }
 
     /**
@@ -173,12 +189,10 @@ public class SerializeOptions : Options {
 
     /**
      * @param value The line terminator, for example `\n` or `\r\n`.
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
-    public fun setNewline(value: String): SerializeOptions {
-        newline = value
-        return this
-    }
+    public fun setNewline(value: String): SerializeOptions =
+        copyOf(newline = value)
 
     /**
      * @return Returns the indent.
@@ -188,12 +202,10 @@ public class SerializeOptions : Options {
 
     /**
      * @param value The string used for each level of indentation, for example two spaces.
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
-    public fun setIndent(value: String): SerializeOptions {
-        indent = value
-        return this
-    }
+    public fun setIndent(value: String): SerializeOptions =
+        copyOf(indent = value)
 
     /**
      * @return Returns the baseIndent.
@@ -203,25 +215,37 @@ public class SerializeOptions : Options {
 
     /**
      * @param value The number of indentation levels for the outermost XML element.
-     * @return Returns the instance to call more set-methods.
+     * @return Returns a modified copy to call more set-methods on.
      */
     public fun setBaseIndent(value: Int): SerializeOptions {
 
         require(value >= 0) { "Base indent must not be negative: $value" }
 
-        baseIndent = value
-        return this
+        return copyOf(baseIndent = value)
     }
 
     /**
-     * @return Returns clone of this SerializeOptions-object with the same options set.
+     * @return Returns copy of this SerializeOptions-object with the same options set.
      */
     public fun clone(): SerializeOptions =
-        SerializeOptions(getOptions())
-            .setPadding(padding)
-            .setNewline(newline)
-            .setIndent(indent)
-            .setBaseIndent(baseIndent)
+        copyOf()
+
+    private fun copyOf(
+        padding: Int = this.padding,
+        newline: String = this.newline,
+        indent: String = this.indent,
+        baseIndent: Int = this.baseIndent
+    ): SerializeOptions =
+        SerializeOptions(getOptions(), padding, newline, indent, baseIndent)
+
+    private fun withOption(optionBits: Int, value: Boolean): SerializeOptions {
+
+        val copy = copyOf()
+
+        copy.setOption(optionBits, value)
+
+        return copy
+    }
 
     /**
      * @see Options.defineOptionName
