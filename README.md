@@ -15,8 +15,23 @@ This library is a port of Adobe's XMP SDK to Kotlin Multiplatform.
 ## Installation
 
 ```
-implementation("de.stefan-oltmann:xmpcore:1.8.1")
+implementation("de.stefan-oltmann:xmpcore:2.0.0")
 ```
+
+### Migration to 2.0.0
+
+Version 2.0.0 contains a few breaking changes:
+
+* **Dates.** `getDateTimeOriginal()` returns an `XmpDate` and `setDateTimeOriginal()` takes an
+  `XmpDate`, so values keep their seconds and fractions and no longer need manual parsing and
+  formatting.
+* **Face regions.** `getFaces()`/`setFaces()` are replaced by `getFaceRegions()`/`setFaceRegions()`
+  working on a `List<XmpFaceRegion>`, because the region list of the XMP can hold several regions
+  with the same name.
+* **`SerializeOptions` is immutable.** The setters return modified copies instead of mutating the
+  receiver, so one shared instance can be reused from concurrent writers.
+* **`XMPUtils` batch operations** `removeProperties`, `appendProperties`, `separateArrayItems` and
+  `catenateArrayItems` are now available.
 
 ## How to use
 
