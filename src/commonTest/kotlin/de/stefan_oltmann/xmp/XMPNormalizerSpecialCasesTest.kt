@@ -154,6 +154,35 @@ class XMPNormalizerSpecialCasesTest {
     }
 
     /**
+     * An alt-text array without x-default first creates the x-default item from the first
+     * item, then appends the copyright to it.
+     */
+    @Test
+    fun testAudioCopyrightCreatesXDefaultFromFirstItem() {
+
+        val xmpMeta = parse(
+            """
+                <dc:rights>
+                <rdf:Alt>
+                  <rdf:li xml:lang="de">Deutsches Recht</rdf:li>
+                </rdf:Alt>
+                </dc:rights>
+                <xmpDM:copyright>Acme Sound</xmpDM:copyright>
+            """.trimIndent()
+        )
+
+        assertEquals(
+            "Deutsches Recht\n\nAcme Sound",
+            readRightsXDefault(xmpMeta)
+        )
+
+        assertEquals(
+            "Deutsches Recht",
+            xmpMeta.getLocalizedText(XMPConst.NS_DC, "rights", "", "de")?.getValue()
+        )
+    }
+
+    /**
      * An identical copyright tail is kept as-is.
      */
     @Test
