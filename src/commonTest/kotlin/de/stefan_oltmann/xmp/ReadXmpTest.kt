@@ -43,7 +43,7 @@ class ReadXmpTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(
-            expected = "1980-03-15T08:15:30",
+            expected = XmpDate(1980, 3, 15, 8, 15, 30, 0, null),
             actual = xmpMeta.getDateTimeOriginal()
         )
 

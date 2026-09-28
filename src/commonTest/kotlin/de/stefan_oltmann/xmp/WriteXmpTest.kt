@@ -315,7 +315,7 @@ class WriteXmpTest {
 
         xmpMeta.setFlagged(true)
 
-        xmpMeta.setDateTimeOriginal("2023-07-07T13:37:42")
+        xmpMeta.setDateTimeOriginal(XmpDate(2023, 7, 7, 13, 37, 42, 0, null))
 
         xmpMeta.setGpsCoordinates(
             latitudeDdm = "53,13.1635N",

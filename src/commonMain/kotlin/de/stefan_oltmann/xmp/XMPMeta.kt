@@ -1577,21 +1577,25 @@ public class XMPMeta internal constructor() {
      */
 
     /**
-     * Returns the ISO date string of exif:DateTimeOriginal,
-     * the moment the picture was originally taken.
+     * Returns exif:DateTimeOriginal, the moment the picture was originally taken, parsed
+     * into its parts. The timezone policy stays with the caller, because
+     * [XmpDate.utcOffsetMinutes] reports whether the stored value carries one.
      *
-     * @return Returns the ISO date string or null if the property is not present.
+     * @return Returns the parsed date or null if the property is not present or not a
+     * well-formed XMP date.
      */
-    public fun getDateTimeOriginal(): String? =
-        getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal")
+    public fun getDateTimeOriginal(): XmpDate? =
+        XmpDate.parse(getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal"))
 
     /**
-     * Sets exif:DateTimeOriginal from an ISO date string.
+     * Sets exif:DateTimeOriginal from the given date, rendered as the canonical ISO 8601
+     * form of [XmpDate], so parts like a zero second survive instead of being lost to an
+     * externally formatted string.
      *
-     * @param isoDate The ISO date string to set.
+     * @param date The date to set.
      */
-    public fun setDateTimeOriginal(isoDate: String): Unit =
-        setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", isoDate)
+    public fun setDateTimeOriginal(date: XmpDate): Unit =
+        setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", date.toString())
 
     /**
      * Deletes exif:DateTimeOriginal.

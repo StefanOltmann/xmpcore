@@ -64,18 +64,81 @@ class XMPMetaConvenienceTest {
     }
 
     /**
-     * The date time original convenience methods write and delete the property.
+     * The date time original convenience methods write, parse and delete the property.
      */
     @Test
     fun testDateTimeOriginalRoundTrip() {
 
         val xmpMeta = XMPMetaFactory.create()
 
-        xmpMeta.setDateTimeOriginal("2023-07-07T13:37:42")
+        val date = XmpDate(2023, 7, 7, 13, 37, 42, 0, null)
 
-        assertEquals("2023-07-07T13:37:42", xmpMeta.getDateTimeOriginal())
+        xmpMeta.setDateTimeOriginal(date)
+
+        assertEquals(date, xmpMeta.getDateTimeOriginal())
 
         xmpMeta.deleteDateTimeOriginal()
+
+        assertNull(xmpMeta.getDateTimeOriginal())
+    }
+
+    /**
+     * A stored date is returned fully parsed, including fraction and UTC offset.
+     */
+    @Test
+    fun testGetDateTimeOriginalParsesAllParts() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", "1980-03-15T08:15:30.5+02:00")
+
+        assertEquals(
+            expected = XmpDate(1980, 3, 15, 8, 15, 30, 500_000_000, 120),
+            actual = xmpMeta.getDateTimeOriginal()
+        )
+    }
+
+    /**
+     * A zero second is written instead of being lost to a shortened time form.
+     */
+    @Test
+    fun testSetDateTimeOriginalAlwaysWritesSeconds() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setDateTimeOriginal(XmpDate(2024, 5, 1, 12, 30, 0, 0, null))
+
+        assertEquals(
+            expected = "2024-05-01T12:30:00",
+            actual = xmpMeta.getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal")
+        )
+    }
+
+    /**
+     * A fractional second is written in its canonical trimmed form.
+     */
+    @Test
+    fun testSetDateTimeOriginalWritesFractionalSeconds() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setDateTimeOriginal(XmpDate(2024, 5, 1, 12, 30, 45, 123_000_000, null))
+
+        assertEquals(
+            expected = "2024-05-01T12:30:45.123",
+            actual = xmpMeta.getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal")
+        )
+    }
+
+    /**
+     * A value that is not a well-formed XMP date reads as absent, like GPS values do.
+     */
+    @Test
+    fun testGetDateTimeOriginalReturnsNullForUnparseable() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", "not-a-date")
 
         assertNull(xmpMeta.getDateTimeOriginal())
     }
