@@ -14,6 +14,7 @@ import de.stefan_oltmann.xmp.XMPConst
 import de.stefan_oltmann.xmp.XMPException
 import de.stefan_oltmann.xmp.XMPMeta
 import de.stefan_oltmann.xmp.XMPSchemaRegistry
+import de.stefan_oltmann.xmp.XmpDate
 import de.stefan_oltmann.xmp.internal.Utils.checkUUIDFormat
 import de.stefan_oltmann.xmp.internal.XMPPathParser.expandXPath
 import de.stefan_oltmann.xmp.options.ParseOptions
@@ -117,9 +118,24 @@ internal object XMPNormalizer {
                 XMPConst.NS_DC == currSchema.name ->
                     normalizeDCArrays(currSchema)
 
-                XMPConst.NS_EXIF == currSchema.name ->
+                XMPConst.NS_EXIF == currSchema.name -> {
+
+                    /* Do a special case fix for exif:GPSTimeStamp. */
+                    fixGpsTimeStamp(currSchema)
+
                     XMPNodeUtils.findChildNode(currSchema, "exif:UserComment", false)
                         ?.let { userComment -> repairAltText(userComment) }
+                }
+
+                XMPConst.NS_DM == currSchema.name -> {
+
+                    /*
+                     * Do a special case migration of xmpDM:copyright to
+                     * dc:rights['x-default'].
+                     */
+                    XMPNodeUtils.findChildNode(currSchema, "xmpDM:copyright", false)
+                        ?.let { dmCopyright -> migrateAudioCopyright(xmp, dmCopyright) }
+                }
 
                 XMPConst.NS_XMP_RIGHTS == currSchema.name ->
                     XMPNodeUtils.findChildNode(currSchema, "xmpRights:UsageTerms", false)
@@ -129,12 +145,149 @@ internal object XMPNormalizer {
     }
 
     /**
+     * Repairs a defective exif:GPSTimeStamp whose calendar part is missing entirely
+     * ("0000-00-00..."), a pattern GPS trackers without a satellite fix write. The
+     * calendar part is replaced with the one from exif:DateTimeOriginal, or from
+     * exif:DateTimeDigitized when the original is absent. Missing or bad dates skip the
+     * repair silently, so nothing else is blocked, exactly like the Adobe original.
+     *
+     * @param exifSchema the exif schema node
+     */
+    private fun fixGpsTimeStamp(exifSchema: XMPNode) {
+
+        val gpsDateTime = XMPNodeUtils.findChildNode(exifSchema, "exif:GPSTimeStamp", false)
+            ?: return
+
+        val gpsValue = gpsDateTime.value ?: return
+
+        /*
+         * The value is inspected as text, because a date-less value like
+         * "0000-00-00T10:20:30" is not a form the strict date parser accepts. Only the
+         * canonical all-zero calendar part triggers the repair.
+         */
+        val missingCalendarPart = "0000-00-00"
+
+        if (!gpsValue.startsWith(missingCalendarPart))
+            return
+
+        val otherDate = XMPNodeUtils.findChildNode(exifSchema, "exif:DateTimeOriginal", false)
+            ?: XMPNodeUtils.findChildNode(exifSchema, "exif:DateTimeDigitized", false)
+            ?: return
+
+        val calendarPrefix = otherDate.value?.let { parseCalendarPrefix(it) } ?: return
+
+        gpsDateTime.value = calendarPrefix + gpsValue.substring(missingCalendarPart.length)
+    }
+
+    /**
+     * Renders the four-digit calendar prefix (year, optional month and day) of an XMP
+     * date, or null when the value is not a well-formed date with a year.
+     */
+    private fun parseCalendarPrefix(value: String): String? {
+
+        val date = XmpDate.parse(value) ?: return null
+
+        if (date.year == 0)
+            return null
+
+        val builder = StringBuilder(date.year.toString().padStart(4, '0'))
+
+        if (date.month > 0)
+            builder.append('-').append(date.month.toString().padStart(2, '0'))
+
+        if (date.day > 0)
+            builder.append('-').append(date.day.toString().padStart(2, '0'))
+
+        return builder.toString()
+    }
+
+    /**
+     * Migrates the audio copyright of xmpDM:copyright into dc:rights['x-default'] and
+     * removes the source property afterwards, following the Adobe original: the existing
+     * x-default tail behind a double linefeed is replaced, an identical tail is kept, and
+     * a missing or bad dc:rights form stops the migration without blocking other cleanup.
+     *
+     * @param xmp         the metadata object
+     * @param dmCopyright the xmpDM:copyright property node
+     */
+    private fun migrateAudioCopyright(
+        xmp: XMPMeta,
+        dmCopyright: XMPNode
+    ) {
+
+        try {
+
+            val dcSchema = XMPNodeUtils.findSchemaNode(xmp.root, XMPConst.NS_DC, true)
+                ?: return
+
+            val dmValue = dmCopyright.value ?: return
+
+            val doubleLF = "\n\n"
+
+            val dcRightsArray = XMPNodeUtils.findChildNode(dcSchema, "dc:rights", false)
+
+            if (dcRightsArray == null || !dcRightsArray.hasChildren()) {
+
+                /* 1. No dc:rights array: create from double linefeed and xmpDM:copyright. */
+                xmp.setLocalizedText(
+                    XMPConst.NS_DC, "rights", "", XMPConst.X_DEFAULT, doubleLF + dmValue
+                )
+            } else {
+
+                var xdIndex = XMPNodeUtils.lookupLanguageItem(dcRightsArray, XMPConst.X_DEFAULT)
+
+                if (xdIndex < 0) {
+
+                    /* 2. No x-default item: create from the first item. */
+                    val firstValue = dcRightsArray.getChild(1).value ?: ""
+
+                    xmp.setLocalizedText(XMPConst.NS_DC, "rights", "", XMPConst.X_DEFAULT, firstValue)
+
+                    xdIndex = XMPNodeUtils.lookupLanguageItem(dcRightsArray, XMPConst.X_DEFAULT)
+                }
+
+                if (xdIndex < 0)
+                    return
+
+                /* 3. Look for a double linefeed in the x-default value. */
+                val defaultNode = dcRightsArray.getChild(xdIndex)
+                val defaultValue = defaultNode.value ?: ""
+                val lfPos = defaultValue.indexOf(doubleLF)
+
+                if (lfPos < 0) {
+
+                    /* 3A. No double linefeed: compare whole values. */
+                    if (dmValue != defaultValue) {
+
+                        /* 3A2. Append the xmpDM:copyright to the x-default item. */
+                        defaultNode.value = defaultValue + doubleLF + dmValue
+                    }
+                } else {
+
+                    /* 3B. Has double linefeed: compare the tail. */
+                    if (defaultValue.substring(lfPos + 2) != dmValue) {
+
+                        /* 3B2. Replace the x-default tail. */
+                        defaultNode.value = defaultValue.substring(0, lfPos + 2) + dmValue
+                    }
+                }
+            }
+
+            /* 4. Get rid of the xmpDM:copyright. */
+            dmCopyright.parent?.removeChild(dmCopyright)
+
+        } catch (_: XMPException) {
+
+            /* Don't let failures (like a bad dc:rights form) stop other cleanup. */
+        }
+    }
+
+    /**
      * Undo the denormalization performed by the XMP used in Acrobat 5.
      * If a Dublin Core array had only one item, it was serialized as a simple property.
      * The `xml:lang` attribute was dropped from an `alt-text` item if the language was `x-default`.
      *
-     */
-    private fun normalizeDCArrays(dcSchema: XMPNode) {
+     */    private fun normalizeDCArrays(dcSchema: XMPNode) {
 
         for (index in 1..dcSchema.getChildrenLength()) {
 
