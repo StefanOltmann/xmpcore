@@ -2446,6 +2446,43 @@ public class XMPMeta internal constructor() {
         )
     }
 
+    /**
+     * Returns xmpNote:IPTCDigest, the digest of the IPTC IIM block the XMP was last
+     * synchronized with. Readers compare it against the actual IPTC digest to detect
+     * outdated IPTC data, as the MWG guidelines prescribe.
+     *
+     * @return Returns the digest string or null if the property is not present.
+     */
+    public fun getIptcDigest(): String? =
+        getPropertyString(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_IPTC_DIGEST)
+
+    /**
+     * Sets xmpNote:IPTCDigest, the sync indicator of the MWG IPTC round-trip. Writers store
+     * the digest of the IPTC IIM block they synchronized the XMP with.
+     *
+     * @param digest The digest string to set.
+     */
+    public fun setIptcDigest(digest: String): Unit =
+        setProperty(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_IPTC_DIGEST, digest)
+
+    /**
+     * Returns xmpNote:HasExtendedXMP, the GUID referencing the Adobe extended XMP chunks of
+     * an oversized packet. Readers use it to decide whether extended chunks exist, and
+     * [XMPMetaFactory.assemblePacket] consumes them with it.
+     *
+     * @return Returns the GUID string or null if the packet has no extended XMP reference.
+     */
+    public fun getHasExtendedXmp(): String? =
+        getPropertyString(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_HAS_EXTENDED_XMP)
+
+    /**
+     * Deletes xmpNote:HasExtendedXMP. Writers remove the stale reference before writing a
+     * packet that no longer carries extended chunks.
+     * It is not an error if the property does not exist.
+     */
+    public fun deleteHasExtendedXmp(): Unit =
+        deleteProperty(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_HAS_EXTENDED_XMP)
+
     public companion object {
 
         /**

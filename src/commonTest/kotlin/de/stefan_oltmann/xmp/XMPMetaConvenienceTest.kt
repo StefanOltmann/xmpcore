@@ -144,6 +144,48 @@ class XMPMetaConvenienceTest {
     }
 
     /**
+     * The IPTC digest convenience methods write and read the xmpNote property.
+     */
+    @Test
+    fun testIptcDigestRoundTrip() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setIptcDigest("D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E")
+
+        assertEquals("D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E", xmpMeta.getIptcDigest())
+
+        assertEquals(
+            expected = "D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E",
+            actual = xmpMeta.getPropertyString(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_IPTC_DIGEST)
+        )
+    }
+
+    /**
+     * The extended XMP reference is deleted with the property, and deleting when absent is
+     * not an error.
+     */
+    @Test
+    fun testDeleteHasExtendedXmp() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(
+            XMPConst.NS_XMP_NOTE,
+            XMPConst.XMP_NOTE_HAS_EXTENDED_XMP,
+            "D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E"
+        )
+
+        assertEquals("D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E", xmpMeta.getHasExtendedXmp())
+
+        xmpMeta.deleteHasExtendedXmp()
+
+        assertTrue(!xmpMeta.doesPropertyExist(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_HAS_EXTENDED_XMP))
+
+        xmpMeta.deleteHasExtendedXmp()
+    }
+
+    /**
      * Setting GPS coordinates writes the mandatory GPS version id too.
      */
     @Test
