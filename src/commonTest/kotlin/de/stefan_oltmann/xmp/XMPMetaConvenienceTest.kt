@@ -369,10 +369,10 @@ class XMPMetaConvenienceTest {
     }
 
     /**
-     * An empty region list reads back as an empty face map.
+     * An empty region list reads back as an empty face region list.
      */
     @Test
-    fun testGetFacesWithEmptyRegionList() {
+    fun testGetFaceRegionsWithEmptyRegionList() {
 
         /* language=XML */
         val testXmp = """
@@ -390,48 +390,87 @@ class XMPMetaConvenienceTest {
 
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
-        assertEquals(emptyMap(), xmpMeta.getFaces())
+        assertEquals(emptyList(), xmpMeta.getFaceRegions())
     }
 
     /**
-     * The faces are stored as mwg-rs regions and read back.
+     * The face regions are stored as mwg-rs regions and read back in order.
      */
     @Test
-    fun testFacesRoundTrip() {
+    fun testFaceRegionsRoundTrip() {
 
         val xmpMeta = XMPMetaFactory.create()
 
-        assertEquals(emptyMap(), xmpMeta.getFaces())
+        assertEquals(emptyList(), xmpMeta.getFaceRegions())
 
-        val faces = mapOf(
-            "Face A" to XMPRegionArea(0.1, 0.2, 0.3, 0.4),
-            "Face B" to XMPRegionArea(0.5, 0.6, 0.7, 0.8)
+        val regions = listOf(
+            XmpFaceRegion("Face A", XMPRegionArea(0.1, 0.2, 0.3, 0.4)),
+            XmpFaceRegion("Face B", XMPRegionArea(0.5, 0.6, 0.7, 0.8))
         )
 
-        xmpMeta.setFaces(faces, widthPx = 1500, heightPx = 1000)
+        xmpMeta.setFaceRegions(regions, widthPx = 1500, heightPx = 1000)
 
-        assertEquals(faces, xmpMeta.getFaces())
+        assertEquals(regions, xmpMeta.getFaceRegions())
     }
 
     /**
-     * Setting an empty face map deletes the regions.
+     * Two regions with the same name are both kept, because the region list is an array
+     * and not keyed by name.
      */
     @Test
-    fun testSetEmptyFacesDeletesRegions() {
+    fun testFaceRegionsRoundTripWithDuplicateNames() {
 
         val xmpMeta = XMPMetaFactory.create()
 
-        xmpMeta.setFaces(mapOf("Face A" to XMPRegionArea(0.1, 0.2, 0.3, 0.4)), 1500, 1000)
-        xmpMeta.setFaces(emptyMap(), 1500, 1000)
+        val regions = listOf(
+            XmpFaceRegion("Maria", XMPRegionArea(0.1, 0.2, 0.3, 0.4)),
+            XmpFaceRegion("Maria", XMPRegionArea(0.5, 0.6, 0.7, 0.8))
+        )
 
-        assertEquals(emptyMap(), xmpMeta.getFaces())
+        xmpMeta.setFaceRegions(regions, widthPx = 1500, heightPx = 1000)
+
+        assertEquals(regions, xmpMeta.getFaceRegions())
+    }
+
+    /**
+     * A region without a name survives the round-trip instead of being dropped.
+     */
+    @Test
+    fun testFaceRegionsKeepNamelessRegions() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        val regions = listOf(XmpFaceRegion(null, XMPRegionArea(0.1, 0.2, 0.3, 0.4)))
+
+        xmpMeta.setFaceRegions(regions, widthPx = 1500, heightPx = 1000)
+
+        assertEquals(regions, xmpMeta.getFaceRegions())
+    }
+
+    /**
+     * Setting an empty face region list deletes the regions.
+     */
+    @Test
+    fun testSetEmptyFaceRegionsDeletesRegions() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setFaceRegions(
+            listOf(XmpFaceRegion("Face A", XMPRegionArea(0.1, 0.2, 0.3, 0.4))),
+            1500,
+            1000
+        )
+
+        xmpMeta.setFaceRegions(emptyList(), 1500, 1000)
+
+        assertEquals(emptyList(), xmpMeta.getFaceRegions())
     }
 
     /**
      * Regions that are no faces are skipped when reading.
      */
     @Test
-    fun testGetFacesSkipsNonFaceRegions() {
+    fun testGetFaceRegionsSkipsNonFaceRegions() {
 
         /* language=XML */
         val testXmp = """
@@ -468,7 +507,7 @@ class XMPMetaConvenienceTest {
 
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
-        assertEquals(emptyMap(), xmpMeta.getFaces())
+        assertEquals(emptyList(), xmpMeta.getFaceRegions())
     }
 
     /**

@@ -1876,25 +1876,25 @@ public class XMPMeta internal constructor() {
     }
 
     /**
-     * Returns the faces stored in mwg-rs:Regions, keyed by their region name.
-     * Regions without type "Face" or with incomplete area data are skipped;
-     * duplicate names keep the last region.
+     * Returns the face regions stored in mwg-rs:Regions, in stored order. Regions of other
+     * types or with incomplete area data are skipped; a region without a name is kept with
+     * a null name, and duplicate names are kept as separate regions.
      *
-     * @return Returns the face regions or an empty map if none are present.
+     * @return Returns the face regions or an empty list if none are present.
      */
-    public fun getFaces(): Map<String, XMPRegionArea> {
+    public fun getFaceRegions(): List<XmpFaceRegion> {
 
         val regionListExists = doesPropertyExist(XMPConst.NS_MWG_RS, XMP_MWG_RS_REGION_LIST)
 
         if (!regionListExists)
-            return emptyMap()
+            return emptyList()
 
         val regionCount = countArrayItems(XMPConst.NS_MWG_RS, XMP_MWG_RS_REGION_LIST)
 
         if (regionCount == 0)
-            return emptyMap()
+            return emptyList()
 
-        val faces = mutableMapOf<String, XMPRegionArea>()
+        val regions = mutableListOf<XmpFaceRegion>()
 
         @Suppress("LoopWithTooManyJumpStatements")
         for (index in 1..regionCount) {
@@ -1913,27 +1913,27 @@ public class XMPMeta internal constructor() {
             val width = getPropertyDouble(XMPConst.NS_MWG_RS, "$prefix:Area/stArea:w")
             val height = getPropertyDouble(XMPConst.NS_MWG_RS, "$prefix:Area/stArea:h")
 
-            /* Skip regions with missing data. */
+            /* Skip regions with missing area data. */
             @Suppress("ComplexCondition")
-            if (name == null || xPos == null || yPos == null || width == null || height == null)
+            if (xPos == null || yPos == null || width == null || height == null)
                 continue
 
-            faces[name] = XMPRegionArea(xPos, yPos, width, height)
+            regions.add(XmpFaceRegion(name, XMPRegionArea(xPos, yPos, width, height)))
         }
 
-        return faces
+        return regions
     }
 
     /**
-     * Replaces mwg-rs:Regions with face regions normalized to the given image size.
-     * Passing an empty map deletes the Regions structure.
+     * Replaces mwg-rs:Regions with the given face regions, normalized to the given image
+     * size. Passing an empty list deletes the Regions structure.
      *
-     * @param faces The face regions keyed by name.
+     * @param regions The face regions to write.
      * @param widthPx The image width in pixels the areas are normalized to.
      * @param heightPx The image height in pixels the areas are normalized to.
      */
-    public fun setFaces(
-        faces: Map<String, XMPRegionArea>,
+    public fun setFaceRegions(
+        regions: List<XmpFaceRegion>,
         widthPx: Int,
         heightPx: Int
     ): Unit {
@@ -1941,7 +1941,7 @@ public class XMPMeta internal constructor() {
         /* Delete existing entries, if any */
         deleteProperty(NS_MWG_RS, "Regions")
 
-        if (faces.isNotEmpty()) {
+        if (regions.isNotEmpty()) {
 
             setStructField(
                 NS_MWG_RS, XMP_MWG_RS_APPLIED_TO_DIMENSIONS,
@@ -1965,7 +1965,7 @@ public class XMPMeta internal constructor() {
                 null, arrayOptions
             )
 
-            faces.onEachIndexed { index, face ->
+            regions.onEachIndexed { index, region ->
 
                 val oneBasedIndex = index + 1
 
@@ -1988,20 +1988,23 @@ public class XMPMeta internal constructor() {
                     XMPConst.XMP_MWG_RS_TYPE_FACE
                 )
 
-                setStructField(
-                    NS_MWG_RS,
-                    structNameItem,
-                    XMPConst.NS_MWG_RS,
-                    "Name",
-                    face.key
-                )
+                if (region.name != null) {
+
+                    setStructField(
+                        NS_MWG_RS,
+                        structNameItem,
+                        XMPConst.NS_MWG_RS,
+                        "Name",
+                        region.name
+                    )
+                }
 
                 setStructField(
                     NS_MWG_RS,
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "x",
-                    face.value.xPos.toString()
+                    region.area.xPos.toString()
                 )
 
                 setStructField(
@@ -2009,7 +2012,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "y",
-                    face.value.yPos.toString()
+                    region.area.yPos.toString()
                 )
 
                 setStructField(
@@ -2017,7 +2020,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "w",
-                    face.value.width.toString()
+                    region.area.width.toString()
                 )
 
                 setStructField(
@@ -2025,7 +2028,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "h",
-                    face.value.height.toString()
+                    region.area.height.toString()
                 )
 
                 setStructField(
