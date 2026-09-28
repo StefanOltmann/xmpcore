@@ -1925,8 +1925,11 @@ public class XMPMeta internal constructor() {
     }
 
     /**
-     * Replaces mwg-rs:Regions with the given face regions, normalized to the given image
-     * size. Passing an empty list deletes the Regions structure.
+     * Replaces the face regions of mwg-rs:Regions with the given list, normalized to the
+     * given image size. Regions of other types survive the rewrite, and unknown fields of
+     * a face whose name appears exactly once on both sides - like the vendor extensions
+     * other tools store in mwg-rs:Extensions - are carried over. Passing an empty list
+     * deletes the face regions, keeping regions of other types.
      *
      * @param regions The face regions to write.
      * @param widthPx The image width in pixels the areas are normalized to.
@@ -1937,6 +1940,9 @@ public class XMPMeta internal constructor() {
         widthPx: Int,
         heightPx: Int
     ): Unit {
+
+        /* Snapshot the region structure, so foreign data survives the replacement. */
+        val previousRegions = findRegionsStructNode()?.let { deepCopyNode(it) }
 
         /* Delete existing entries, if any */
         deleteProperty(NS_MWG_RS, "Regions")
@@ -2039,7 +2045,125 @@ public class XMPMeta internal constructor() {
                     "normalized"
                 )
             }
+
+            restoreForeignFaceFields(previousRegions)
         }
+
+        reappendNonFaceRegions(previousRegions)
+    }
+
+    private fun findRegionsStructNode(): XMPNode? {
+
+        val schemaNode = XMPNodeUtils.findSchemaNode(root, XMPConst.NS_MWG_RS, false) ?: return null
+
+        return schemaNode.getChildren().firstOrNull { it.hasLocalName("Regions") }
+    }
+
+    private fun findRegionListNode(regionsNode: XMPNode): XMPNode? =
+        regionsNode.getChildren().firstOrNull { it.hasLocalName("RegionList") }
+
+    private fun XMPNode.hasLocalName(localName: String): Boolean =
+        name?.substringAfter(':') == localName
+
+    private fun XMPNode.fieldValue(localName: String): String? =
+        getChildren().firstOrNull { it.hasLocalName(localName) }?.value
+
+    private fun deepCopyNode(node: XMPNode): XMPNode {
+
+        val copy = XMPNode(node.name, node.value, PropertyOptions(node.options.getOptions()))
+
+        copy.isImplicit = node.isImplicit
+        copy.hasValueChild = node.hasValueChild
+
+        for (child in node.getChildren())
+            copy.addChild(deepCopyNode(child))
+
+        for (qualifier in node.getQualifier())
+            copy.addQualifier(deepCopyNode(qualifier))
+
+        return copy
+    }
+
+    private fun restoreForeignFaceFields(
+        previousRegions: XMPNode?
+    ) {
+
+        if (previousRegions == null)
+            return
+
+        val newList = findRegionsStructNode()?.let { findRegionListNode(it) } ?: return
+
+        val newFaceItems = newList.getChildren()
+
+        val oldFaceItems = findRegionListNode(previousRegions)
+            ?.getChildren()
+            ?.filter { it.fieldValue("Type") == XMPConst.XMP_MWG_RS_TYPE_FACE }
+            ?: return
+
+        for (oldItem in oldFaceItems) {
+
+            val name = oldItem.fieldValue("Name") ?: continue
+
+            /* Only a name that appears exactly once on both sides identifies a region. */
+            if (oldFaceItems.count { it.fieldValue("Name") == name } != 1)
+                continue
+
+            val targets = newFaceItems.filter {
+                it.fieldValue("Type") == XMPConst.XMP_MWG_RS_TYPE_FACE &&
+                    it.fieldValue("Name") == name
+            }
+
+            if (targets.size != 1)
+                continue
+
+            for (field in oldItem.getChildren()) {
+
+                if (field.hasLocalName("Type") || field.hasLocalName("Name") || field.hasLocalName("Area"))
+                    continue
+
+                targets[0].addChild(deepCopyNode(field))
+            }
+        }
+    }
+
+    private fun reappendNonFaceRegions(previousRegions: XMPNode?) {
+
+        if (previousRegions == null)
+            return
+
+        val previousList = findRegionListNode(previousRegions) ?: return
+
+        val nonFaceItems = previousList.getChildren()
+            .filter { it.fieldValue("Type") != XMPConst.XMP_MWG_RS_TYPE_FACE }
+
+        if (nonFaceItems.isEmpty())
+            return
+
+        val currentRegions = findRegionsStructNode()
+
+        if (currentRegions == null) {
+
+            /*
+             * No face was written, so the region structure is rebuilt from the snapshot
+             * with the face items removed.
+             */
+            for (item in previousList.getChildren().toList()) {
+                if (item.fieldValue("Type") == XMPConst.XMP_MWG_RS_TYPE_FACE)
+                    previousList.removeChild(item)
+            }
+
+            val schemaNode = XMPNodeUtils.findSchemaNode(root, XMPConst.NS_MWG_RS, true)
+
+            if (schemaNode != null)
+                schemaNode.addChild(previousRegions)
+
+            return
+        }
+
+        val currentList = findRegionListNode(currentRegions) ?: return
+
+        for (item in nonFaceItems)
+            currentList.addChild(currentList.getChildrenLength() + 1, item)
     }
 
     /**
