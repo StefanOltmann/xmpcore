@@ -410,16 +410,13 @@ public class XMPMeta internal constructor() {
         deleteExisting: Boolean
     ) {
 
-        val compositeMask = PropertyOptions.ARRAY or PropertyOptions.ARRAY_ALT_TEXT or
-            PropertyOptions.ARRAY_ALTERNATE or PropertyOptions.ARRAY_ORDERED or PropertyOptions.STRUCT
-
         if (deleteExisting)
             node.clear()
 
         /* Its checked by setOptions(), if the merged result is a valid options set */
         node.options.mergeWith(newOptions)
 
-        if (node.options.getOptions() and compositeMask == 0) {
+        if (!node.options.isCompositeProperty()) {
 
             /* This is setting the value of a leaf node. */
             setNodeValue(node, value)
@@ -428,12 +425,6 @@ public class XMPMeta internal constructor() {
 
             if (value != null && value.toString().isNotEmpty())
                 throw XMPException("Composite nodes can't have values", XMPErrorConst.BADXPATH)
-
-            /* Can't change an array to a struct, or vice versa. */
-            if (node.options.getOptions() and compositeMask != 0 &&
-                newOptions.getOptions() and compositeMask != node.options.getOptions() and compositeMask
-            )
-                throw XMPException("Requested and existing composite form mismatch", XMPErrorConst.BADXPATH)
 
             node.removeChildren()
         }

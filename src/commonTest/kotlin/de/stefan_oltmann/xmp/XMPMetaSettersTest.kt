@@ -80,4 +80,32 @@ class XMPMetaSettersTest {
         )
         assertEquals(2, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
     }
+
+    /**
+     * Setting a null value on an existing composite node whose requested form differs
+     * clears the children instead of failing, like the Adobe original does.
+     */
+    @Test
+    fun testSetPropertyNullValueOnExistingArrayClearsChildren() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:subject>
+                  <rdf:Bag>
+                    <rdf:li>fox</rdf:li>
+                  </rdf:Bag>
+                </dc:subject>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        xmpMeta.setProperty(XMPConst.NS_DC, "subject", null)
+
+        assertEquals(0, xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
+    }
 }
