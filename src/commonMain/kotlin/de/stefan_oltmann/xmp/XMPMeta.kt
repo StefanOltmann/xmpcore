@@ -1605,6 +1605,15 @@ public class XMPMeta internal constructor() {
         deleteProperty(XMPConst.NS_EXIF, "DateTimeOriginal")
 
     /**
+     * Deletes exif:DateTimeDigitized. Writers remove it alongside
+     * [deleteDateTimeOriginal], because external writers store both date properties and
+     * leaving one behind makes them inconsistent.
+     * It is not an error if the property does not exist.
+     */
+    public fun deleteDateTimeDigitized(): Unit =
+        deleteProperty(XMPConst.NS_EXIF, "DateTimeDigitized")
+
+    /**
      * @return Returns tiff:Orientation as integer or null if the property is not present.
      */
     public fun getOrientation(): Int? =

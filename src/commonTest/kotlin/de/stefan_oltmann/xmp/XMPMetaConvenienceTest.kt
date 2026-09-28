@@ -144,6 +144,24 @@ class XMPMetaConvenienceTest {
     }
 
     /**
+     * Deleting exif:DateTimeDigitized removes the property, and deleting when absent is
+     * not an error.
+     */
+    @Test
+    fun testDeleteDateTimeDigitized() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(XMPConst.NS_EXIF, "DateTimeDigitized", "2023-07-07T13:37:42")
+
+        xmpMeta.deleteDateTimeDigitized()
+
+        assertTrue(!xmpMeta.doesPropertyExist(XMPConst.NS_EXIF, "DateTimeDigitized"))
+
+        xmpMeta.deleteDateTimeDigitized()
+    }
+
+    /**
      * The IPTC digest convenience methods write and read the xmpNote property.
      */
     @Test
