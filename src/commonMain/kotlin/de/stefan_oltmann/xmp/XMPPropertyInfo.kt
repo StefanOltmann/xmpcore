@@ -14,7 +14,7 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
 
 /**
  * This interface is used to return a property together with its path and namespace.
- * It is returned when properties are iterated with the <code>XMPIterator</code>.
+ * It is returned when properties are iterated with the [XMPIterator].
  */
 public interface XMPPropertyInfo : XMPProperty {
 

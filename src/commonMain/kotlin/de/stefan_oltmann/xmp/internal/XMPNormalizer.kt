@@ -408,14 +408,14 @@ internal object XMPNormalizer {
 
         val strictAliasing = options.getStrictAliasing()
 
-        val schemas = tree.iterateChildren().asSequence().toList()
+        val schemas = tree.getChildren().toList()
 
         for (currSchema in schemas) {
 
             if (!currSchema.hasAliases)
                 continue
 
-            val properties = currSchema.iterateChildrenMutable().asSequence().toList()
+            val properties = currSchema.getChildren().toList()
 
             for (currProp in properties) {
 
