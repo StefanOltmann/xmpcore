@@ -96,6 +96,35 @@ public data class XmpGps(
         }
 
         /**
+         * Checks whether a coordinate pair is inside the valid sphere range, mirroring the
+         * range check of the constructor. Callers that must produce a typed error, like an
+         * image write exception, pre-check with this instead of catching the constructor's
+         * IllegalArgumentException.
+         *
+         * @param latitude The latitude in decimal degrees.
+         * @param longitude The longitude in decimal degrees.
+         * @return Returns true when [XmpGps] accepts the pair.
+         */
+        @kotlin.jvm.JvmStatic
+        public fun isValid(latitude: Double, longitude: Double): Boolean =
+            latitude in -MAX_LATITUDE..MAX_LATITUDE &&
+                longitude in -MAX_LONGITUDE..MAX_LONGITUDE
+
+        /**
+         * Checks whether two positions cannot be distinguished by a write-read round-trip,
+         * because both render to the same DDM values. Callers verifying that a stored value
+         * survived a write compare with this instead of guessing a tolerance in degrees.
+         *
+         * @param first The position as it was written.
+         * @param second The position as it was read back.
+         * @return Returns true when both render identically.
+         */
+        @kotlin.jvm.JvmStatic
+        public fun equivalent(first: XmpGps, second: XmpGps): Boolean =
+            first.toLatitudeDdm() == second.toLatitudeDdm() &&
+                first.toLongitudeDdm() == second.toLongitudeDdm()
+
+        /**
          * Converts a DMS (degrees, minutes, seconds) or DDM (degrees, decimal minutes) value
          * into decimal degrees. Designed to be robust and to never throw.
          */
