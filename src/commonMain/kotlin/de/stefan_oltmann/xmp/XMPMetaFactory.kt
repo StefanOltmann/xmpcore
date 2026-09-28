@@ -132,6 +132,26 @@ public object XMPMetaFactory {
         if (packet == null) create() else parseFromString(packet)
 
     /**
+     * Checks whether a packet would parse without keeping the parsed result. Readers can
+     * validate a packet before handing it to a writer without duplicating the parser's
+     * acceptance rules through text matching.
+     *
+     * @param packet A String containing an XMP-file.
+     * @return Returns true when [parseFromString] would accept the packet.
+     */
+    @kotlin.jvm.JvmStatic
+    public fun isParsable(packet: String): Boolean {
+
+        try {
+            parseFromString(packet)
+
+            return true
+        } catch (_: XMPException) {
+            return false
+        }
+    }
+
+    /**
      * Splits a serialized XMP packet that exceeds a size limit into a main packet and Adobe
      * extended XMP chunks, exactly like ExifTool and the Adobe SDK do it: the main packet
      * keeps as many whole `rdf:Description` blocks as fit and references the remaining data
