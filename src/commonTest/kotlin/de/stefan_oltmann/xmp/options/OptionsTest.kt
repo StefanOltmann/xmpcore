@@ -377,11 +377,12 @@ class OptionsTest {
 
         val options = ParseOptions()
             .setRequireXMPMeta(true)
+            .setFixControlChars(true)
             .setStrictAliasing(true)
             .setOmitNormalization(true)
 
         assertEquals(
-            expected = "REQUIRE_XMP_META | STRICT_ALIASING | OMIT_NORMALIZATION",
+            expected = "REQUIRE_XMP_META | STRICT_ALIASING | FIX_CONTROL_CHARS | OMIT_NORMALIZATION",
             actual = options.getOptionsString()
         )
     }

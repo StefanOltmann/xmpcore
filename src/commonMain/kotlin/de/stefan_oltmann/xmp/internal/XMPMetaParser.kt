@@ -17,7 +17,6 @@ import de.stefan_oltmann.xmp.XMPSchemaRegistry
 import de.stefan_oltmann.xmp.internal.XMPNormalizer.normalize
 import de.stefan_oltmann.xmp.options.ParseOptions
 import nl.adaptivity.xmlutil.dom.NodeConsts
-import nl.adaptivity.xmlutil.dom2.Attr
 import nl.adaptivity.xmlutil.dom2.Element
 import nl.adaptivity.xmlutil.dom2.Node
 import nl.adaptivity.xmlutil.dom2.ProcessingInstruction
@@ -45,6 +44,17 @@ internal object XMPMetaParser {
     private const val MAX_SEARCH_DEPTH = 512
 
     /**
+     * The DEL character, the last ASCII control character replaced by the
+     * FIX_CONTROL_CHARS option.
+     */
+    private const val DELETE_CHARACTER = 0x007F
+
+    /**
+     * The first character after the ASCII control range.
+     */
+    private const val FIRST_ASCII_CONTROL = 0x0020
+
+    /**
      * Parses the input source into an XMP metadata object, including
      * de-aliasing and normalisation.
      *
@@ -62,7 +72,12 @@ internal object XMPMetaParser {
 
         val actualOptions = options ?: ParseOptions()
 
-        val document = DomParser.parseDocumentFromString(input)
+        val actualInput = if (actualOptions.getFixControlChars())
+            replaceControlCharsWithSpaces(input)
+        else
+            input
+
+        val document = DomParser.parseDocumentFromString(actualInput)
 
         val xmpMetaRequired = actualOptions.getRequireXMPMeta()
 
@@ -294,4 +309,51 @@ internal object XMPMetaParser {
         if (existing == null || prefix < existing)
             into[namespaceURI] = prefix
     }
+
+    /**
+     * Replaces ASCII control characters that are invalid in XML with spaces, like the
+     * default-on Adobe FIX_CONTROL_CHARS option and the FixASCIIControlsReader of the
+     * original do. Tab, line feed and carriage return stay untouched.
+     *
+     * @param input the raw XMP string.
+     * @return Returns the sanitized string.
+     */
+    private fun replaceControlCharsWithSpaces(input: String): String {
+
+        var hasControlChar = false
+
+        for (char in input) {
+
+            if (isReplacedControlChar(char)) {
+                hasControlChar = true
+                break
+            }
+        }
+
+        if (!hasControlChar)
+            return input
+
+        return buildString(input.length) {
+
+            for (char in input) {
+
+                if (isReplacedControlChar(char))
+                    append(' ')
+                else
+                    append(char)
+            }
+        }
+    }
+
+    /**
+     * Checks whether a character is an ASCII control character that is invalid in XML and
+     * gets replaced with a space: the C0 controls except tab, line feed and carriage
+     * return, plus the DEL character.
+     *
+     * @param char the character to check.
+     * @return Returns true when the character gets replaced.
+     */
+    private fun isReplacedControlChar(char: Char): Boolean =
+        char.code < FIRST_ASCII_CONTROL && char != '\t' && char != '\n' && char != '\r' ||
+            char.code == DELETE_CHARACTER
 }

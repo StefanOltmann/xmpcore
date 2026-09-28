@@ -78,11 +78,12 @@ class OptionsGetOptionsStringTest {
     fun testParseOptionsNames() {
 
         val options = ParseOptions()
+            .setFixControlChars(true)
             .setStrictAliasing(true)
             .setOmitNormalization(true)
 
         assertEquals(
-            expected = "STRICT_ALIASING | OMIT_NORMALIZATION",
+            expected = "STRICT_ALIASING | FIX_CONTROL_CHARS | OMIT_NORMALIZATION",
             actual = options.getOptionsString()
         )
     }

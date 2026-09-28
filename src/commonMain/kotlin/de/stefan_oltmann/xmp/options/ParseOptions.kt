@@ -15,6 +15,12 @@ package de.stefan_oltmann.xmp.options
  */
 public class ParseOptions : Options() {
 
+    init {
+
+        /* The Adobe default enables the repair options. */
+        setOption(FIX_CONTROL_CHARS, true)
+    }
+
     /**
      * @return Returns the requireXMPMeta.
      */
@@ -27,6 +33,21 @@ public class ParseOptions : Options() {
      */
     public fun setRequireXMPMeta(value: Boolean): ParseOptions {
         setOption(REQUIRE_XMP_META, value)
+        return this
+    }
+
+    /**
+     * @return Returns whether control characters are replaced with spaces while parsing.
+     */
+    public fun getFixControlChars(): Boolean =
+        getOption(FIX_CONTROL_CHARS)
+
+    /**
+     * @param value the value to set
+     * @return Returns the instance to call more set-methods.
+     */
+    public fun setFixControlChars(value: Boolean): ParseOptions {
+        setOption(FIX_CONTROL_CHARS, value)
         return this
     }
 
@@ -66,6 +87,7 @@ public class ParseOptions : Options() {
     override fun defineOptionName(option: Int): String? {
         return when (option) {
             REQUIRE_XMP_META -> "REQUIRE_XMP_META"
+            FIX_CONTROL_CHARS -> "FIX_CONTROL_CHARS"
             STRICT_ALIASING -> "STRICT_ALIASING"
             OMIT_NORMALIZATION -> "OMIT_NORMALIZATION"
             else -> null
@@ -76,7 +98,7 @@ public class ParseOptions : Options() {
      * @see Options.getValidOptions
      */
     override fun getValidOptions(): Int =
-        REQUIRE_XMP_META or STRICT_ALIASING or OMIT_NORMALIZATION
+        REQUIRE_XMP_META or FIX_CONTROL_CHARS or STRICT_ALIASING or OMIT_NORMALIZATION
 
     /**
      * Require a surrounding "x:xmpmeta" element in the xml-document.
@@ -84,6 +106,12 @@ public class ParseOptions : Options() {
     internal companion object {
 
         const val REQUIRE_XMP_META = 0x0001
+
+        /**
+         * The default-on Adobe option to replace ASCII control characters with spaces
+         * while parsing.
+         */
+        const val FIX_CONTROL_CHARS = 0x0008
 
         /**
          * Do not reconcile alias differences, throw an exception instead.
