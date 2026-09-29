@@ -519,6 +519,42 @@ class XMPMetaConvenienceTest {
     }
 
     /**
+     * getTitle and getDescription apply the same selection: the first localization whose
+     * value is not blank wins, so a blank x-default item does not hide the real value.
+     */
+    @Suppress("MultilineRawStringIndentation")
+    @Test
+    fun testTitleAndDescriptionUseSameSelection() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title>
+                  <rdf:Alt>
+                    <rdf:li xml:lang="x-default"> </rdf:li>
+                    <rdf:li xml:lang="de">Titel</rdf:li>
+                  </rdf:Alt>
+                </dc:title>
+                <dc:description>
+                  <rdf:Alt>
+                    <rdf:li xml:lang="x-default"> </rdf:li>
+                    <rdf:li xml:lang="de">Beschreibung</rdf:li>
+                  </rdf:Alt>
+                </dc:description>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals("Titel", xmpMeta.getTitle())
+
+        assertEquals("Beschreibung", xmpMeta.getDescription())
+    }
+
+    /**
      * The object name defaults to the empty string and is read from rdf:about.
      */
     @Test

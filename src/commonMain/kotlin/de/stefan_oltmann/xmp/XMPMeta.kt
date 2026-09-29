@@ -2248,19 +2248,11 @@ public class XMPMeta internal constructor() {
 
         if (shownLocationsCount > 0) {
 
-            val iterator: XMPIterator = iterator(
-                schemaNS = XMPConst.NS_IPTC_EXT,
-                propName = "${XMPConst.XMP_IPTC_EXT_LOCATION_SHOWN}[1]/Iptc4xmpExt:LocationName",
-                options = null
-            )
-
             /* Like getTitle() the first non-empty localization wins. */
-            locationName = iterator.asSequence()
-                .firstOrNull { propertyInfo ->
-                    propertyInfo.getOptions().hasQualifiers() &&
-                        !propertyInfo.getValue().isNullOrBlank()
-                }
-                ?.getValue()
+            locationName = firstNonEmptyLocalization(
+                XMPConst.NS_IPTC_EXT,
+                "${XMPConst.XMP_IPTC_EXT_LOCATION_SHOWN}[1]/Iptc4xmpExt:LocationName"
+            )
 
             location =
                 getPropertyString(
@@ -2452,17 +2444,25 @@ public class XMPMeta internal constructor() {
     }
 
     /**
-     * @return Returns the first non-empty localization of dc:title or null if absent.
+     * Returns the first localization of an alt-text property whose value is not null or
+     * blank, which is how the localized convenience getters select their value.
+     *
+     * @param schemaNS The namespace URI of the alt-text property.
+     * @param propName The path of the alt-text property.
+     * @return Returns the first non-empty localization or null if there is none.
      */
-    public fun getTitle(): String? {
+    @Suppress("LoopWithTooManyJumpStatements")
+    private fun firstNonEmptyLocalization(
+        schemaNS: String,
+        propName: String
+    ): String? {
 
         val iterator: XMPIterator = iterator(
-            schemaNS = XMPConst.NS_DC,
-            propName = "title",
+            schemaNS = schemaNS,
+            propName = propName,
             options = null
         )
 
-        @Suppress("LoopWithTooManyJumpStatements")
         while (iterator.hasNext()) {
 
             val propertyInfo = iterator.next()
@@ -2480,6 +2480,12 @@ public class XMPMeta internal constructor() {
 
         return null
     }
+
+    /**
+     * @return Returns the first non-empty localization of dc:title or null if absent.
+     */
+    public fun getTitle(): String? =
+        firstNonEmptyLocalization(XMPConst.NS_DC, "title")
 
     /**
      * Replaces dc:title with a single x-default localized text.
@@ -2520,32 +2526,8 @@ public class XMPMeta internal constructor() {
     /**
      * @return Returns the first non-empty localization of dc:description or null if absent.
      */
-    public fun getDescription(): String? {
-
-        val iterator: XMPIterator = iterator(
-            schemaNS = XMPConst.NS_DC,
-            propName = "description",
-            options = null
-        )
-
-        @Suppress("LoopWithTooManyJumpStatements")
-        while (iterator.hasNext()) {
-
-            val propertyInfo = iterator.next()
-
-            if (!propertyInfo.getOptions().hasQualifiers())
-                continue
-
-            val value = propertyInfo.getValue()
-
-            if (value.isNullOrBlank())
-                continue
-
-            return value
-        }
-
-        return null
-    }
+    public fun getDescription(): String? =
+        firstNonEmptyLocalization(XMPConst.NS_DC, "description")
 
     /**
      * Replaces dc:description with a single x-default localized text.
