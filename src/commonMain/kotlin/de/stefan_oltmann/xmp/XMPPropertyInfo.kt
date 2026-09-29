@@ -10,11 +10,9 @@
  */
 package de.stefan_oltmann.xmp
 
-import de.stefan_oltmann.xmp.options.PropertyOptions
-
 /**
  * This interface is used to return a property together with its path and namespace.
- * It is returned when properties are iterated with the <code>XMPIterator</code>.
+ * It is returned when properties are iterated with the [XMPIterator].
  */
 public interface XMPPropertyInfo : XMPProperty {
 
@@ -25,17 +23,7 @@ public interface XMPPropertyInfo : XMPProperty {
 
     /**
      * @return Returns the path of the property, but only if returned by the iterator.
+     * Schema nodes have no path and report null, like the Adobe original.
      */
-    public fun getPath(): String
-
-    /**
-     * @return Returns the value of the property.
-     */
-    override fun getValue(): String
-
-    /**
-     * @return Returns the options of the property.
-     */
-    override fun getOptions(): PropertyOptions
-
+    public fun getPath(): String?
 }

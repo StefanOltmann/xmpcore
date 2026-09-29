@@ -116,7 +116,8 @@ class DomParserTest {
     }
 
     /**
-     * A blank document is rejected.
+     * A blank document fails like a document the XML parser rejects, because that is what
+     * the Adobe original reports for whitespace-only input.
      */
     @Test
     fun testParseBlankDocumentThrows() {
@@ -125,11 +126,12 @@ class DomParserTest {
             DomParser.parseDocumentFromString("   ")
         }
 
-        assertEquals(XMPErrorConst.BADXMP, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
     }
 
     /**
-     * A document that cannot be recovered is rejected.
+     * A document that cannot be recovered is rejected as an XML error, like the Adobe
+     * original.
      */
     @Test
     fun testParseUnrecoverableDocumentThrows() {
@@ -138,6 +140,6 @@ class DomParserTest {
             XMPMetaFactory.parseFromString("this is not xml <broken")
         }
 
-        assertEquals(XMPErrorConst.BADSTREAM, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
     }
 }

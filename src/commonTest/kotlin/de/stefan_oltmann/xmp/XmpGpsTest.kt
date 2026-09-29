@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 /**
  * Tests [XmpGps]: parsing of the DDM and DMS values the XMP specification and broken tools
@@ -223,6 +224,61 @@ class XmpGpsTest {
         xmpMeta.setProperty(XMPConst.NS_EXIF, "GPSLatitude", "91,0.0N")
 
         assertNull(xmpMeta.getGpsCoordinates())
+    }
+
+    /**
+     * The range check mirrors the constructor and accepts the closed sphere boundaries.
+     */
+    @Test
+    fun testIsValidAcceptsSphereBoundaries() {
+
+        assertTrue(XmpGps.isValid(90.0, 180.0))
+
+        assertTrue(XmpGps.isValid(-90.0, -180.0))
+
+        assertTrue(XmpGps.isValid(53.219392, 8.239662))
+    }
+
+    /**
+     * The range check rejects out-of-sphere and non-numeric values.
+     */
+    @Test
+    fun testIsValidRejectsInvalidCoordinates() {
+
+        assertTrue(!XmpGps.isValid(90.0001, 0.0))
+
+        assertTrue(!XmpGps.isValid(0.0, -180.0001))
+
+        assertTrue(!XmpGps.isValid(Double.NaN, 0.0))
+    }
+
+    /**
+     * Two positions that render to the same DDM values cannot be distinguished by a
+     * write-read round-trip.
+     */
+    @Test
+    fun testEquivalentAcceptsValuesWithinRenderPrecision() {
+
+        assertTrue(
+            XmpGps.equivalent(
+                XmpGps(53.2193916, 8.2396620),
+                XmpGps(53.2193920, 8.2396615)
+            )
+        )
+    }
+
+    /**
+     * Positions that render to different DDM values are not equivalent.
+     */
+    @Test
+    fun testEquivalentRejectsDifferentValues() {
+
+        assertTrue(
+            !XmpGps.equivalent(
+                XmpGps(53.2193916, 8.0),
+                XmpGps(53.22, 8.0)
+            )
+        )
     }
 
     private fun assertThrowsIllegalArgument(latitude: Double, longitude: Double) {

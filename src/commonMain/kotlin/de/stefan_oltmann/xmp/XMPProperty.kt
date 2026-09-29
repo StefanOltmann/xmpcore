@@ -28,7 +28,7 @@ public interface XMPProperty {
     public fun getOptions(): PropertyOptions
 
     /**
-     * Only set by {@link XMPMeta.getLocalizedText}.
+     * Only set by [XMPMeta.getLocalizedText].
      *
      * @return Returns the language of the alt-text item.
      */

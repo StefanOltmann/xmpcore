@@ -18,6 +18,44 @@ import de.stefan_oltmann.xmp.XMPConst
 internal object Utils {
 
     /**
+     * The internal properties of the xmp schema, see the XMP specification.
+     */
+    private val internalXmpProperties = setOf(
+        "xmp:BaseURL",
+        "xmp:CreatorTool",
+        "xmp:Format",
+        "xmp:Locale",
+        "xmp:MetadataDate",
+        "xmp:ModifyDate"
+    )
+
+    /**
+     * The internal properties of the pdf schema, see the XMP specification.
+     */
+    private val internalPdfProperties = setOf(
+        "pdf:BaseURL",
+        "pdf:Creator",
+        "pdf:ModDate",
+        "pdf:PDFVersion",
+        "pdf:Producer"
+    )
+
+    /**
+     * The internal properties of the Camera Raw schema, see the XMP specification.
+     */
+    private val internalCameraRawProperties = setOf(
+        "crs:Version",
+        "crs:RawFileName",
+        "crs:ToneCurveName"
+    )
+
+    /**
+     * Matches the decimal and hexadecimal numeric character references of XML, like
+     * `&#x1;` or `&#2;`.
+     */
+    private val controlCharReferenceRegex = Regex("&#(?:x([0-9A-Fa-f]+)|([0-9]+));")
+
+    /**
      * segments of a UUID.
      */
     const val UUID_SEGMENT_COUNT = 4
@@ -79,7 +117,7 @@ internal object Utils {
                 }
 
                 ' ' -> {
-                    /* Leave as is. */
+                    /* Remove spaces, like the Adobe original does. */
                 }
 
                 else -> {
@@ -355,6 +393,39 @@ internal object Utils {
     }
 
     /**
+     * Replaces numeric character references that resolve to a control character with a
+     * space, like the FixASCIIControlsReader retry pass of the Adobe original. The XML
+     * parser resolves such references into the data model silently, so the repair must
+     * happen on the raw input before parsing. References to legal characters, including
+     * tab, line feed and carriage return, are left untouched.
+     *
+     * @param value the raw parse input.
+     * @return Returns the repaired string.
+     */
+    fun replaceControlCharReferencesWithSpace(value: String): String {
+
+        /* Fast path without allocation for inputs without any character reference. */
+        if (!value.contains("&#"))
+            return value
+
+        return controlCharReferenceRegex.replace(value) { match ->
+
+            val hexDigits = match.groupValues[1]
+            val decimalDigits = match.groupValues[2]
+
+            val codePoint = if (hexDigits.isNotEmpty())
+                hexDigits.toIntOrNull(HEX_RADIX)
+            else
+                decimalDigits.toIntOrNull()
+
+            if (codePoint != null && isReplacedControlChar(codePoint.toChar()))
+                " "
+            else
+                match.value
+        }
+    }
+
+    /**
      * Checks whether a character is a control character that gets replaced by a space.
      *
      * Tab, LF and CR are excluded, matching the Adobe original.
@@ -433,5 +504,96 @@ internal object Utils {
 
             char++
         }
+    }
+
+    /**
+     * Checks whether a property is defined as an "internal property" that describes the
+     * processing history of the file and should survive metadata cleanups, see the XMP
+     * specification. The comparison uses the qualified property names with their standard
+     * prefixes, like the Adobe original does.
+     *
+     * @param schema a schema namespace
+     * @param prop   a qualified XMP property name
+     * @return Returns true if the property is defined as an internal property.
+     */
+    fun isInternalProperty(schema: String?, prop: String?): Boolean {
+
+        var isInternal = false
+
+        if (XMPConst.NS_DC == schema) {
+
+            if ("dc:format" == prop || "dc:language" == prop)
+                isInternal = true
+
+        } else if (XMPConst.NS_XMP == schema) {
+
+            if (prop in internalXmpProperties)
+                isInternal = true
+
+        } else if (XMPConst.NS_PDF == schema) {
+
+            if (prop in internalPdfProperties)
+                isInternal = true
+
+        } else if (XMPConst.NS_TIFF == schema) {
+
+            isInternal = true
+
+            if ("tiff:ImageDescription" == prop || "tiff:Artist" == prop ||
+                "tiff:Copyright" == prop
+            )
+                isInternal = false
+
+        } else if (XMPConst.NS_EXIF == schema) {
+
+            isInternal = true
+
+            if ("exif:UserComment" == prop)
+                isInternal = false
+
+        } else if (XMPConst.NS_EXIF_AUX == schema) {
+
+            isInternal = true
+
+        } else if (XMPConst.NS_PHOTOSHOP == schema) {
+
+            if ("photoshop:ICCProfile" == prop)
+                isInternal = true
+
+        } else if (XMPConst.NS_CAMERA_RAW == schema) {
+
+            if (prop in internalCameraRawProperties)
+                isInternal = true
+
+        } else if (XMPConst.NS_ADOBE_STOCK_PHOTO == schema) {
+
+            isInternal = true
+
+        } else if (XMPConst.NS_XMP_MM == schema) {
+
+            isInternal = true
+
+        } else if (XMPConst.TYPE_TEXT == schema) {
+
+            isInternal = true
+
+        } else if (XMPConst.TYPE_PAGED_FILE == schema) {
+
+            isInternal = true
+
+        } else if (XMPConst.TYPE_GRAPHICS == schema) {
+
+            isInternal = true
+
+        } else if (XMPConst.TYPE_IMAGE == schema) {
+
+            isInternal = true
+
+        } else if (XMPConst.TYPE_FONT == schema) {
+
+            isInternal = true
+        }
+
+        return isInternal
     }
 }

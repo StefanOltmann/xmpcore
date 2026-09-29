@@ -293,6 +293,16 @@ public object XMPConst {
     public const val XMP_MWG_RS_REGION_LIST: String = "Regions/mwg-rs:RegionList"
     public const val XMP_MWG_RS_APPLIED_TO_DIMENSIONS: String = "Regions/mwg-rs:AppliedToDimensions"
 
+    /**
+     * The xmpNote:IPTCDigest property, the sync indicator of the MWG IPTC round-trip.
+     */
+    public const val XMP_NOTE_IPTC_DIGEST: String = "IPTCDigest"
+
+    /**
+     * The xmpNote:HasExtendedXMP property, the GUID reference to Adobe extended XMP chunks.
+     */
+    public const val XMP_NOTE_HAS_EXTENDED_XMP: String = "HasExtendedXMP"
+
     /* XmpDM:pick="1" or xmpDM:pick="0" */
     public const val FLAGGED_TAG_ADOBE_NAME: String = "pick"
     public const val FLAGGED_TAG_ADOBE_TRUE: String = "1"

@@ -32,10 +32,12 @@ public abstract class Options {
      *
      * @param options the options bit mask
      *
+     * Attention: The bit mask is assigned directly, because a virtual mutator call from a
+     * constructor would dispatch into an overriding subclass before its own state exists.
      */
     protected constructor(options: Int) {
         assertOptionsValid(options)
-        setOptions(options)
+        valueBits = options
     }
 
     protected abstract fun getValidOptions(): Int
@@ -50,8 +52,10 @@ public abstract class Options {
     /**
      * @param optionBits the binary bit or bits that shall be set to the given value
      * @param value      the boolean value to set
+     *
+     * Open so an immutable option class can reject the inherited mutator.
      */
-    public fun setOption(optionBits: Int, value: Boolean) {
+    public open fun setOption(optionBits: Int, value: Boolean) {
         this.valueBits = if (value)
             this.valueBits or optionBits
         else
@@ -70,8 +74,10 @@ public abstract class Options {
      *
      * @param options The options to set.
      * @throws XMPException If undefined or inconsistent option bits are set.
+     *
+     * Open so an immutable option class can reject the inherited mutator.
      */
-    public fun setOptions(options: Int) {
+    public open fun setOptions(options: Int) {
 
         assertOptionsValid(options)
 
@@ -117,7 +123,7 @@ public abstract class Options {
      * @return Returns the options as hex bitmask.
      */
     override fun toString(): String =
-        "0x" + valueBits.toString(Utils.HEX_RADIX)
+        "0x" + valueBits.toUInt().toString(Utils.HEX_RADIX)
 
     /**
      * To be implemeted by inheritants.
@@ -161,7 +167,8 @@ public abstract class Options {
 
         if (invalidOptions != 0)
             throw XMPException(
-                "The option bit(s) 0x" + invalidOptions.toString(Utils.HEX_RADIX) + " + are invalid!",
+                "The option bit(s) 0x" + invalidOptions.toUInt().toString(Utils.HEX_RADIX) +
+                    " are invalid!",
                 XMPErrorConst.BADOPTIONS
             )
 

@@ -34,7 +34,7 @@ class XMPMetaDtdRejectionTest {
             XMPMetaFactory.parseFromString(input)
         }
 
-        assertEquals(XMPErrorConst.BADSTREAM, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
     }
 
     /**
@@ -61,6 +61,6 @@ class XMPMetaDtdRejectionTest {
             XMPMetaFactory.parseFromString(input)
         }
 
-        assertEquals(XMPErrorConst.BADSTREAM, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
     }
 }

@@ -214,7 +214,7 @@ public class PropertyOptions : Options {
         getOptions() and (ARRAY or STRUCT) > 0
 
     /**
-     * @return Returns whether the property is of composite type - an array or a struct.
+     * @return Returns whether the property is a simple leaf - neither an array nor a struct.
      */
     public fun isSimple(): Boolean =
         getOptions() and (ARRAY or STRUCT) == 0

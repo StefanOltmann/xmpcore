@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -139,6 +140,78 @@ class XMPIteratorFeaturesTest {
     }
 
     /**
+     * The iterator reports null for the path and the value of the schema node itself, like
+     * the Adobe original, so a caller can distinguish container entries from leaves with
+     * empty values.
+     */
+    @Test
+    fun testSchemaNodeIteratorEntryKeepsNullPathAndValue() {
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        val iterator = xmpMeta.iterator()
+
+        val schemaInfo = iterator.next()
+
+        assertEquals(XMPConst.NS_DC, schemaInfo.getNamespace())
+
+        assertNull(schemaInfo.getPath())
+
+        assertNull(schemaInfo.getValue())
+    }
+
+    /**
+     * The skip also works when a look-ahead hasNext() call has already prepared the next
+     * property: the prepared field of the struct is not delivered, and the skip does not
+     * leak onto a later sibling whose subtree must stay intact.
+     */
+    @Test
+    fun testSkipSubtreeAfterLookaheadHasNext() {
+
+        /* language=XML */
+        val structXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:subject>
+                  <rdf:Bag>
+                    <rdf:li rdf:parseType="Resource">
+                      <dc:first>a</dc:first>
+                      <dc:second>b</dc:second>
+                    </rdf:li>
+                    <rdf:li rdf:parseType="Resource">
+                      <dc:first>c</dc:first>
+                    </rdf:li>
+                  </rdf:Bag>
+                </dc:subject>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(structXmp)
+
+        val iterator = xmpMeta.iterator(XMPConst.NS_DC, "subject", null)
+
+        /* Consume dc:subject and the first struct item. */
+        iterator.next()
+
+        assertEquals("dc:subject[1]", iterator.next().getPath())
+
+        /* The look-ahead prepares the first field of the struct before the skip. */
+        assertTrue(iterator.hasNext())
+
+        iterator.skipSubtree()
+
+        assertEquals(
+            expected = listOf(
+                "dc:subject[2]",
+                "dc:subject[2]/dc:first"
+            ),
+            actual = collectPaths(iterator)
+        )
+    }
+
+    /**
      * The option `JUST_LEAFNAME` returns only the last path component. The namespace prefix
      * is only stripped from qualifiers, array items are reduced to their index.
      */
@@ -148,8 +221,8 @@ class XMPIteratorFeaturesTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(
-            expected = listOf(
-                "",
+            expected = listOf<String?>(
+                null,
                 "dc:subject",
                 "[1]",
                 "[2]",
@@ -172,8 +245,8 @@ class XMPIteratorFeaturesTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(
-            expected = listOf(
-                "",
+            expected = listOf<String?>(
+                null,
                 "dc:subject",
                 "dc:subject[1]",
                 "dc:subject[2]",
@@ -390,14 +463,14 @@ class XMPIteratorFeaturesTest {
         iterator.skipSiblings()
 
         assertEquals(
-            expected = listOf("", "xmp:Rating"),
+            expected = listOf<String?>(null, "xmp:Rating"),
             actual = collectPaths(iterator)
         )
     }
 
-    private fun collectPaths(iterator: XMPIterator): List<String> {
+    private fun collectPaths(iterator: XMPIterator): List<String?> {
 
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         while (iterator.hasNext()) {
             val propertyInfo = iterator.next()

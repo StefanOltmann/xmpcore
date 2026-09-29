@@ -47,6 +47,10 @@ public object XMPMetaFactory {
      * @param options Options controlling the parsing.
      * @return Returns the `XMPMeta`-object created from the input.
      * @throws XMPException If the file is not well-formed XML or if the parsing fails.
+     *
+     * Attention: Unlike the Adobe original, which returns an empty metadata object when the
+     * input contains no RDF at all, this port throws an XMPException for such input, so the
+     * caller keeps control over the fallback; [parseOrCreate] covers the "nothing there" case.
      */
     @kotlin.jvm.JvmStatic
     @kotlin.jvm.JvmOverloads
@@ -114,6 +118,40 @@ public object XMPMetaFactory {
             /* Ensure that only XMPException is thrown from this method. */
 
             throw XMPException("Parsing error.", XMPErrorConst.UNKNOWN, ex)
+        }
+    }
+
+    /**
+     * Parses an existing XMP packet, or creates an empty `XMPMeta`-object when the input is
+     * null. Writers that update existing metadata no longer branch between [parseFromString]
+     * and [create]. Corrupt input throws, so the caller keeps control over fallback strategies.
+     *
+     * @param packet A String containing an XMP-file, or null when there is no packet.
+     * @return Returns the parsed [XMPMeta], or a new empty one when the input is null.
+     * @throws XMPException If the packet is not well-formed XML or the parsing fails.
+     */
+    @kotlin.jvm.JvmStatic
+    @Throws(XMPException::class)
+    public fun parseOrCreate(packet: String?): XMPMeta =
+        if (packet == null) create() else parseFromString(packet)
+
+    /**
+     * Checks whether a packet would parse without keeping the parsed result. Readers can
+     * validate a packet before handing it to a writer without duplicating the parser's
+     * acceptance rules through text matching.
+     *
+     * @param packet A String containing an XMP-file.
+     * @return Returns true when [parseFromString] would accept the packet.
+     */
+    @kotlin.jvm.JvmStatic
+    public fun isParsable(packet: String): Boolean {
+
+        try {
+            parseFromString(packet)
+
+            return true
+        } catch (_: XMPException) {
+            return false
         }
     }
 

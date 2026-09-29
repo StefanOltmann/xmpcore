@@ -315,7 +315,7 @@ class WriteXmpTest {
 
         xmpMeta.setFlagged(true)
 
-        xmpMeta.setDateTimeOriginal("2023-07-07T13:37:42")
+        xmpMeta.setDateTimeOriginal(XmpDate(2023, 7, 7, 13, 37, 42, 0, null))
 
         xmpMeta.setGpsCoordinates(
             latitudeDdm = "53,13.1635N",
@@ -324,11 +324,11 @@ class WriteXmpTest {
 
         xmpMeta.setKeywords(setOf("bird", "cat", "dog"))
 
-        xmpMeta.setFaces(
-            faces = mapOf(
-                "Eye Left" to XMPRegionArea(0.295179, 0.278880, 0.033245, 0.05),
-                "Eye Right" to XMPRegionArea(0.814990, 0.472579, 0.033245, 0.05),
-                "Nothing" to XMPRegionArea(0.501552, 0.905484, 0.033245, 0.05)
+        xmpMeta.setFaceRegions(
+            regions = listOf(
+                XmpFaceRegion("Eye Left", XMPRegionArea(0.295179, 0.278880, 0.033245, 0.05)),
+                XmpFaceRegion("Eye Right", XMPRegionArea(0.814990, 0.472579, 0.033245, 0.05)),
+                XmpFaceRegion("Nothing", XMPRegionArea(0.501552, 0.905484, 0.033245, 0.05))
             ),
             widthPx = 1500,
             heightPx = 1000

@@ -318,7 +318,7 @@ class OptionsTest {
             IteratorOptions().setOptions(invalid)
         }
         assertFailsWith<XMPException> {
-            SerializeOptions().setOptions(invalid)
+            SerializeOptions(invalid)
         }
         assertFailsWith<XMPException> {
             AliasOptions().setOptions(invalid)
@@ -377,11 +377,12 @@ class OptionsTest {
 
         val options = ParseOptions()
             .setRequireXMPMeta(true)
+            .setFixControlChars(true)
             .setStrictAliasing(true)
             .setOmitNormalization(true)
 
         assertEquals(
-            expected = "REQUIRE_XMP_META | STRICT_ALIASING | OMIT_NORMALIZATION",
+            expected = "REQUIRE_XMP_META | STRICT_ALIASING | FIX_CONTROL_CHARS | OMIT_NORMALIZATION",
             actual = options.getOptionsString()
         )
     }
@@ -445,5 +446,34 @@ class OptionsTest {
         options.setOption(PropertyOptions.DELETE_EXISTING, true)
 
         assertEquals("<option name not defined>", options.getOptionsString())
+    }
+
+    /**
+     * The error message for invalid options renders the invalid bits as an unsigned hex
+     * value like the Adobe original, without the stray plus sign of the old port.
+     */
+    @Test
+    fun testInvalidOptionsMessageUsesPositiveHex() {
+
+        val ex = assertFailsWith<XMPException> {
+            IteratorOptions().setOptions(-0x7FFFFFF5)
+        }
+
+        assertTrue(ex.message!!.contains("0x8000000b are invalid!"))
+
+        assertTrue(!ex.message!!.contains("+ are"))
+    }
+
+    /**
+     * [Options.toString] renders the bits as an unsigned hex value.
+     */
+    @Test
+    fun testToStringUsesPositiveHex() {
+
+        val options = PropertyOptions()
+
+        options.setOptions(Int.MIN_VALUE)
+
+        assertEquals("0x80000000", options.toString())
     }
 }

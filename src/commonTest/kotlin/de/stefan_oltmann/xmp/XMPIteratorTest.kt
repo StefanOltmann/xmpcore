@@ -45,8 +45,8 @@ class XMPIteratorTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(
-            expected = listOf(
-                "",
+            expected = listOf<String?>(
+                null,
                 "dc:subject",
                 "dc:subject[1]",
                 "dc:subject[2]",
@@ -67,8 +67,8 @@ class XMPIteratorTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(
-            expected = listOf(
-                "",
+            expected = listOf<String?>(
+                null,
                 "dc:subject",
                 "dc:subject[1]",
                 "dc:subject[2]",
@@ -94,7 +94,7 @@ class XMPIteratorTest {
         val wholeTreeIterator = xmpMeta.iterator(IteratorOptions().setJustChildren(true))
 
         assertEquals(
-            expected = listOf(""),
+            expected = listOf<String?>(null),
             actual = collectPaths(wholeTreeIterator)
         )
 
@@ -141,7 +141,7 @@ class XMPIteratorTest {
 
         val iterator = xmpMeta.iterator()
 
-        val values = mutableListOf<String>()
+        val values = mutableListOf<String?>()
         val namespaces = mutableListOf<String>()
 
         while (iterator.hasNext()) {
@@ -151,7 +151,7 @@ class XMPIteratorTest {
         }
 
         assertEquals(
-            expected = listOf("", "", "fox", "swiper", "", "Titel", "x-default"),
+            expected = listOf<String?>(null, "", "fox", "swiper", "", "Titel", "x-default"),
             actual = values
         )
 
@@ -164,9 +164,9 @@ class XMPIteratorTest {
     /**
      * Collects the paths of all properties the iterator reports.
      */
-    private fun collectPaths(iterator: XMPIterator): List<String> {
+    private fun collectPaths(iterator: XMPIterator): List<String?> {
 
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         while (iterator.hasNext()) {
             val propertyInfo = iterator.next()

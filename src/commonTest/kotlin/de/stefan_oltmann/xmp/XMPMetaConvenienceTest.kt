@@ -64,20 +64,143 @@ class XMPMetaConvenienceTest {
     }
 
     /**
-     * The date time original convenience methods write and delete the property.
+     * The date time original convenience methods write, parse and delete the property.
      */
     @Test
     fun testDateTimeOriginalRoundTrip() {
 
         val xmpMeta = XMPMetaFactory.create()
 
-        xmpMeta.setDateTimeOriginal("2023-07-07T13:37:42")
+        val date = XmpDate(2023, 7, 7, 13, 37, 42, 0, null)
 
-        assertEquals("2023-07-07T13:37:42", xmpMeta.getDateTimeOriginal())
+        xmpMeta.setDateTimeOriginal(date)
+
+        assertEquals(date, xmpMeta.getDateTimeOriginal())
 
         xmpMeta.deleteDateTimeOriginal()
 
         assertNull(xmpMeta.getDateTimeOriginal())
+    }
+
+    /**
+     * A stored date is returned fully parsed, including fraction and UTC offset.
+     */
+    @Test
+    fun testGetDateTimeOriginalParsesAllParts() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", "1980-03-15T08:15:30.5+02:00")
+
+        assertEquals(
+            expected = XmpDate(1980, 3, 15, 8, 15, 30, 500_000_000, 120),
+            actual = xmpMeta.getDateTimeOriginal()
+        )
+    }
+
+    /**
+     * A zero second is written instead of being lost to a shortened time form.
+     */
+    @Test
+    fun testSetDateTimeOriginalAlwaysWritesSeconds() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setDateTimeOriginal(XmpDate(2024, 5, 1, 12, 30, 0, 0, null))
+
+        assertEquals(
+            expected = "2024-05-01T12:30:00",
+            actual = xmpMeta.getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal")
+        )
+    }
+
+    /**
+     * A fractional second is written in its canonical trimmed form.
+     */
+    @Test
+    fun testSetDateTimeOriginalWritesFractionalSeconds() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setDateTimeOriginal(XmpDate(2024, 5, 1, 12, 30, 45, 123_000_000, null))
+
+        assertEquals(
+            expected = "2024-05-01T12:30:45.123",
+            actual = xmpMeta.getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal")
+        )
+    }
+
+    /**
+     * A value that is not a well-formed XMP date reads as absent, like GPS values do.
+     */
+    @Test
+    fun testGetDateTimeOriginalReturnsNullForUnparseable() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", "not-a-date")
+
+        assertNull(xmpMeta.getDateTimeOriginal())
+    }
+
+    /**
+     * Deleting exif:DateTimeDigitized removes the property, and deleting when absent is
+     * not an error.
+     */
+    @Test
+    fun testDeleteDateTimeDigitized() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(XMPConst.NS_EXIF, "DateTimeDigitized", "2023-07-07T13:37:42")
+
+        xmpMeta.deleteDateTimeDigitized()
+
+        assertTrue(!xmpMeta.doesPropertyExist(XMPConst.NS_EXIF, "DateTimeDigitized"))
+
+        xmpMeta.deleteDateTimeDigitized()
+    }
+
+    /**
+     * The IPTC digest convenience methods write and read the xmpNote property.
+     */
+    @Test
+    fun testIptcDigestRoundTrip() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setIptcDigest("D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E")
+
+        assertEquals("D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E", xmpMeta.getIptcDigest())
+
+        assertEquals(
+            expected = "D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E",
+            actual = xmpMeta.getPropertyString(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_IPTC_DIGEST)
+        )
+    }
+
+    /**
+     * The extended XMP reference is deleted with the property, and deleting when absent is
+     * not an error.
+     */
+    @Test
+    fun testDeleteHasExtendedXmp() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(
+            XMPConst.NS_XMP_NOTE,
+            XMPConst.XMP_NOTE_HAS_EXTENDED_XMP,
+            "D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E"
+        )
+
+        assertEquals("D8C2E1F0A3B4C5D6E7F8091A2B3C4D5E", xmpMeta.getHasExtendedXmp())
+
+        xmpMeta.deleteHasExtendedXmp()
+
+        assertTrue(!xmpMeta.doesPropertyExist(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_HAS_EXTENDED_XMP))
+
+        xmpMeta.deleteHasExtendedXmp()
     }
 
     /**
@@ -246,109 +369,6 @@ class XMPMetaConvenienceTest {
     }
 
     /**
-     * An empty region list reads back as an empty face map.
-     */
-    @Test
-    fun testGetFacesWithEmptyRegionList() {
-
-        /* language=XML */
-        val testXmp = """
-            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-              <rdf:Description rdf:about=""
-                  xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/">
-                <mwg-rs:Regions rdf:parseType="Resource">
-                  <mwg-rs:RegionList>
-                    <rdf:Bag/>
-                  </mwg-rs:RegionList>
-                </mwg-rs:Regions>
-              </rdf:Description>
-            </rdf:RDF>
-        """.trimIndent()
-
-        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
-
-        assertEquals(emptyMap(), xmpMeta.getFaces())
-    }
-
-    /**
-     * The faces are stored as mwg-rs regions and read back.
-     */
-    @Test
-    fun testFacesRoundTrip() {
-
-        val xmpMeta = XMPMetaFactory.create()
-
-        assertEquals(emptyMap(), xmpMeta.getFaces())
-
-        val faces = mapOf(
-            "Face A" to XMPRegionArea(0.1, 0.2, 0.3, 0.4),
-            "Face B" to XMPRegionArea(0.5, 0.6, 0.7, 0.8)
-        )
-
-        xmpMeta.setFaces(faces, widthPx = 1500, heightPx = 1000)
-
-        assertEquals(faces, xmpMeta.getFaces())
-    }
-
-    /**
-     * Setting an empty face map deletes the regions.
-     */
-    @Test
-    fun testSetEmptyFacesDeletesRegions() {
-
-        val xmpMeta = XMPMetaFactory.create()
-
-        xmpMeta.setFaces(mapOf("Face A" to XMPRegionArea(0.1, 0.2, 0.3, 0.4)), 1500, 1000)
-        xmpMeta.setFaces(emptyMap(), 1500, 1000)
-
-        assertEquals(emptyMap(), xmpMeta.getFaces())
-    }
-
-    /**
-     * Regions that are no faces are skipped when reading.
-     */
-    @Test
-    fun testGetFacesSkipsNonFaceRegions() {
-
-        /* language=XML */
-        val testXmp = """
-            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
-              <rdf:Description rdf:about=""
-                  xmlns:mwg-rs="http://www.metadataworkinggroup.com/schemas/regions/"
-                  xmlns:stArea="http://ns.adobe.com/xmp/sType/Area#">
-                <mwg-rs:Regions rdf:parseType="Resource">
-                  <mwg-rs:RegionList>
-                    <rdf:Bag>
-                      <rdf:li>
-                        <rdf:Description
-                          mwg-rs:Name="Doggy"
-                          mwg-rs:Type="Pet">
-                        <mwg-rs:Area
-                          stArea:h="0.05"
-                          stArea:unit="normalized"
-                          stArea:w="0.03"
-                          stArea:x="0.2"
-                          stArea:y="0.3"/>
-                        </rdf:Description>
-                      </rdf:li>
-                      <rdf:li>
-                        <rdf:Description
-                          mwg-rs:Name="NoArea"
-                          mwg-rs:Type="Face"/>
-                      </rdf:li>
-                    </rdf:Bag>
-                  </mwg-rs:RegionList>
-                </mwg-rs:Regions>
-              </rdf:Description>
-            </rdf:RDF>
-        """.trimIndent()
-
-        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
-
-        assertEquals(emptyMap(), xmpMeta.getFaces())
-    }
-
-    /**
      * The persons in image are stored as an Iptc4xmpExt array and read back.
      */
     @Test
@@ -499,6 +519,42 @@ class XMPMetaConvenienceTest {
     }
 
     /**
+     * getTitle and getDescription apply the same selection: the first localization whose
+     * value is not blank wins, so a blank x-default item does not hide the real value.
+     */
+    @Suppress("MultilineRawStringIndentation")
+    @Test
+    fun testTitleAndDescriptionUseSameSelection() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:title>
+                  <rdf:Alt>
+                    <rdf:li xml:lang="x-default"> </rdf:li>
+                    <rdf:li xml:lang="de">Titel</rdf:li>
+                  </rdf:Alt>
+                </dc:title>
+                <dc:description>
+                  <rdf:Alt>
+                    <rdf:li xml:lang="x-default"> </rdf:li>
+                    <rdf:li xml:lang="de">Beschreibung</rdf:li>
+                  </rdf:Alt>
+                </dc:description>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        assertEquals("Titel", xmpMeta.getTitle())
+
+        assertEquals("Beschreibung", xmpMeta.getDescription())
+    }
+
+    /**
      * The object name defaults to the empty string and is read from rdf:about.
      */
     @Test
@@ -567,7 +623,7 @@ class XMPMetaConvenienceTest {
 
         xmpMeta.sort()
 
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         val iterator = xmpMeta.iterator()
 
@@ -575,7 +631,7 @@ class XMPMetaConvenienceTest {
             paths.add(iterator.next().getPath())
 
         assertEquals(
-            expected = listOf("", "dc:apple", "dc:zebra", "", "xmp:mango"),
+            expected = listOf<String?>(null, "dc:apple", "dc:zebra", null, "xmp:mango"),
             actual = paths
         )
     }

@@ -15,8 +15,23 @@ This library is a port of Adobe's XMP SDK to Kotlin Multiplatform.
 ## Installation
 
 ```
-implementation("de.stefan-oltmann:xmpcore:1.8.1")
+implementation("de.stefan-oltmann:xmpcore:2.0.0")
 ```
+
+### Migration to 2.0.0
+
+Version 2.0.0 contains a few breaking changes:
+
+* **Dates.** `getDateTimeOriginal()` returns an `XmpDate` and `setDateTimeOriginal()` takes an
+  `XmpDate`, so values keep their seconds and fractions and no longer need manual parsing and
+  formatting.
+* **Face regions.** `getFaces()`/`setFaces()` are replaced by `getFaceRegions()`/`setFaceRegions()`
+  working on a `List<XmpFaceRegion>`, because the region list of the XMP can hold several regions
+  with the same name.
+* **`SerializeOptions` is immutable.** The setters return modified copies instead of mutating the
+  receiver, so one shared instance can be reused from concurrent writers.
+* **`XMPUtils` batch operations** `removeProperties`, `appendProperties`, `separateArrayItems` and
+  `catenateArrayItems` are now available.
 
 ## How to use
 
@@ -61,6 +76,64 @@ Namespaces discovered while parsing are registered permanently in a process-glob
 (like Adobe's XMP Core). Parsing a file with unknown namespaces therefore leaves small permanent
 entries behind. Applications that parse very large numbers of files with many changing namespaces
 over long uptime should keep this in mind.
+
+### Deviations from the Adobe XMP Core
+
+This port aims to behave like the Adobe original. A few deliberate deviations remain:
+
+* **Fail-fast instead of swallowing errors.** The Adobe original ignores errors inside all
+  `delete*` methods and returns `false` from the `doesPropertyExist*` methods when the arguments
+  are invalid or a namespace is unknown. This port throws `XMPException` in those cases, because
+  treating invalid input as a no-op masks programming errors.
+* **No RDF found.** The Adobe original returns an empty metadata object when a document contains
+  no RDF at all, which silently turns `REQUIRE_XMP_META` into a filter. This port throws
+  `XMPException` instead, so callers keep control over the fallback; use `parseOrCreate` for the
+  "nothing there" case.
+* **Dates.** `XMPDateTime` is replaced by `XmpDate`, which parses strictly without silently
+  clamping values and always renders the seconds of a time.
+* **Streams.** Only `String` input and output exists. The `ByteArray`/`InputStream`/
+  `OutputStream` API of the original, including the `exactPacketLength` and thumbnail padding
+  options, is not ported.
+* **Deterministic namespaces.** Namespace prefixes discovered while parsing are assigned in
+  namespace URI order, so the serialized output does not depend on the platform's DOM attribute
+  order.
+
+Beyond these, the port fixes defects that the Java 5.1.3 original carries and that behave like
+the Adobe C++ original here:
+
+* A qualifier selector like `ns:bag[?ns:qual='value']` never examined the last array item in
+  the Java original; this port finds it.
+* A path lookup whose array index is out of range crashed the Java original with a
+  `NullPointerException`; this port reports an `XMPException`.
+* `XMPIterator.skipSubtree()` was declared but never evaluated by the Java original; this port
+  implements the documented behavior.
+* The `XMPUtils` batch operations had several defects in the Java original, among them an
+  inverted form comparison that disabled array merging, array items appended to the schema
+  instead of the array, and a quote scan reading the wrong position; this port implements the
+  intended semantics.
+
+A few edge cases are handled differently on purpose:
+
+* **Duplicated properties and qualifiers.** Instead of rejecting the whole file, the last
+  occurrence replaces the earlier one at its position, like ExifTool does for duplicated tags.
+* **Corrupted XML around the RDF.** Junk or NUL padding around an otherwise intact RDF part is
+  tolerated, where the Adobe original rejects such files.
+* **Malformed RDF edge cases.** Named children inside arrays and a lone `rdf:_` element are
+  rejected, while the numbered `rdf:_N` item form is accepted, following the RDF specification
+  more closely than the Java original.
+* **Base64 values.** Values with an invalid length or non-zero padding bits fail the read where
+  the Java original silently accepted or truncated them.
+* **Control characters.** Literal invalid control characters and numeric character references
+  resolving to one are repaired to spaces, like Adobe's default-on repair option including its
+  second parse pass.
+
+Where a drop-in replacement is affected, the remaining API-shape differences:
+
+* The iterator's `getNamespace()` falls back to the base namespace for array items, where the
+  Adobe original returns null. An array item belongs to its schema's namespace even though its
+  node name is the prefix-less `[]`, so the null of the original is an artifact of looking up
+  that synthetic name as a prefix; the port reports the namespace the item was found under
+  instead.
 
 ## Contributions
 

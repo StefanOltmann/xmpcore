@@ -41,6 +41,11 @@ internal class XMPRDFWriter(private val options: SerializeOptions) {
     private val indent: String = options.getIndent()
 
     /**
+     * The padding emitted after the content, reduced by the option consistency rules.
+     */
+    private var effectivePadding: Int = options.getPadding()
+
+    /**
      * The actual serialization.
      */
     fun serialize(xmp: XMPMeta): String {
@@ -48,6 +53,8 @@ internal class XMPRDFWriter(private val options: SerializeOptions) {
         try {
 
             val sb: StringBuilder = StringBuilder()
+
+            checkOptionsConsistence()
 
             serializeAsRDF(sb, xmp, options)
 
@@ -63,6 +70,26 @@ internal class XMPRDFWriter(private val options: SerializeOptions) {
 
         } catch (ex: Exception) {
             throw XMPException("Error writing the XMP", XMPErrorConst.UNKNOWN, ex)
+        }
+    }
+
+    /**
+     * Checks if the supplied options are consistent, like the Adobe original: a read-only
+     * packet requires the wrapper and never carries padding, and a packet without wrapper
+     * never carries padding.
+     *
+     * @throws XMPException If the options conflict.
+     */
+    private fun checkOptionsConsistence() {
+
+        if (options.getReadOnlyPacket()) {
+
+            if (options.getOmitPacketWrapper())
+                throw XMPException("Inconsistent options for read-only packet", XMPErrorConst.BADOPTIONS)
+
+            effectivePadding = 0
+        } else if (options.getOmitPacketWrapper()) {
+            effectivePadding = 0
         }
     }
 
@@ -126,9 +153,14 @@ internal class XMPRDFWriter(private val options: SerializeOptions) {
 
             /*
              * The padding keeps space between content and trailer so tools can update an
-             * embedded packet in place without rewriting the whole container file.
+             * embedded packet in place without rewriting the whole container file. The
+             * trailer is indented by the base indent, like the Adobe original does.
              */
-            appendPadding(sb, options.getPadding())
+            appendPadding(sb, effectivePadding)
+
+            repeat(options.getBaseIndent()) {
+                sb.append(options.getIndent())
+            }
 
             sb.append(PACKET_TRAILER)
             sb.append(if (options.getReadOnlyPacket()) 'r' else 'w')

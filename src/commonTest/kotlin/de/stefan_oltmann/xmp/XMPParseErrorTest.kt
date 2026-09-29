@@ -646,8 +646,9 @@ class XMPParseErrorTest {
     }
 
     /**
-     * A processing instruction directly inside rdf:RDF is rejected with a
-     * proper BADRDF error instead of an unexpected exception type.
+     * A processing instruction directly inside rdf:RDF is not an array item name and
+     * reaches the RDF term check of the node element, which fails with BADXMP like the
+     * Adobe original, whose node element list has no type check of its own.
      */
     @Test
     fun testProcessingInstructionInsideRdfThrows() {
@@ -660,17 +661,36 @@ class XMPParseErrorTest {
             </rdf:RDF>
         """.trimIndent()
 
-        assertXMPError(XMPErrorConst.BADRDF) {
+        assertXMPError(XMPErrorConst.BADXMP) {
             XMPMetaFactory.parseFromString(testXmp)
         }
     }
 
     /**
-     * A partially numbered rdf:_N array item is rejected.
+     * Non-whitespace text directly inside rdf:RDF reaches the RDF term check of the node
+     * element and fails with BADXMP like the Adobe original.
+     */
+    @Test
+    fun testTextNodeInsideRdfThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              stray text
+              <rdf:Description rdf:about=""/>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertXMPError(XMPErrorConst.BADXMP) {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
+    }
+
+    /**
+     * Asserts that the given block throws an XMPException with the expected code.
      */
     @Test
     fun testPartiallyNumberedRdfArrayItemThrows() {
-
         /* language=XML */
         val testXmp = """
             <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -679,6 +699,32 @@ class XMPParseErrorTest {
                 <dc:subject>
                   <rdf:Bag>
                     <rdf:_1x>a</rdf:_1x>
+                  </rdf:Bag>
+                </dc:subject>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertXMPError(XMPErrorConst.BADRDF) {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
+    }
+
+    /**
+     * A lone rdf:_ element is not a numbered array item, because the RDF form requires at
+     * least one digit: it is rejected like any other named child of an array.
+     */
+    @Test
+    fun testLoneRdfUnderscoreItemThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:subject>
+                  <rdf:Bag>
+                    <rdf:_>a</rdf:_>
                   </rdf:Bag>
                 </dc:subject>
               </rdf:Description>

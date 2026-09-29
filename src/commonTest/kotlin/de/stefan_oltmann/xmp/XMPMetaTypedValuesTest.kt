@@ -378,4 +378,28 @@ class XMPMetaTypedValuesTest {
 
         override fun toString(): String = "custom-value"
     }
+
+    /**
+     * The wrapper-based getter and the typed getters run the same lookup, so the value of
+     * getProperty agrees with the raw-value accessors for every value type.
+     */
+    @Test
+    fun testGetPropertyAndTypedGettersAgree() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(XMPConst.NS_XMP, "textProp", "text")
+
+        xmpMeta.setPropertyInteger(XMPConst.NS_XMP, "intProp", 42)
+
+        assertEquals(
+            expected = xmpMeta.getPropertyString(XMPConst.NS_XMP, "textProp"),
+            actual = xmpMeta.getProperty(XMPConst.NS_XMP, "textProp")?.getValue()
+        )
+
+        assertEquals(
+            expected = xmpMeta.getPropertyInteger(XMPConst.NS_XMP, "intProp"),
+            actual = xmpMeta.getProperty(XMPConst.NS_XMP, "intProp")?.getValue()?.toInt()
+        )
+    }
 }

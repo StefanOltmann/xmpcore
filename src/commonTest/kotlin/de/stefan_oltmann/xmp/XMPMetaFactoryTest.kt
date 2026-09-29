@@ -84,7 +84,21 @@ class XMPMetaFactoryTest {
     }
 
     /**
-     * A blank input is rejected.
+     * An empty input is a parameter error, like the ParameterAsserts of the Adobe original.
+     */
+    @Test
+    fun testParseEmptyInputThrows() {
+
+        val ex = assertFailsWith<XMPException> {
+            XMPMetaFactory.parseFromString("")
+        }
+
+        assertEquals(XMPErrorConst.BADPARAM, ex.errorCode)
+    }
+
+    /**
+     * A blank input fails the XML parse with the BADXML error code, like the Adobe
+     * original where whitespace-only content is rejected by the parser.
      */
     @Test
     fun testParseBlankInputThrows() {
@@ -93,7 +107,7 @@ class XMPMetaFactoryTest {
             XMPMetaFactory.parseFromString("   ")
         }
 
-        assertEquals(XMPErrorConst.BADXMP, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
     }
 
     /**
@@ -110,7 +124,7 @@ class XMPMetaFactoryTest {
     }
 
     /**
-     * Invalid XML is rejected as a stream error.
+     * Invalid XML is rejected as an XML error, like the Adobe original.
      */
     @Test
     fun testParseInvalidXmlThrows() {
@@ -119,7 +133,114 @@ class XMPMetaFactoryTest {
             XMPMetaFactory.parseFromString("this is not xml")
         }
 
-        assertEquals(XMPErrorConst.BADSTREAM, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
+    }
+
+    /**
+     * Parsing a null input returns a fresh empty metadata object.
+     */
+    @Test
+    fun testParseOrCreateReturnsNewMetaForNull() {
+
+        val xmpMeta = XMPMetaFactory.parseOrCreate(null)
+
+        assertEquals("", xmpMeta.getObjectName())
+        assertNotNull(xmpMeta.iterator())
+        assertTrue(!xmpMeta.iterator().hasNext())
+    }
+
+    /**
+     * An existing packet is parsed, exactly like parseFromString does it.
+     */
+    @Test
+    fun testParseOrCreateParsesExistingPacket() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                xmp:Rating="3"/>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertEquals(3, XMPMetaFactory.parseOrCreate(testXmp).getRating())
+    }
+
+    /**
+     * Corrupt input throws instead of silently falling back to an empty object.
+     */
+    @Test
+    fun testParseOrCreateThrowsForCorruptPacket() {
+
+        val ex = assertFailsWith<XMPException> {
+            XMPMetaFactory.parseOrCreate("this is not xml")
+        }
+
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
+    }
+
+    /**
+     * A valid packet is accepted.
+     */
+    @Test
+    fun testIsParsableAcceptsValidPacket() {
+
+        /* language=XML */
+        val testXmp = """
+            <x:xmpmeta xmlns:x="adobe:ns:meta/">
+              <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+                <rdf:Description rdf:about=""
+                    xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+                  xmp:Rating="3"/>
+              </rdf:RDF>
+            </x:xmpmeta>
+        """.trimIndent()
+
+        assertTrue(XMPMetaFactory.isParsable(testXmp))
+    }
+
+    /**
+     * A bare rdf:RDF document is accepted, because the default options accept it too.
+     */
+    @Test
+    fun testIsParsableAcceptsBareRdf() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""/>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertTrue(XMPMetaFactory.isParsable(testXmp))
+    }
+
+    /**
+     * A blank input is rejected.
+     */
+    @Test
+    fun testIsParsableRejectsBlankInput() {
+
+        assertTrue(!XMPMetaFactory.isParsable("   "))
+    }
+
+    /**
+     * Invalid XML is rejected.
+     */
+    @Test
+    fun testIsParsableRejectsInvalidXml() {
+
+        assertTrue(!XMPMetaFactory.isParsable("this is not xml"))
+    }
+
+    /**
+     * An XML document without RDF content is rejected.
+     */
+    @Test
+    fun testIsParsableRejectsXmlWithoutRdf() {
+
+        assertTrue(!XMPMetaFactory.isParsable("<foo/>"))
     }
 
     /**

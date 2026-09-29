@@ -42,14 +42,14 @@ class XMPNormalizerTest {
         )
 
         /* The alias name resolves to the base, so no xmp: schema may remain. */
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         val iterator = xmpMeta.iterator()
 
         while (iterator.hasNext())
             paths.add(iterator.next().getPath())
 
-        assertFalse(paths.any { it.contains("xmp:") })
+        assertFalse(paths.any { it?.contains("xmp:") == true })
     }
 
     /**
@@ -88,14 +88,14 @@ class XMPNormalizerTest {
         )
 
         /* The alias name resolves to the base, so no xmp: schema may remain. */
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         val iterator = xmpMeta.iterator()
 
         while (iterator.hasNext())
             paths.add(iterator.next().getPath())
 
-        assertFalse(paths.any { it.contains("xmp:") })
+        assertFalse(paths.any { it?.contains("xmp:") == true })
     }
 
     /**
@@ -267,14 +267,14 @@ class XMPNormalizerTest {
         )
 
         /* The alias name resolves to the base, so no photoshop schema may remain. */
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         val iterator = xmpMeta.iterator()
 
         while (iterator.hasNext())
             paths.add(iterator.next().getPath())
 
-        assertFalse(paths.any { it.contains("photoshop:") })
+        assertFalse(paths.any { it?.contains("photoshop:") == true })
     }
 
     /**
@@ -386,7 +386,7 @@ class XMPNormalizerTest {
 
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         val iterator = xmpMeta.iterator()
 
@@ -394,7 +394,7 @@ class XMPNormalizerTest {
             paths.add(iterator.next().getPath())
 
         assertEquals(
-            expected = listOf("", "dc:title", "dc:title[1]", "dc:title[1]/xml:lang"),
+            expected = listOf<String?>(null, "dc:title", "dc:title[1]", "dc:title[1]/xml:lang"),
             actual = paths
         )
     }

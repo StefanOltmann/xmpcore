@@ -713,13 +713,6 @@ public object XMPSchemaRegistry {
             null
         )
         registerAlias(
-            XMPConst.NS_EXIF,
-            "DateTimeDigitized",
-            XMPConst.NS_XMP,
-            "CreateDate",
-            null
-        )
-        registerAlias(
             XMPConst.NS_TIFF,
             "ImageDescription",
             XMPConst.NS_DC,

@@ -132,26 +132,7 @@ public class XMPMeta internal constructor() {
 
     private fun getProperty(schemaNS: String, propName: String, valueType: XMPValueType): XMPProperty? {
 
-        if (schemaNS.isEmpty())
-            throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
-
-        if (propName.isEmpty())
-            throw XMPException(XMPErrorConst.EMPTY_PROPERTY_NAME_TEXT, XMPErrorConst.BADPARAM)
-
-        val propNode = findNode(
-            xmpTree = this.root,
-            xpath = expandXPath(schemaNS, propName),
-            createNodes = false,
-            leafOptions = null
-        ) ?: return null
-
-        if (valueType != XMPValueType.STRING && propNode.options.isCompositeProperty())
-            throw XMPException(
-                "Property must be simple when a value type is requested",
-                XMPErrorConst.BADXPATH
-            )
-
-        val value = evaluateNodeValue(valueType, propNode)
+        val (propNode, value) = findValueNode(schemaNS, propName, valueType) ?: return null
 
         return object : XMPProperty {
 
@@ -184,7 +165,9 @@ public class XMPMeta internal constructor() {
 
             XMPValueType.DOUBLE -> convertToDouble(propNode.value)
 
-            XMPValueType.BASE64 -> decodeBase64(propNode.value.orEmpty())
+            XMPValueType.BASE64 -> decodeBase64(
+                propNode.value ?: throw XMPException("Invalid base64 string", XMPErrorConst.BADVALUE)
+            )
 
             /*
              * Leaf values return empty string instead of null
@@ -403,15 +386,12 @@ public class XMPMeta internal constructor() {
     /**
      * The internals for setProperty() and related calls, used after the node is found or created.
      */
-    private fun setNode(
+    internal fun setNode(
         node: XMPNode,
         value: Any?,
         newOptions: PropertyOptions,
         deleteExisting: Boolean
     ) {
-
-        val compositeMask = PropertyOptions.ARRAY or PropertyOptions.ARRAY_ALT_TEXT or
-            PropertyOptions.ARRAY_ALTERNATE or PropertyOptions.ARRAY_ORDERED or PropertyOptions.STRUCT
 
         if (deleteExisting)
             node.clear()
@@ -419,7 +399,7 @@ public class XMPMeta internal constructor() {
         /* Its checked by setOptions(), if the merged result is a valid options set */
         node.options.mergeWith(newOptions)
 
-        if (node.options.getOptions() and compositeMask == 0) {
+        if (!node.options.isCompositeProperty()) {
 
             /* This is setting the value of a leaf node. */
             setNodeValue(node, value)
@@ -428,12 +408,6 @@ public class XMPMeta internal constructor() {
 
             if (value != null && value.toString().isNotEmpty())
                 throw XMPException("Composite nodes can't have values", XMPErrorConst.BADXPATH)
-
-            /* Can't change an array to a struct, or vice versa. */
-            if (node.options.getOptions() and compositeMask != 0 &&
-                newOptions.getOptions() and compositeMask != node.options.getOptions() and compositeMask
-            )
-                throw XMPException("Requested and existing composite form mismatch", XMPErrorConst.BADXPATH)
 
             node.removeChildren()
         }
@@ -747,6 +721,10 @@ public class XMPMeta internal constructor() {
      * Deletes the given XMP subtree rooted at the given property.
      * It is not an error if the property does not exist.
      *
+     * Attention: Unlike the Adobe original, which swallows every error inside the delete
+     * methods, invalid arguments and unknown namespaces throw an XMPException. This
+     * fail-fast is deliberate, see the "Deviations" section in the README.
+     *
      * @param schemaNS The namespace URI for the property. Has the same usage as in `getProperty()`.
      * @param propName The name of the property. Has the same usage as in getProperty.
      */
@@ -856,6 +834,10 @@ public class XMPMeta internal constructor() {
 
     /**
      * Returns whether the property exists.
+     *
+     * Attention: Unlike the Adobe original, which returns false for invalid arguments and
+     * unknown namespaces, invalid input throws an XMPException. This fail-fast is
+     * deliberate, see the "Deviations" section in the README.
      *
      * @param schemaNS The namespace URI for the property. Has the same usage as in getProperty()`.
      * @param propName The name of the property. Has the same usage as in `getProperty()`.
@@ -1066,14 +1048,14 @@ public class XMPMeta internal constructor() {
 
             object : XMPProperty {
 
-                override fun getValue(): String =
-                    node.value.orEmpty()
+                override fun getValue(): String? =
+                    node.value
 
                 override fun getOptions(): PropertyOptions =
                     node.options
 
-                override fun getLanguage(): String =
-                    node.getQualifier(1).value.orEmpty()
+                override fun getLanguage(): String? =
+                    node.getQualifier(1).value
 
                 override fun toString(): String =
                     node.value.toString()
@@ -1365,9 +1347,18 @@ public class XMPMeta internal constructor() {
         getPropertyObject(schemaNS, propName, XMPValueType.STRING) as? String
 
     /**
-     * Returns a property, but the result value can be requested.
+     * Locates a property and evaluates its value in the requested type. This is the one
+     * lookup pipeline behind the wrapper-based and the raw-value accessors, so both cannot
+     * diverge.
+     *
+     * @return Returns the node together with its evaluated value, or null when the
+     * property does not exist.
      */
-    private fun getPropertyObject(schemaNS: String, propName: String, valueType: XMPValueType): Any? {
+    private fun findValueNode(
+        schemaNS: String,
+        propName: String,
+        valueType: XMPValueType
+    ): Pair<XMPNode, Any?>? {
 
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
@@ -1388,8 +1379,14 @@ public class XMPMeta internal constructor() {
                 XMPErrorConst.BADXPATH
             )
 
-        return evaluateNodeValue(valueType, propNode)
+        return propNode to evaluateNodeValue(valueType, propNode)
     }
+
+    /**
+     * Returns a property, but the result value can be requested.
+     */
+    private fun getPropertyObject(schemaNS: String, propName: String, valueType: XMPValueType): Any? =
+        findValueNode(schemaNS, propName, valueType)?.second
 
     /**
      * Convenience method to set a property to a literal `boolean` value.
@@ -1577,21 +1574,25 @@ public class XMPMeta internal constructor() {
      */
 
     /**
-     * Returns the ISO date string of exif:DateTimeOriginal,
-     * the moment the picture was originally taken.
+     * Returns exif:DateTimeOriginal, the moment the picture was originally taken, parsed
+     * into its parts. The timezone policy stays with the caller, because
+     * [XmpDate.utcOffsetMinutes] reports whether the stored value carries one.
      *
-     * @return Returns the ISO date string or null if the property is not present.
+     * @return Returns the parsed date or null if the property is not present or not a
+     * well-formed XMP date.
      */
-    public fun getDateTimeOriginal(): String? =
-        getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal")
+    public fun getDateTimeOriginal(): XmpDate? =
+        XmpDate.parse(getPropertyString(XMPConst.NS_EXIF, "DateTimeOriginal"))
 
     /**
-     * Sets exif:DateTimeOriginal from an ISO date string.
+     * Sets exif:DateTimeOriginal from the given date, rendered as the canonical ISO 8601
+     * form of [XmpDate], so parts like a zero second survive instead of being lost to an
+     * externally formatted string.
      *
-     * @param isoDate The ISO date string to set.
+     * @param date The date to set.
      */
-    public fun setDateTimeOriginal(isoDate: String): Unit =
-        setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", isoDate)
+    public fun setDateTimeOriginal(date: XmpDate): Unit =
+        setProperty(XMPConst.NS_EXIF, "DateTimeOriginal", date.toString())
 
     /**
      * Deletes exif:DateTimeOriginal.
@@ -1599,6 +1600,15 @@ public class XMPMeta internal constructor() {
      */
     public fun deleteDateTimeOriginal(): Unit =
         deleteProperty(XMPConst.NS_EXIF, "DateTimeOriginal")
+
+    /**
+     * Deletes exif:DateTimeDigitized. Writers remove it alongside
+     * [deleteDateTimeOriginal], because external writers store both date properties and
+     * leaving one behind makes them inconsistent.
+     * It is not an error if the property does not exist.
+     */
+    public fun deleteDateTimeDigitized(): Unit =
+        deleteProperty(XMPConst.NS_EXIF, "DateTimeDigitized")
 
     /**
      * @return Returns tiff:Orientation as integer or null if the property is not present.
@@ -1863,25 +1873,25 @@ public class XMPMeta internal constructor() {
     }
 
     /**
-     * Returns the faces stored in mwg-rs:Regions, keyed by their region name.
-     * Regions without type "Face" or with incomplete area data are skipped;
-     * duplicate names keep the last region.
+     * Returns the face regions stored in mwg-rs:Regions, in stored order. Regions of other
+     * types or with incomplete area data are skipped; a region without a name is kept with
+     * a null name, and duplicate names are kept as separate regions.
      *
-     * @return Returns the face regions or an empty map if none are present.
+     * @return Returns the face regions or an empty list if none are present.
      */
-    public fun getFaces(): Map<String, XMPRegionArea> {
+    public fun getFaceRegions(): List<XmpFaceRegion> {
 
         val regionListExists = doesPropertyExist(XMPConst.NS_MWG_RS, XMP_MWG_RS_REGION_LIST)
 
         if (!regionListExists)
-            return emptyMap()
+            return emptyList()
 
         val regionCount = countArrayItems(XMPConst.NS_MWG_RS, XMP_MWG_RS_REGION_LIST)
 
         if (regionCount == 0)
-            return emptyMap()
+            return emptyList()
 
-        val faces = mutableMapOf<String, XMPRegionArea>()
+        val regions = mutableListOf<XmpFaceRegion>()
 
         @Suppress("LoopWithTooManyJumpStatements")
         for (index in 1..regionCount) {
@@ -1900,35 +1910,41 @@ public class XMPMeta internal constructor() {
             val width = getPropertyDouble(XMPConst.NS_MWG_RS, "$prefix:Area/stArea:w")
             val height = getPropertyDouble(XMPConst.NS_MWG_RS, "$prefix:Area/stArea:h")
 
-            /* Skip regions with missing data. */
+            /* Skip regions with missing area data. */
             @Suppress("ComplexCondition")
-            if (name == null || xPos == null || yPos == null || width == null || height == null)
+            if (xPos == null || yPos == null || width == null || height == null)
                 continue
 
-            faces[name] = XMPRegionArea(xPos, yPos, width, height)
+            regions.add(XmpFaceRegion(name, XMPRegionArea(xPos, yPos, width, height)))
         }
 
-        return faces
+        return regions
     }
 
     /**
-     * Replaces mwg-rs:Regions with face regions normalized to the given image size.
-     * Passing an empty map deletes the Regions structure.
+     * Replaces the face regions of mwg-rs:Regions with the given list, normalized to the
+     * given image size. Regions of other types survive the rewrite, and unknown fields of
+     * a face whose name appears exactly once on both sides - like the vendor extensions
+     * other tools store in mwg-rs:Extensions - are carried over. Passing an empty list
+     * deletes the face regions, keeping regions of other types.
      *
-     * @param faces The face regions keyed by name.
+     * @param regions The face regions to write.
      * @param widthPx The image width in pixels the areas are normalized to.
      * @param heightPx The image height in pixels the areas are normalized to.
      */
-    public fun setFaces(
-        faces: Map<String, XMPRegionArea>,
+    public fun setFaceRegions(
+        regions: List<XmpFaceRegion>,
         widthPx: Int,
         heightPx: Int
     ): Unit {
 
+        /* Snapshot the region structure, so foreign data survives the replacement. */
+        val previousRegions = findRegionsStructNode()?.let { deepCopyNode(it) }
+
         /* Delete existing entries, if any */
         deleteProperty(NS_MWG_RS, "Regions")
 
-        if (faces.isNotEmpty()) {
+        if (regions.isNotEmpty()) {
 
             setStructField(
                 NS_MWG_RS, XMP_MWG_RS_APPLIED_TO_DIMENSIONS,
@@ -1952,7 +1968,7 @@ public class XMPMeta internal constructor() {
                 null, arrayOptions
             )
 
-            faces.onEachIndexed { index, face ->
+            regions.onEachIndexed { index, region ->
 
                 val oneBasedIndex = index + 1
 
@@ -1975,20 +1991,23 @@ public class XMPMeta internal constructor() {
                     XMPConst.XMP_MWG_RS_TYPE_FACE
                 )
 
-                setStructField(
-                    NS_MWG_RS,
-                    structNameItem,
-                    XMPConst.NS_MWG_RS,
-                    "Name",
-                    face.key
-                )
+                if (region.name != null) {
+
+                    setStructField(
+                        NS_MWG_RS,
+                        structNameItem,
+                        XMPConst.NS_MWG_RS,
+                        "Name",
+                        region.name
+                    )
+                }
 
                 setStructField(
                     NS_MWG_RS,
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "x",
-                    face.value.xPos.toString()
+                    region.area.xPos.toString()
                 )
 
                 setStructField(
@@ -1996,7 +2015,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "y",
-                    face.value.yPos.toString()
+                    region.area.yPos.toString()
                 )
 
                 setStructField(
@@ -2004,7 +2023,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "w",
-                    face.value.width.toString()
+                    region.area.width.toString()
                 )
 
                 setStructField(
@@ -2012,7 +2031,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "h",
-                    face.value.height.toString()
+                    region.area.height.toString()
                 )
 
                 setStructField(
@@ -2023,7 +2042,125 @@ public class XMPMeta internal constructor() {
                     "normalized"
                 )
             }
+
+            restoreForeignFaceFields(previousRegions)
         }
+
+        reappendNonFaceRegions(previousRegions)
+    }
+
+    private fun findRegionsStructNode(): XMPNode? {
+
+        val schemaNode = XMPNodeUtils.findSchemaNode(root, XMPConst.NS_MWG_RS, false) ?: return null
+
+        return schemaNode.getChildren().firstOrNull { it.hasLocalName("Regions") }
+    }
+
+    private fun findRegionListNode(regionsNode: XMPNode): XMPNode? =
+        regionsNode.getChildren().firstOrNull { it.hasLocalName("RegionList") }
+
+    private fun XMPNode.hasLocalName(localName: String): Boolean =
+        name?.substringAfter(':') == localName
+
+    private fun XMPNode.fieldValue(localName: String): String? =
+        getChildren().firstOrNull { it.hasLocalName(localName) }?.value
+
+    private fun deepCopyNode(node: XMPNode): XMPNode {
+
+        val copy = XMPNode(node.name, node.value, PropertyOptions(node.options.getOptions()))
+
+        copy.isImplicit = node.isImplicit
+        copy.hasValueChild = node.hasValueChild
+
+        for (child in node.getChildren())
+            copy.addChild(deepCopyNode(child))
+
+        for (qualifier in node.getQualifier())
+            copy.addQualifier(deepCopyNode(qualifier))
+
+        return copy
+    }
+
+    private fun restoreForeignFaceFields(
+        previousRegions: XMPNode?
+    ) {
+
+        if (previousRegions == null)
+            return
+
+        val newList = findRegionsStructNode()?.let { findRegionListNode(it) } ?: return
+
+        val newFaceItems = newList.getChildren()
+
+        val oldFaceItems = findRegionListNode(previousRegions)
+            ?.getChildren()
+            ?.filter { it.fieldValue("Type") == XMPConst.XMP_MWG_RS_TYPE_FACE }
+            ?: return
+
+        for (oldItem in oldFaceItems) {
+
+            val name = oldItem.fieldValue("Name") ?: continue
+
+            /* Only a name that appears exactly once on both sides identifies a region. */
+            if (oldFaceItems.count { it.fieldValue("Name") == name } != 1)
+                continue
+
+            val targets = newFaceItems.filter {
+                it.fieldValue("Type") == XMPConst.XMP_MWG_RS_TYPE_FACE &&
+                    it.fieldValue("Name") == name
+            }
+
+            if (targets.size != 1)
+                continue
+
+            for (field in oldItem.getChildren()) {
+
+                if (field.hasLocalName("Type") || field.hasLocalName("Name") || field.hasLocalName("Area"))
+                    continue
+
+                targets[0].addChild(deepCopyNode(field))
+            }
+        }
+    }
+
+    private fun reappendNonFaceRegions(previousRegions: XMPNode?) {
+
+        if (previousRegions == null)
+            return
+
+        val previousList = findRegionListNode(previousRegions) ?: return
+
+        val nonFaceItems = previousList.getChildren()
+            .filter { it.fieldValue("Type") != XMPConst.XMP_MWG_RS_TYPE_FACE }
+
+        if (nonFaceItems.isEmpty())
+            return
+
+        val currentRegions = findRegionsStructNode()
+
+        if (currentRegions == null) {
+
+            /*
+             * No face was written, so the region structure is rebuilt from the snapshot
+             * with the face items removed.
+             */
+            for (item in previousList.getChildren().toList()) {
+                if (item.fieldValue("Type") == XMPConst.XMP_MWG_RS_TYPE_FACE)
+                    previousList.removeChild(item)
+            }
+
+            val schemaNode = XMPNodeUtils.findSchemaNode(root, XMPConst.NS_MWG_RS, true)
+
+            if (schemaNode != null)
+                schemaNode.addChild(previousRegions)
+
+            return
+        }
+
+        val currentList = findRegionListNode(currentRegions) ?: return
+
+        for (item in nonFaceItems)
+            currentList.addChild(currentList.getChildrenLength() + 1, item)
     }
 
     /**
@@ -2107,19 +2244,11 @@ public class XMPMeta internal constructor() {
 
         if (shownLocationsCount > 0) {
 
-            val iterator: XMPIterator = iterator(
-                schemaNS = XMPConst.NS_IPTC_EXT,
-                propName = "${XMPConst.XMP_IPTC_EXT_LOCATION_SHOWN}[1]/Iptc4xmpExt:LocationName",
-                options = null
-            )
-
             /* Like getTitle() the first non-empty localization wins. */
-            locationName = iterator.asSequence()
-                .firstOrNull { propertyInfo ->
-                    propertyInfo.getOptions().hasQualifiers() &&
-                        !propertyInfo.getValue().isNullOrBlank()
-                }
-                ?.getValue()
+            locationName = firstNonEmptyLocalization(
+                XMPConst.NS_IPTC_EXT,
+                "${XMPConst.XMP_IPTC_EXT_LOCATION_SHOWN}[1]/Iptc4xmpExt:LocationName"
+            )
 
             location =
                 getPropertyString(
@@ -2311,17 +2440,25 @@ public class XMPMeta internal constructor() {
     }
 
     /**
-     * @return Returns the first non-empty localization of dc:title or null if absent.
+     * Returns the first localization of an alt-text property whose value is not null or
+     * blank, which is how the localized convenience getters select their value.
+     *
+     * @param schemaNS The namespace URI of the alt-text property.
+     * @param propName The path of the alt-text property.
+     * @return Returns the first non-empty localization or null if there is none.
      */
-    public fun getTitle(): String? {
+    @Suppress("LoopWithTooManyJumpStatements")
+    private fun firstNonEmptyLocalization(
+        schemaNS: String,
+        propName: String
+    ): String? {
 
         val iterator: XMPIterator = iterator(
-            schemaNS = XMPConst.NS_DC,
-            propName = "title",
+            schemaNS = schemaNS,
+            propName = propName,
             options = null
         )
 
-        @Suppress("LoopWithTooManyJumpStatements")
         while (iterator.hasNext()) {
 
             val propertyInfo = iterator.next()
@@ -2339,6 +2476,12 @@ public class XMPMeta internal constructor() {
 
         return null
     }
+
+    /**
+     * @return Returns the first non-empty localization of dc:title or null if absent.
+     */
+    public fun getTitle(): String? =
+        firstNonEmptyLocalization(XMPConst.NS_DC, "title")
 
     /**
      * Replaces dc:title with a single x-default localized text.
@@ -2379,32 +2522,8 @@ public class XMPMeta internal constructor() {
     /**
      * @return Returns the first non-empty localization of dc:description or null if absent.
      */
-    public fun getDescription(): String? {
-
-        val iterator: XMPIterator = iterator(
-            schemaNS = XMPConst.NS_DC,
-            propName = "description",
-            options = null
-        )
-
-        @Suppress("LoopWithTooManyJumpStatements")
-        while (iterator.hasNext()) {
-
-            val propertyInfo = iterator.next()
-
-            if (!propertyInfo.getOptions().hasQualifiers())
-                continue
-
-            val value = propertyInfo.getValue()
-
-            if (value.isNullOrBlank())
-                continue
-
-            return value
-        }
-
-        return null
-    }
+    public fun getDescription(): String? =
+        firstNonEmptyLocalization(XMPConst.NS_DC, "description")
 
     /**
      * Replaces dc:description with a single x-default localized text.
@@ -2441,6 +2560,43 @@ public class XMPMeta internal constructor() {
             qualValue = XMPConst.X_DEFAULT
         )
     }
+
+    /**
+     * Returns xmpNote:IPTCDigest, the digest of the IPTC IIM block the XMP was last
+     * synchronized with. Readers compare it against the actual IPTC digest to detect
+     * outdated IPTC data, as the MWG guidelines prescribe.
+     *
+     * @return Returns the digest string or null if the property is not present.
+     */
+    public fun getIptcDigest(): String? =
+        getPropertyString(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_IPTC_DIGEST)
+
+    /**
+     * Sets xmpNote:IPTCDigest, the sync indicator of the MWG IPTC round-trip. Writers store
+     * the digest of the IPTC IIM block they synchronized the XMP with.
+     *
+     * @param digest The digest string to set.
+     */
+    public fun setIptcDigest(digest: String): Unit =
+        setProperty(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_IPTC_DIGEST, digest)
+
+    /**
+     * Returns xmpNote:HasExtendedXMP, the GUID referencing the Adobe extended XMP chunks of
+     * an oversized packet. Readers use it to decide whether extended chunks exist, and
+     * [XMPMetaFactory.assemblePacket] consumes them with it.
+     *
+     * @return Returns the GUID string or null if the packet has no extended XMP reference.
+     */
+    public fun getHasExtendedXmp(): String? =
+        getPropertyString(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_HAS_EXTENDED_XMP)
+
+    /**
+     * Deletes xmpNote:HasExtendedXMP. Writers remove the stale reference before writing a
+     * packet that no longer carries extended chunks.
+     * It is not an error if the property does not exist.
+     */
+    public fun deleteHasExtendedXmp(): Unit =
+        deleteProperty(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_HAS_EXTENDED_XMP)
 
     public companion object {
 

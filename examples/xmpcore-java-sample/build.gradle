@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'de.stefan-oltmann:xmpcore:1.7.4'
+    implementation 'de.stefan-oltmann:xmpcore:2.0.0'
 }
 
 // Needed to make it work for the Gradle java plugin
