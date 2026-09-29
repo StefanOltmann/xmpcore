@@ -139,6 +139,57 @@ class XMPIteratorFeaturesTest {
     }
 
     /**
+     * The skip also works when a look-ahead hasNext() call has already prepared the next
+     * property: the prepared field of the struct is not delivered, and the skip does not
+     * leak onto a later sibling whose subtree must stay intact.
+     */
+    @Test
+    fun testSkipSubtreeAfterLookaheadHasNext() {
+
+        /* language=XML */
+        val structXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:subject>
+                  <rdf:Bag>
+                    <rdf:li rdf:parseType="Resource">
+                      <dc:first>a</dc:first>
+                      <dc:second>b</dc:second>
+                    </rdf:li>
+                    <rdf:li rdf:parseType="Resource">
+                      <dc:first>c</dc:first>
+                    </rdf:li>
+                  </rdf:Bag>
+                </dc:subject>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        val xmpMeta = XMPMetaFactory.parseFromString(structXmp)
+
+        val iterator = xmpMeta.iterator(XMPConst.NS_DC, "subject", null)
+
+        /* Consume dc:subject and the first struct item. */
+        iterator.next()
+
+        assertEquals("dc:subject[1]", iterator.next().getPath())
+
+        /* The look-ahead prepares the first field of the struct before the skip. */
+        assertTrue(iterator.hasNext())
+
+        iterator.skipSubtree()
+
+        assertEquals(
+            expected = listOf(
+                "dc:subject[2]",
+                "dc:subject[2]/dc:first"
+            ),
+            actual = collectPaths(iterator)
+        )
+    }
+
+    /**
      * The option `JUST_LEAFNAME` returns only the last path component. The namespace prefix
      * is only stripped from qualifiers, array items are reduced to their index.
      */

@@ -95,6 +95,20 @@ public class XMPIterator(
     private var skipSubtree = false
 
     /**
+     * The iterator that prepared the property waiting for delivery.
+     * [NodeIterator.reportNode] updates it, so it is always the owner of the node the
+     * pending property describes.
+     */
+    private var preparedOwner: NodeIterator? = null
+
+    /**
+     * The owner of the property the last `next()` call delivered, or null before the
+     * first delivery. [skipSubtree] ends the subtree of this iterator, which stays
+     * correct even when a look-ahead [hasNext] call already prepared a deeper property.
+     */
+    private var lastDeliveredOwner: NodeIterator? = null
+
+    /**
      * the node iterator doing the work.
      */
     private var nodeIterator: Iterator<XMPPropertyInfo>? = null
@@ -176,11 +190,18 @@ public class XMPIterator(
     }
 
     /**
-     * Skip the subtree below the current node when `next()` is
-     * called.
+     * Skip the subtree below the node the last `next()` call delivered. A look-ahead
+     * `hasNext()` call may already have prepared a property from inside that subtree;
+     * the preparation is dropped, so the iteration continues with the next sibling.
      */
     public fun skipSubtree() {
-        skipSubtree = true
+
+        val owner = lastDeliveredOwner
+
+        if (owner != null)
+            owner.skipOwnSubtree()
+        else
+            skipSubtree = true
     }
 
     /**
@@ -201,6 +222,9 @@ public class XMPIterator(
 
         if (iterator == null || !iterator.hasNext())
             throw NoSuchElementException("There are no more nodes to return")
+
+        /* The pending property belongs to this iterator's node; remember it for skipSubtree. */
+        lastDeliveredOwner = preparedOwner
 
         return iterator.next()
     }
@@ -360,6 +384,9 @@ public class XMPIterator(
 
             returnProperty = createPropertyInfo(node, baseNS, path)
 
+            /* The pending property belongs to this iterator; skipSubtree targets it. */
+            preparedOwner = this
+
             return true
         }
 
@@ -423,6 +450,31 @@ public class XMPIterator(
             returnProperty = null
 
             return result
+        }
+
+        /**
+         * Ends the subtree below the node this iterator last delivered: the prepared
+         * look-ahead property of this iterator and of its whole active sub-iterator
+         * chain is dropped, so the parent advances to the next sibling.
+         */
+        fun skipOwnSubtree() {
+
+            (this@XMPIterator.nodeIterator as? NodeIterator)?.dropPreparedProperties()
+
+            state = ITERATE_DONE
+            childrenIterator = null
+            returnProperty = null
+        }
+
+        /**
+         * Drops the prepared property of this iterator and recursively of its active
+         * sub-iterator, so nothing from inside a skipped subtree is delivered.
+         */
+        private fun dropPreparedProperties() {
+
+            returnProperty = null
+
+            (subIterator as? NodeIterator)?.dropPreparedProperties()
         }
 
         /**

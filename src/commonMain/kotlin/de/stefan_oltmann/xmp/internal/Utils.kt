@@ -50,6 +50,12 @@ internal object Utils {
     )
 
     /**
+     * Matches the decimal and hexadecimal numeric character references of XML, like
+     * `&#x1;` or `&#2;`.
+     */
+    private val controlCharReferenceRegex = Regex("&#(?:x([0-9A-Fa-f]+)|([0-9]+));")
+
+    /**
      * segments of a UUID.
      */
     const val UUID_SEGMENT_COUNT = 4
@@ -385,12 +391,6 @@ internal object Utils {
 
         return buffer.toString()
     }
-
-    /**
-     * Matches the decimal and hexadecimal numeric character references of XML, like
-     * `&#x1;` or `&#2;`.
-     */
-    private val controlCharReferenceRegex = Regex("&#(?:x([0-9A-Fa-f]+)|([0-9]+));")
 
     /**
      * Replaces numeric character references that resolve to a control character with a
