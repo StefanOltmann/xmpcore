@@ -456,12 +456,36 @@ internal object ExtendedXmpCodec {
 
     /**
      * Removes a stale `xmpNote:HasExtendedXMP` reference from the packet. Empty
-     * `rdf:Description` wrappers of a removed reference are legal RDF and remain.
+     * `rdf:Description` wrappers of a removed reference are legal RDF and remain. The
+     * attribute-form pattern is only rewritten inside a start tag, where an attribute can
+     * legally appear; the same character sequence inside an element's text content is
+     * user data, because quotes are not escaped there, and survives untouched.
      */
-    private fun removeStaleExtendedXmpReference(packet: String): String =
-        packet
-            .replace(staleAttributeReferenceRegex, "")
-            .replace(staleElementReferenceRegex, "")
+    private fun removeStaleExtendedXmpReference(packet: String): String {
+
+        val withoutAttributeReference = staleAttributeReferenceRegex.replace(packet) { match ->
+            if (isInsideStartTag(packet, match.range.first)) "" else match.value
+        }
+
+        return staleElementReferenceRegex.replace(withoutAttributeReference, "")
+    }
+
+    /**
+     * Checks whether a position sits inside a start tag, where an attribute can legally
+     * appear. A closing bracket between the last opening bracket and the position means
+     * the position is in text content.
+     */
+    private fun isInsideStartTag(packet: String, position: Int): Boolean {
+
+        val tagStart = packet.lastIndexOf('<', position - 1)
+
+        if (tagStart < 0)
+            return false
+
+        val closeIndex = packet.indexOf('>', tagStart + 1)
+
+        return closeIndex == -1 || closeIndex >= position
+    }
 
     /**
      * Adds the line break before the packet terminator processing instruction when the
@@ -511,11 +535,15 @@ internal object ExtendedXmpCodec {
     /**
      * Extracts the GUID of the `xmpNote:HasExtendedXMP` reference from the raw packet text.
      * Both serialization forms that writers emit are recognized: the shorthand attribute form
-     * and the element form. Returns null if the packet does not reference extended data.
+     * and the element form. Attribute-form matches are only accepted inside a start tag,
+     * like the stale reference removal, so marker text inside a value is not mistaken for a
+     * reference. Returns null if the packet does not reference extended data.
      */
     private fun findExtendedXmpGuid(packet: String): String? {
 
-        attributeReferenceRegex.find(packet)?.let { return it.groupValues[1] }
+        attributeReferenceRegex.findAll(packet)
+            .firstOrNull { isInsideStartTag(packet, it.range.first) }
+            ?.let { return it.groupValues[1] }
 
         return elementReferenceRegex.find(packet)?.groupValues?.get(1)
     }

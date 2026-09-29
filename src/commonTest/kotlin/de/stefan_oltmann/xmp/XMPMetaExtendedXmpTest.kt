@@ -237,6 +237,46 @@ class XMPMetaExtendedXmpTest {
     }
 
     /**
+     * The attribute-form marker text inside an element's content is user data, because
+     * quotes are not escaped in text content: the stale reference removal only rewrites
+     * matches inside a start tag, so a description carrying the literal text survives.
+     * The xml:lang qualifier forces the element form, because unqualified simple
+     * properties are serialized as attributes where the quotes would be escaped.
+     */
+    @Test
+    fun testPartitionKeepsMarkerTextInsideValues() {
+
+        val description =
+            """before xmpNote:HasExtendedXMP="0123456789ABCDEF0123456789ABCDEF" after"""
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setProperty(XMPConst.NS_DC, "source", description)
+
+        xmpMeta.setQualifier(
+            XMPConst.NS_DC,
+            "source",
+            XMPConst.NS_XML,
+            "lang",
+            XMPConst.X_DEFAULT
+        )
+
+        val packet = XMPMetaFactory.serializeToString(xmpMeta, SerializeOptions())
+
+        val partition = XMPMetaFactory.partitionPacket(
+            packet,
+            maxMainPacketBytes,
+            maxExtendedChunkBytes
+        )
+
+        assertTrue(partition.extendedChunks.isEmpty())
+
+        val reparsed = XMPMetaFactory.parseFromString(partition.mainPacket)
+
+        assertEquals(description, reparsed.getPropertyString(XMPConst.NS_DC, "source"))
+    }
+
+    /**
      * In-place editing padding carries no information and must not push an otherwise small
      * packet over the size limit. The canonical line break before the packet terminator
      * survives the collapsing of the padding.
