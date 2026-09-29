@@ -61,8 +61,15 @@ internal object XMPMetaParser {
 
         val actualOptions = options ?: ParseOptions()
 
+        /*
+         * Control characters are repaired like the two-pass parse of the Adobe original:
+         * literal invalid characters and numeric character references that resolve to one
+         * become spaces, so they can never reach the data model.
+         */
         val actualInput = if (actualOptions.getFixControlChars())
-            Utils.replaceControlCharsWithSpace(input)
+            Utils.replaceControlCharReferencesWithSpace(
+                Utils.replaceControlCharsWithSpace(input)
+            )
         else
             input
 

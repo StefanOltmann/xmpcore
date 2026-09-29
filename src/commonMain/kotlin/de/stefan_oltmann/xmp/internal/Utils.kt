@@ -387,6 +387,45 @@ internal object Utils {
     }
 
     /**
+     * Matches the decimal and hexadecimal numeric character references of XML, like
+     * `&#x1;` or `&#2;`.
+     */
+    private val controlCharReferenceRegex = Regex("&#(?:x([0-9A-Fa-f]+)|([0-9]+));")
+
+    /**
+     * Replaces numeric character references that resolve to a control character with a
+     * space, like the FixASCIIControlsReader retry pass of the Adobe original. The XML
+     * parser resolves such references into the data model silently, so the repair must
+     * happen on the raw input before parsing. References to legal characters, including
+     * tab, line feed and carriage return, are left untouched.
+     *
+     * @param value the raw parse input.
+     * @return Returns the repaired string.
+     */
+    fun replaceControlCharReferencesWithSpace(value: String): String {
+
+        /* Fast path without allocation for inputs without any character reference. */
+        if (!value.contains("&#"))
+            return value
+
+        return controlCharReferenceRegex.replace(value) { match ->
+
+            val hexDigits = match.groupValues[1]
+            val decimalDigits = match.groupValues[2]
+
+            val codePoint = if (hexDigits.isNotEmpty())
+                hexDigits.toIntOrNull(HEX_RADIX)
+            else
+                decimalDigits.toIntOrNull()
+
+            if (codePoint != null && isReplacedControlChar(codePoint.toChar()))
+                " "
+            else
+                match.value
+        }
+    }
+
+    /**
      * Checks whether a character is a control character that gets replaced by a space.
      *
      * Tab, LF and CR are excluded, matching the Adobe original.
