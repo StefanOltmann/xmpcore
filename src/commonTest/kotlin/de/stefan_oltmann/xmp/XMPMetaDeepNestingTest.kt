@@ -104,4 +104,32 @@ class XMPMetaDeepNestingTest {
 
         assertEquals(XMPErrorConst.BADXMP, ex.errorCode)
     }
+
+    /**
+     * The DOM builder and the search walks share one effective limit, so neither guard is
+     * dead: a plain document just beyond the limit fails with the shared depth message.
+     */
+    @Test
+    fun testPlainXmlJustBeyondSharedDepthLimitIsRejected() {
+
+        val open = StringBuilder()
+
+        val close = StringBuilder()
+
+        for (index in 1..300) {
+
+            open.append("<w$index>")
+
+            close.insert(0, "</w$index>")
+        }
+
+        /* language=XML */
+        val input = "<w0>$open$close</w0>"
+
+        val ex = assertFailsWith<XMPException> {
+            XMPMetaFactory.parseFromString(input)
+        }
+
+        assertEquals("Maximum nesting depth of 256 exceeded", ex.message)
+    }
 }

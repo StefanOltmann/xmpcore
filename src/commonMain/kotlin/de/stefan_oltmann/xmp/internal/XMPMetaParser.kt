@@ -37,11 +37,12 @@ internal object XMPMetaParser {
     private val XMP_RDF = Any()
 
     /**
-     * Maximum nesting depth of the XML containers that are searched for the RDF root. Real-world
-     * documents stay far below this, while hostile input can nest arbitrarily deep and would
-     * exhaust the stack through the recursive search.
+     * Maximum nesting depth of the XML containers that are searched for the RDF root. It
+     * mirrors the DOM-level cap of DomParser, so neither guard of the recursive walks is
+     * dead: real-world documents stay far below this, while hostile input can nest
+     * arbitrarily deep and would exhaust the stack through the recursive search.
      */
-    private const val MAX_SEARCH_DEPTH = 512
+    private const val MAX_SEARCH_DEPTH = 256
 
     /**
      * Parses the input source into an XMP metadata object, including
