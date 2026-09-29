@@ -85,6 +85,10 @@ This port aims to behave like the Adobe original. A few deliberate deviations re
   `delete*` methods and returns `false` from the `doesPropertyExist*` methods when the arguments
   are invalid or a namespace is unknown. This port throws `XMPException` in those cases, because
   treating invalid input as a no-op masks programming errors.
+* **No RDF found.** The Adobe original returns an empty metadata object when a document contains
+  no RDF at all, which silently turns `REQUIRE_XMP_META` into a filter. This port throws
+  `XMPException` instead, so callers keep control over the fallback; use `parseOrCreate` for the
+  "nothing there" case.
 * **Dates.** `XMPDateTime` is replaced by `XmpDate`, which parses strictly without silently
   clamping values and always renders the seconds of a time.
 * **Streams.** Only `String` input and output exists. The `ByteArray`/`InputStream`/
@@ -93,6 +97,44 @@ This port aims to behave like the Adobe original. A few deliberate deviations re
 * **Deterministic namespaces.** Namespace prefixes discovered while parsing are assigned in
   namespace URI order, so the serialized output does not depend on the platform's DOM attribute
   order.
+
+Beyond these, the port fixes defects that the Java 5.1.3 original carries and that behave like
+the Adobe C++ original here:
+
+* A qualifier selector like `ns:bag[?ns:qual='value']` never examined the last array item in
+  the Java original; this port finds it.
+* A path lookup whose array index is out of range crashed the Java original with a
+  `NullPointerException`; this port reports an `XMPException`.
+* `XMPIterator.skipSubtree()` was declared but never evaluated by the Java original; this port
+  implements the documented behavior.
+* The `XMPUtils` batch operations had several defects in the Java original, among them an
+  inverted form comparison that disabled array merging, array items appended to the schema
+  instead of the array, and a quote scan reading the wrong position; this port implements the
+  intended semantics.
+
+A few edge cases are handled differently on purpose:
+
+* **Duplicated properties and qualifiers.** Instead of rejecting the whole file, the last
+  occurrence replaces the earlier one at its position, like ExifTool does for duplicated tags.
+* **Corrupted XML around the RDF.** Junk or NUL padding around an otherwise intact RDF part is
+  tolerated, where the Adobe original rejects such files.
+* **Malformed RDF edge cases.** Named children inside arrays and a lone `rdf:_` element are
+  rejected, while the numbered `rdf:_N` item form is accepted, following the RDF specification
+  more closely than the Java original.
+* **Base64 values.** Values with an invalid length or non-zero padding bits fail the read where
+  the Java original silently accepted or truncated them.
+* **Control characters.** Literal invalid control characters and numeric character references
+  resolving to one are repaired to spaces, like Adobe's default-on repair option including its
+  second parse pass.
+
+Where a drop-in replacement is affected, the remaining API-shape differences:
+
+* The iterator's `getNamespace()` falls back to the base namespace instead of returning null
+  for array items, and `getValue()`/`getPath()` return the empty string instead of null.
+* `getLocalizedText()` returns the empty string instead of null for values without text.
+* Malformed XML and DOCTYPE declarations are reported with the `BADSTREAM` error code where the
+  Adobe original reports `BADXML`, and blank input with `BADXMP` instead of `BADPARAM`; the
+  accept/reject decisions themselves are identical.
 
 ## Contributions
 

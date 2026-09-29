@@ -47,6 +47,10 @@ public object XMPMetaFactory {
      * @param options Options controlling the parsing.
      * @return Returns the `XMPMeta`-object created from the input.
      * @throws XMPException If the file is not well-formed XML or if the parsing fails.
+     *
+     * Attention: Unlike the Adobe original, which returns an empty metadata object when the
+     * input contains no RDF at all, this port throws an XMPException for such input, so the
+     * caller keeps control over the fallback; [parseOrCreate] covers the "nothing there" case.
      */
     @kotlin.jvm.JvmStatic
     @kotlin.jvm.JvmOverloads
