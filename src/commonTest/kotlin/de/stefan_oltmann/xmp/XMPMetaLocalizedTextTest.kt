@@ -6,8 +6,8 @@ import de.stefan_oltmann.xmp.internal.XMPNodeUtils
 import de.stefan_oltmann.xmp.options.PropertyOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
