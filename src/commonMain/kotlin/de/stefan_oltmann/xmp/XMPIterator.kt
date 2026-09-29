@@ -63,8 +63,6 @@ import de.stefan_oltmann.xmp.options.PropertyOptions
  *  * JUST_LEAFNAME - Return just the leaf component of the node names.
  * The default is to return the full xmp path.
  *  * OMIT_QUALIFIERS - Do not visit the qualifiers.
- *  * INCLUDE_ALIASES - Adds known alias properties to the properties in the iteration.
- * *Note:* Not supported in Java XMPCore!
  *
  * `next()` returns `XMPPropertyInfo`-objects and throws
  * a `NoSuchElementException` if there are no more properties to

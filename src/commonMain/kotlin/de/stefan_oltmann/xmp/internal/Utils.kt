@@ -117,7 +117,7 @@ internal object Utils {
                 }
 
                 ' ' -> {
-                    /* Leave as is. */
+                    /* Remove spaces, like the Adobe original does. */
                 }
 
                 else -> {
