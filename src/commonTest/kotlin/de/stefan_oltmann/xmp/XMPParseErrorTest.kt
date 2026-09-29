@@ -670,7 +670,6 @@ class XMPParseErrorTest {
      */
     @Test
     fun testPartiallyNumberedRdfArrayItemThrows() {
-
         /* language=XML */
         val testXmp = """
             <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
@@ -679,6 +678,32 @@ class XMPParseErrorTest {
                 <dc:subject>
                   <rdf:Bag>
                     <rdf:_1x>a</rdf:_1x>
+                  </rdf:Bag>
+                </dc:subject>
+              </rdf:Description>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertXMPError(XMPErrorConst.BADRDF) {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
+    }
+
+    /**
+     * A lone rdf:_ element is not a numbered array item, because the RDF form requires at
+     * least one digit: it is rejected like any other named child of an array.
+     */
+    @Test
+    fun testLoneRdfUnderscoreItemThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              <rdf:Description rdf:about=""
+                  xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <dc:subject>
+                  <rdf:Bag>
+                    <rdf:_>a</rdf:_>
                   </rdf:Bag>
                 </dc:subject>
               </rdf:Description>

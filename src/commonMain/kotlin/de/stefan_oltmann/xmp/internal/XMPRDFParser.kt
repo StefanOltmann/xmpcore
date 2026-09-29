@@ -1388,6 +1388,10 @@ internal object XMPRDFParser {
         if (!localName.startsWith("_"))
             return false
 
+        /* A lone underscore carries no number; the RDF form requires at least one digit. */
+        if (localName.length < 2)
+            return false
+
         for (i in 1 until localName.length)
             if (localName[i] !in '0'..'9')
                 return false
