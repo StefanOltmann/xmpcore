@@ -132,26 +132,7 @@ public class XMPMeta internal constructor() {
 
     private fun getProperty(schemaNS: String, propName: String, valueType: XMPValueType): XMPProperty? {
 
-        if (schemaNS.isEmpty())
-            throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
-
-        if (propName.isEmpty())
-            throw XMPException(XMPErrorConst.EMPTY_PROPERTY_NAME_TEXT, XMPErrorConst.BADPARAM)
-
-        val propNode = findNode(
-            xmpTree = this.root,
-            xpath = expandXPath(schemaNS, propName),
-            createNodes = false,
-            leafOptions = null
-        ) ?: return null
-
-        if (valueType != XMPValueType.STRING && propNode.options.isCompositeProperty())
-            throw XMPException(
-                "Property must be simple when a value type is requested",
-                XMPErrorConst.BADXPATH
-            )
-
-        val value = evaluateNodeValue(valueType, propNode)
+        val (propNode, value) = findValueNode(schemaNS, propName, valueType) ?: return null
 
         return object : XMPProperty {
 
@@ -1366,9 +1347,18 @@ public class XMPMeta internal constructor() {
         getPropertyObject(schemaNS, propName, XMPValueType.STRING) as? String
 
     /**
-     * Returns a property, but the result value can be requested.
+     * Locates a property and evaluates its value in the requested type. This is the one
+     * lookup pipeline behind the wrapper-based and the raw-value accessors, so both cannot
+     * diverge.
+     *
+     * @return Returns the node together with its evaluated value, or null when the
+     * property does not exist.
      */
-    private fun getPropertyObject(schemaNS: String, propName: String, valueType: XMPValueType): Any? {
+    private fun findValueNode(
+        schemaNS: String,
+        propName: String,
+        valueType: XMPValueType
+    ): Pair<XMPNode, Any?>? {
 
         if (schemaNS.isEmpty())
             throw XMPException(XMPErrorConst.EMPTY_SCHEMA_TEXT, XMPErrorConst.BADPARAM)
@@ -1389,8 +1379,14 @@ public class XMPMeta internal constructor() {
                 XMPErrorConst.BADXPATH
             )
 
-        return evaluateNodeValue(valueType, propNode)
+        return propNode to evaluateNodeValue(valueType, propNode)
     }
+
+    /**
+     * Returns a property, but the result value can be requested.
+     */
+    private fun getPropertyObject(schemaNS: String, propName: String, valueType: XMPValueType): Any? =
+        findValueNode(schemaNS, propName, valueType)?.second
 
     /**
      * Convenience method to set a property to a literal `boolean` value.
