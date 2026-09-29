@@ -287,7 +287,8 @@ internal object XMPNormalizer {
      * If a Dublin Core array had only one item, it was serialized as a simple property.
      * The `xml:lang` attribute was dropped from an `alt-text` item if the language was `x-default`.
      *
-     */    private fun normalizeDCArrays(dcSchema: XMPNode) {
+     */
+    private fun normalizeDCArrays(dcSchema: XMPNode) {
 
         for (index in 1..dcSchema.getChildrenLength()) {
 

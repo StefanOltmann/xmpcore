@@ -10,6 +10,7 @@
  */
 package de.stefan_oltmann.xmp
 
+import de.stefan_oltmann.xmp.XMPUtils.itemValuesMatch
 import de.stefan_oltmann.xmp.internal.Utils.isInternalProperty
 import de.stefan_oltmann.xmp.internal.XMPErrorConst
 import de.stefan_oltmann.xmp.internal.XMPNode
