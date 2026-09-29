@@ -258,7 +258,6 @@ class XMPUtilsSeparateArrayItemsTest {
     }
 
     private fun readItems(xmpMeta: XMPMeta): List<String> =
-
         (1..xmpMeta.countArrayItems(XMPConst.NS_DC, "subject"))
             .mapNotNull { xmpMeta.getArrayItem(XMPConst.NS_DC, "subject", it)?.getValue() }
 }

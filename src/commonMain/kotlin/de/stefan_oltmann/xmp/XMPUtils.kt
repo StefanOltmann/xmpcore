@@ -637,7 +637,6 @@ public object XMPUtils {
      * @return Returns true when the character kind requires quoting.
      */
     private fun isSeparatorNeedingQuotes(charKind: Int, allowCommas: Boolean): Boolean =
-
         charKind == UCK_SEMICOLON || charKind == UCK_CONTROL ||
             (charKind == UCK_COMMA && !allowCommas)
 
@@ -650,7 +649,6 @@ public object XMPUtils {
      * @return Returns true when the character continues the current value.
      */
     private fun isValueCharacter(charKind: Int, preserveCommas: Boolean): Boolean =
-
         charKind == UCK_NORMAL || charKind == UCK_QUOTE ||
             (charKind == UCK_COMMA && preserveCommas)
 
@@ -867,7 +865,6 @@ public object XMPUtils {
      * @return Returns the closing quote character.
      */
     private fun getClosingQuote(openQuote: Char): Char =
-
         when (openQuote) {
             '\u0022' -> '\u0022'
             '\u00AB' -> '\u00BB'
@@ -896,7 +893,6 @@ public object XMPUtils {
      * @return Returns true for both quote characters of the pair.
      */
     private fun isSurroundingQuote(ch: Char, openQuote: Char, closeQuote: Char): Boolean =
-
         ch == openQuote || isClosingQuote(ch, openQuote, closeQuote)
 
     /**
@@ -909,7 +905,6 @@ public object XMPUtils {
      * @return Returns true for the closing quote characters.
      */
     private fun isClosingQuote(ch: Char, openQuote: Char, closeQuote: Char): Boolean =
-
         ch == closeQuote || (openQuote == '\u301D' && (ch == '\u301E' || ch == '\u301F'))
 
     /**
