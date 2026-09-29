@@ -318,7 +318,7 @@ class OptionsTest {
             IteratorOptions().setOptions(invalid)
         }
         assertFailsWith<XMPException> {
-            SerializeOptions().setOptions(invalid)
+            SerializeOptions(invalid)
         }
         assertFailsWith<XMPException> {
             AliasOptions().setOptions(invalid)
@@ -456,7 +456,7 @@ class OptionsTest {
     fun testInvalidOptionsMessageUsesPositiveHex() {
 
         val ex = assertFailsWith<XMPException> {
-            SerializeOptions().setOptions(-0x7FFFFFF5)
+            IteratorOptions().setOptions(-0x7FFFFFF5)
         }
 
         assertTrue(ex.message!!.contains("0x8000000b are invalid!"))

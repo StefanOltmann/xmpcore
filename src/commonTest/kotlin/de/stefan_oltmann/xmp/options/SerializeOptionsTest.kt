@@ -3,8 +3,10 @@
  */
 package de.stefan_oltmann.xmp.options
 
+import de.stefan_oltmann.xmp.XMPException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 /**
@@ -25,14 +27,38 @@ class SerializeOptionsTest {
         assertTrue(clone.getUseCanonicalFormat())
     }
 
+    /**
+     * Rebuilding options from their bit mask through the internal constructor keeps
+     * working, so internal callers can carry options across module boundaries.
+     */
     @Test
-    fun testSetOptionsWithCanonicalFormat() {
+    fun testBitMaskConstructorKeepsCanonicalFormat() {
+
+        val options = SerializeOptions(SerializeOptions().setUseCanonicalFormat(true).getOptions())
+
+        assertTrue(options.getUseCanonicalFormat())
+    }
+
+    /**
+     * The inherited raw mutators throw, because the instances are immutable: a shared
+     * instance must stay reusable from concurrent writers.
+     */
+    @Test
+    fun testInheritedMutatorsThrow() {
 
         val options = SerializeOptions()
 
-        options.setOptions(SerializeOptions().setUseCanonicalFormat(true).getOptions())
+        val before = options.getOptions()
 
-        assertTrue(options.getUseCanonicalFormat())
+        assertFailsWith<XMPException> {
+            options.setOption(SerializeOptions.SORT, true)
+        }
+
+        assertFailsWith<XMPException> {
+            options.setOptions(0)
+        }
+
+        assertEquals(before, options.getOptions())
     }
 
     /**

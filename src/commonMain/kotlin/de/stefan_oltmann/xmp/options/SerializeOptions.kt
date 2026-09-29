@@ -10,11 +10,16 @@
  */
 package de.stefan_oltmann.xmp.options
 
+import de.stefan_oltmann.xmp.XMPException
+import de.stefan_oltmann.xmp.internal.XMPErrorConst
+
 /**
  * Options for [de.stefan_oltmann.xmp.XMPMetaFactory.serializeToString].
  *
  * Instances are immutable: the fluent setters return a modified copy and leave the receiver
  * unchanged, so one shared instance can be reused from concurrent writers without locking.
+ * The inherited raw mutators [setOption] and [setOptions] throw, because calling them on a
+ * shared instance would break that guarantee; use the copy-returning setters instead.
  */
 public class SerializeOptions : Options {
 
@@ -85,6 +90,29 @@ public class SerializeOptions : Options {
         this.indent = indent
         this.baseIndent = baseIndent
     }
+
+    /**
+     * Attention: The inherited raw mutator would break the immutability of a shared
+     * instance and therefore always fails; use the copy-returning setters instead.
+     */
+    public override fun setOption(optionBits: Int, value: Boolean): Unit =
+        throwImmutableMutator()
+
+    /**
+     * Attention: The inherited raw mutator would break the immutability of a shared
+     * instance and therefore always fails; use the copy-returning setters instead.
+     */
+    public override fun setOptions(options: Int): Unit =
+        throwImmutableMutator()
+
+    /**
+     * Builds the exception for the unusable inherited raw mutators.
+     */
+    private fun throwImmutableMutator(): Nothing =
+        throw XMPException(
+            "SerializeOptions is immutable, use the copy-returning set methods instead",
+            XMPErrorConst.BADOPTIONS
+        )
 
     /**
      * @return Returns whether the `<?xpacket ...?>` packet wrapper shall be omitted.
@@ -231,20 +259,22 @@ public class SerializeOptions : Options {
         copyOf()
 
     private fun copyOf(
+        options: Int = this.getOptions(),
         padding: Int = this.padding,
         newline: String = this.newline,
         indent: String = this.indent,
         baseIndent: Int = this.baseIndent
     ): SerializeOptions =
-        SerializeOptions(getOptions(), padding, newline, indent, baseIndent)
+        SerializeOptions(options, padding, newline, indent, baseIndent)
 
     private fun withOption(optionBits: Int, value: Boolean): SerializeOptions {
 
-        val copy = copyOf()
+        val adjustedBits = if (value)
+            getOptions() or optionBits
+        else
+            getOptions() and optionBits.inv()
 
-        copy.setOption(optionBits, value)
-
-        return copy
+        return copyOf(options = adjustedBits)
     }
 
     /**
