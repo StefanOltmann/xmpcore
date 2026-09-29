@@ -163,17 +163,19 @@ internal object XMPRDFParser {
                 continue
 
             /*
-             * Skip comments, they carry no data. This matches the tolerance
-             * of parseRdfPropertyElementList.
+             * Skip comments, they carry no data. The Adobe original never sees them,
+             * because its document builder drops comments.
              */
             if (child.nodeType == NodeConsts.COMMENT_NODE)
                 continue
 
+            /*
+             * The node element list of the Adobe original has no type check of its own,
+             * so stray nodes reach the RDF term check of the node element, which fails
+             * with this exact code and message.
+             */
             if (child.nodeType != NodeConsts.ELEMENT_NODE)
-                throw XMPException(
-                    "Expected element node not found. Found type: ${child.nodeType}",
-                    XMPErrorConst.BADRDF
-                )
+                throw XMPException("Unknown Node ${child.nodeType}", XMPErrorConst.BADXMP)
 
             parseRdfNodeElement(xmp, xmp.root, child as Element, true, options, 0)
         }

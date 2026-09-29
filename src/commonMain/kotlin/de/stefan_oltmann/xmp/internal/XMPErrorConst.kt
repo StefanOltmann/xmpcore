@@ -29,5 +29,10 @@ internal object XMPErrorConst {
     const val BADXML: Int = 201
     const val BADRDF: Int = 202
     const val BADXMP: Int = 203
+
+    /**
+     * Defined by the error table of the Adobe original; this port reports stream-level
+     * failures through [BADXML] like the original does and currently never throws it.
+     */
     const val BADSTREAM: Int = 204
 }

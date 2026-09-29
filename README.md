@@ -132,9 +132,6 @@ Where a drop-in replacement is affected, the remaining API-shape differences:
 * The iterator's `getNamespace()` falls back to the base namespace instead of returning null
   for array items, and `getValue()`/`getPath()` return the empty string instead of null.
 * `getLocalizedText()` returns the empty string instead of null for values without text.
-* Malformed XML and DOCTYPE declarations are reported with the `BADSTREAM` error code where the
-  Adobe original reports `BADXML`, and blank input with `BADXMP` instead of `BADPARAM`; the
-  accept/reject decisions themselves are identical.
 
 ## Contributions
 

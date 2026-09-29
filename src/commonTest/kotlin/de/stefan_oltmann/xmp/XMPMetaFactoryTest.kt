@@ -84,7 +84,21 @@ class XMPMetaFactoryTest {
     }
 
     /**
-     * A blank input is rejected.
+     * An empty input is a parameter error, like the ParameterAsserts of the Adobe original.
+     */
+    @Test
+    fun testParseEmptyInputThrows() {
+
+        val ex = assertFailsWith<XMPException> {
+            XMPMetaFactory.parseFromString("")
+        }
+
+        assertEquals(XMPErrorConst.BADPARAM, ex.errorCode)
+    }
+
+    /**
+     * A blank input fails the XML parse with the BADXML error code, like the Adobe
+     * original where whitespace-only content is rejected by the parser.
      */
     @Test
     fun testParseBlankInputThrows() {
@@ -93,7 +107,7 @@ class XMPMetaFactoryTest {
             XMPMetaFactory.parseFromString("   ")
         }
 
-        assertEquals(XMPErrorConst.BADXMP, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
     }
 
     /**
@@ -110,7 +124,7 @@ class XMPMetaFactoryTest {
     }
 
     /**
-     * Invalid XML is rejected as a stream error.
+     * Invalid XML is rejected as an XML error, like the Adobe original.
      */
     @Test
     fun testParseInvalidXmlThrows() {
@@ -119,7 +133,7 @@ class XMPMetaFactoryTest {
             XMPMetaFactory.parseFromString("this is not xml")
         }
 
-        assertEquals(XMPErrorConst.BADSTREAM, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
     }
 
     /**
@@ -163,7 +177,7 @@ class XMPMetaFactoryTest {
             XMPMetaFactory.parseOrCreate("this is not xml")
         }
 
-        assertEquals(XMPErrorConst.BADSTREAM, ex.errorCode)
+        assertEquals(XMPErrorConst.BADXML, ex.errorCode)
     }
 
     /**

@@ -48,10 +48,10 @@ internal object DomParser {
         } catch (ex: XMPException) {
 
             /*
-             * Malformed XML is wrapped as BADSTREAM and may still contain a usable RDF
+             * Malformed XML is wrapped as BADXML and may still contain a usable RDF
              * island. Other XMP errors (including nesting limits) must not be salvaged.
              */
-            if (ex.errorCode == XMPErrorConst.BADSTREAM)
+            if (ex.errorCode == XMPErrorConst.BADXML)
                 return parseCorruptedDocument(input, ex)
 
             throw ex
@@ -74,7 +74,7 @@ internal object DomParser {
         if (input.contains(DOCTYPE_MARKER))
             throw XMPException(
                 "DTD declarations are not supported in XMP.",
-                XMPErrorConst.BADSTREAM
+                XMPErrorConst.BADXML
             )
     }
 
@@ -160,8 +160,14 @@ internal object DomParser {
 
         rejectDoctype(input)
 
+        /*
+         * Whitespace-only input is rejected with the code and message the Adobe original
+         * reports when its XML parser turns such a document away. The check is the only
+         * deterministic guard, because parser tolerance for whitespace-only documents is
+         * unspecified.
+         */
         if (input.isBlank())
-            throw XMPException("XMP is empty.", XMPErrorConst.BADXMP)
+            throw XMPException("XML parsing failure", XMPErrorConst.BADXML)
 
         try {
 
@@ -204,7 +210,7 @@ internal object DomParser {
         } catch (ex: XMPException) {
             throw ex
         } catch (ex: Exception) {
-            throw XMPException("Error reading the XML file: ${ex.message}", XMPErrorConst.BADSTREAM, ex)
+            throw XMPException("XML parsing failure", XMPErrorConst.BADXML, ex)
         }
     }
 }

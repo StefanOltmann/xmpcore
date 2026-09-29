@@ -646,8 +646,9 @@ class XMPParseErrorTest {
     }
 
     /**
-     * A processing instruction directly inside rdf:RDF is rejected with a
-     * proper BADRDF error instead of an unexpected exception type.
+     * A processing instruction directly inside rdf:RDF is not an array item name and
+     * reaches the RDF term check of the node element, which fails with BADXMP like the
+     * Adobe original, whose node element list has no type check of its own.
      */
     @Test
     fun testProcessingInstructionInsideRdfThrows() {
@@ -660,13 +661,33 @@ class XMPParseErrorTest {
             </rdf:RDF>
         """.trimIndent()
 
-        assertXMPError(XMPErrorConst.BADRDF) {
+        assertXMPError(XMPErrorConst.BADXMP) {
             XMPMetaFactory.parseFromString(testXmp)
         }
     }
 
     /**
-     * A partially numbered rdf:_N array item is rejected.
+     * Non-whitespace text directly inside rdf:RDF reaches the RDF term check of the node
+     * element and fails with BADXMP like the Adobe original.
+     */
+    @Test
+    fun testTextNodeInsideRdfThrows() {
+
+        /* language=XML */
+        val testXmp = """
+            <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+              stray text
+              <rdf:Description rdf:about=""/>
+            </rdf:RDF>
+        """.trimIndent()
+
+        assertXMPError(XMPErrorConst.BADXMP) {
+            XMPMetaFactory.parseFromString(testXmp)
+        }
+    }
+
+    /**
+     * Asserts that the given block throws an XMPException with the expected code.
      */
     @Test
     fun testPartiallyNumberedRdfArrayItemThrows() {

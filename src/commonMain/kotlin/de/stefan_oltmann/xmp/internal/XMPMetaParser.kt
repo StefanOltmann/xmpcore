@@ -57,8 +57,12 @@ internal object XMPMetaParser {
         options: ParseOptions?
     ): XMPMeta {
 
-        if (input.isBlank())
-            throw XMPException("XMP input must not be a blank string.", XMPErrorConst.BADXMP)
+        /*
+         * An empty input is a parameter error like the ParameterAsserts of the Adobe
+         * original; non-empty input that is not XML fails in DomParser below.
+         */
+        if (input.isEmpty())
+            throw XMPException("Parameter must not be null or empty", XMPErrorConst.BADPARAM)
 
         val actualOptions = options ?: ParseOptions()
 
