@@ -6,6 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
@@ -139,6 +140,27 @@ class XMPIteratorFeaturesTest {
     }
 
     /**
+     * The iterator reports null for the path and the value of the schema node itself, like
+     * the Adobe original, so a caller can distinguish container entries from leaves with
+     * empty values.
+     */
+    @Test
+    fun testSchemaNodeIteratorEntryKeepsNullPathAndValue() {
+
+        val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
+
+        val iterator = xmpMeta.iterator()
+
+        val schemaInfo = iterator.next()
+
+        assertEquals(XMPConst.NS_DC, schemaInfo.getNamespace())
+
+        assertNull(schemaInfo.getPath())
+
+        assertNull(schemaInfo.getValue())
+    }
+
+    /**
      * The skip also works when a look-ahead hasNext() call has already prepared the next
      * property: the prepared field of the struct is not delivered, and the skip does not
      * leak onto a later sibling whose subtree must stay intact.
@@ -199,8 +221,8 @@ class XMPIteratorFeaturesTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(
-            expected = listOf(
-                "",
+            expected = listOf<String?>(
+                null,
                 "dc:subject",
                 "[1]",
                 "[2]",
@@ -223,8 +245,8 @@ class XMPIteratorFeaturesTest {
         val xmpMeta = XMPMetaFactory.parseFromString(testXmp)
 
         assertEquals(
-            expected = listOf(
-                "",
+            expected = listOf<String?>(
+                null,
                 "dc:subject",
                 "dc:subject[1]",
                 "dc:subject[2]",
@@ -441,14 +463,14 @@ class XMPIteratorFeaturesTest {
         iterator.skipSiblings()
 
         assertEquals(
-            expected = listOf("", "xmp:Rating"),
+            expected = listOf<String?>(null, "xmp:Rating"),
             actual = collectPaths(iterator)
         )
     }
 
-    private fun collectPaths(iterator: XMPIterator): List<String> {
+    private fun collectPaths(iterator: XMPIterator): List<String?> {
 
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         while (iterator.hasNext()) {
             val propertyInfo = iterator.next()

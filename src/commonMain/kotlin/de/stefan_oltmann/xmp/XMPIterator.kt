@@ -563,11 +563,11 @@ public class XMPIterator(
                     return baseNS ?: ""
                 }
 
-                override fun getPath(): String =
-                    path ?: ""
+                override fun getPath(): String? =
+                    path
 
-                override fun getValue(): String =
-                    value ?: ""
+                override fun getValue(): String? =
+                    value
 
                 override fun getOptions(): PropertyOptions =
                     node.options

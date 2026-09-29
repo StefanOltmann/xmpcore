@@ -129,9 +129,11 @@ A few edge cases are handled differently on purpose:
 
 Where a drop-in replacement is affected, the remaining API-shape differences:
 
-* The iterator's `getNamespace()` falls back to the base namespace instead of returning null
-  for array items, and `getValue()`/`getPath()` return the empty string instead of null.
-* `getLocalizedText()` returns the empty string instead of null for values without text.
+* The iterator's `getNamespace()` falls back to the base namespace for array items, where the
+  Adobe original returns null. An array item belongs to its schema's namespace even though its
+  node name is the prefix-less `[]`, so the null of the original is an artifact of looking up
+  that synthetic name as a prefix; the port reports the namespace the item was found under
+  instead.
 
 ## Contributions
 

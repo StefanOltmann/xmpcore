@@ -1048,14 +1048,14 @@ public class XMPMeta internal constructor() {
 
             object : XMPProperty {
 
-                override fun getValue(): String =
-                    node.value.orEmpty()
+                override fun getValue(): String? =
+                    node.value
 
                 override fun getOptions(): PropertyOptions =
                     node.options
 
-                override fun getLanguage(): String =
-                    node.getQualifier(1).value.orEmpty()
+                override fun getLanguage(): String? =
+                    node.getQualifier(1).value
 
                 override fun toString(): String =
                     node.value.toString()

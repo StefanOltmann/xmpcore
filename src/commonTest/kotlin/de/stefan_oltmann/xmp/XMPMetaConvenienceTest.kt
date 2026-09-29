@@ -623,7 +623,7 @@ class XMPMetaConvenienceTest {
 
         xmpMeta.sort()
 
-        val paths = mutableListOf<String>()
+        val paths = mutableListOf<String?>()
 
         val iterator = xmpMeta.iterator()
 
@@ -631,7 +631,7 @@ class XMPMetaConvenienceTest {
             paths.add(iterator.next().getPath())
 
         assertEquals(
-            expected = listOf("", "dc:apple", "dc:zebra", "", "xmp:mango"),
+            expected = listOf<String?>(null, "dc:apple", "dc:zebra", null, "xmp:mango"),
             actual = paths
         )
     }

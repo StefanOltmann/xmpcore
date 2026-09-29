@@ -1,9 +1,12 @@
 package de.stefan_oltmann.xmp
 
 import de.stefan_oltmann.xmp.internal.XMPErrorConst
+import de.stefan_oltmann.xmp.internal.XMPNode
+import de.stefan_oltmann.xmp.internal.XMPNodeUtils
 import de.stefan_oltmann.xmp.options.PropertyOptions
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -452,12 +455,12 @@ class XMPMetaLocalizedTextTest {
 
         val iterator = xmpMeta.iterator(XMPConst.NS_DC, "title", null)
 
-        val values = mutableListOf<String>()
+        val values = mutableListOf<String?>()
 
         while (iterator.hasNext())
             values.add(iterator.next().getValue())
 
-        assertEquals(listOf("", "Default", "x-default", "Default", "de"), values)
+        assertEquals(listOf<String?>("", "Default", "x-default", "Default", "de"), values)
         assertTrue(xmpMeta.getTitle() == "Default")
     }
 
@@ -590,5 +593,39 @@ class XMPMetaLocalizedTextTest {
             "Neu",
             checkNotNull(xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "x-default")).getValue()
         )
+    }
+
+    /**
+     * A localized text item without a value reports null instead of the empty string, so a
+     * caller can distinguish missing text from empty text like the Adobe original does.
+     */
+    @Test
+    fun testGetLocalizedTextKeepsNullValue() {
+
+        val xmpMeta = XMPMeta()
+
+        val schema = XMPNodeUtils.findSchemaNode(xmpMeta.root, XMPConst.NS_DC, true)
+
+        checkNotNull(schema)
+
+        val title = XMPNode(
+            name = "dc:title",
+            value = null,
+            options = PropertyOptions().setArrayAlternate(true).setArrayAltText(true)
+        )
+
+        schema.addChild(title)
+
+        val item = XMPNode(XMPConst.ARRAY_ITEM_NAME, null)
+
+        item.addQualifier(XMPNode(XMPConst.XML_LANG, "de"))
+
+        title.addChild(item)
+
+        val property = xmpMeta.getLocalizedText(XMPConst.NS_DC, "title", null, "de")
+
+        assertNotNull(property)
+
+        assertNull(property.getValue())
     }
 }
