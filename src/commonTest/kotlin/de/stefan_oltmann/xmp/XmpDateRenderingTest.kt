@@ -2,7 +2,6 @@ package de.stefan_oltmann.xmp
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNull
 
 /**
  * The rendering must keep every value the parser can produce:
