@@ -418,7 +418,13 @@ internal object Utils {
             else
                 decimalDigits.toIntOrNull()
 
-            if (codePoint != null && isReplacedControlChar(codePoint.toChar()))
+            /*
+             * The code point is compared as an Int: values above the BMP
+             * are valid XML characters, and truncating them to a Char
+             * would wrap supplementary-plane references into the control
+             * range and corrupt them.
+             */
+            if (codePoint != null && isReplacedControlCodePoint(codePoint))
                 " "
             else
                 match.value
@@ -433,12 +439,25 @@ internal object Utils {
      * @param char the character to check
      * @return Returns true if the character must be replaced.
      */
-    @Suppress("MagicNumber")
     private fun isReplacedControlChar(char: Char): Boolean =
-        (char.code <= 0x1F || char.code == 0x7F) &&
-            char != '\t' &&
-            char != '\n' &&
-            char != '\r'
+        isReplacedControlCodePoint(char.code)
+
+    /**
+     * Checks whether a code point is a control character that gets replaced by
+     * a space, compared as an Int so supplementary-plane values cannot wrap
+     * around into the control range.
+     *
+     * Tab, LF and CR are excluded, matching the Adobe original.
+     *
+     * @param codePoint the code point to check
+     * @return Returns true if the code point must be replaced.
+     */
+    @Suppress("MagicNumber")
+    private fun isReplacedControlCodePoint(codePoint: Int): Boolean =
+        (codePoint <= 0x1F || codePoint == 0x7F) &&
+            codePoint != '\t'.code &&
+            codePoint != '\n'.code &&
+            codePoint != '\r'.code
 
     /**
      * Simple check if a character is a valid XML start name char.
