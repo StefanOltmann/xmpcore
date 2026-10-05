@@ -97,9 +97,22 @@ internal object ExtendedXmpCodec {
         maxExtendedChunkBytes: Int
     ): XmpPacketPartition {
 
-        require(maxMainPacketBytes > 0) { "Max main packet bytes must be positive: $maxMainPacketBytes" }
+        /*
+         * Checked as XMPException, not require(): the public entry point
+         * promises that only XMPException escapes, and callers dispatch on
+         * the error code.
+         */
+        if (maxMainPacketBytes <= 0)
+            throw XMPException(
+                "Max main packet bytes must be positive: $maxMainPacketBytes",
+                XMPErrorConst.BADPARAM
+            )
 
-        require(maxExtendedChunkBytes > 0) { "Max extended chunk bytes must be positive: $maxExtendedChunkBytes" }
+        if (maxExtendedChunkBytes <= 0)
+            throw XMPException(
+                "Max extended chunk bytes must be positive: $maxExtendedChunkBytes",
+                XMPErrorConst.BADPARAM
+            )
 
         val withoutStaleReference = removeStaleExtendedXmpReference(packet)
 
@@ -396,6 +409,18 @@ internal object ExtendedXmpCodec {
 
             expectedOffset += fragment.data.size
         }
+
+        /*
+         * The chunks may be internally consistent yet collectively shorter
+         * or longer than the declared total - accepting such an assembly
+         * would pass truncated data off as a complete extended packet.
+         */
+        if (expectedOffset != declaredLength)
+            throw XMPException(
+                "The extended XMP chunks assemble to $expectedOffset bytes, " +
+                    "but the declared total length is $declaredLength.",
+                XMPErrorConst.BADXMP
+            )
 
         val extendedBytes = ByteArray(expectedOffset)
 

@@ -353,11 +353,11 @@ class XMPMetaExtendedXmpTest {
 
         val packet = createPacket(schemaCount = 1, propertiesPerSchema = 1)
 
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<XMPException> {
             XMPMetaFactory.partitionPacket(packet, 0, maxExtendedChunkBytes)
         }
 
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<XMPException> {
             XMPMetaFactory.partitionPacket(packet, maxMainPacketBytes, 0)
         }
     }
