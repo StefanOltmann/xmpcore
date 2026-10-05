@@ -54,29 +54,84 @@ public data class XmpDate(
      * The UTC offset in minutes, for example 300 for "+05:00", -300 for "-05:00" and 0 for
      * "Z", or null when the value carries no timezone.
      */
-    public val utcOffsetMinutes: Int?
+    public val utcOffsetMinutes: Int?,
+
+    /**
+     * Whether the value carried a time separator when it was parsed. Offset-less
+     * midnight ("T00:00:00") is a complete time, and the render must keep it instead
+     * of collapsing the value into a date-only literal; a constructed value without
+     * an explicit flag keeps the Adobe zero-means-absent behavior.
+     */
+    public val timeWasPresent: Boolean = false
 ) {
+
+    private val yearText: String
+        get() {
+
+            val digits = year.toString().removePrefix("-").padStart(4, '0')
+
+            return if (year < 0) "-$digits" else digits
+        }
+
+    /*
+     * Equality compares the calendar fields only: the time-presence flag
+     * governs the rendering of a zero time, and a value that renders
+     * identically to an Adobe-constructed one must stay equal to it, like
+     * the Adobe XMPDateTime field comparison.
+     */
+    override fun equals(other: Any?): Boolean =
+
+        other is XmpDate &&
+            year == other.year &&
+            month == other.month &&
+            day == other.day &&
+            hour == other.hour &&
+            minute == other.minute &&
+            second == other.second &&
+            nanosecond == other.nanosecond &&
+            utcOffsetMinutes == other.utcOffsetMinutes
+
+    override fun hashCode(): Int {
+
+        var result = year
+
+        result = 31 * result + month
+        result = 31 * result + day
+        result = 31 * result + hour
+        result = 31 * result + minute
+        result = 31 * result + second
+        result = 31 * result + nanosecond
+        result = 31 * result + (utcOffsetMinutes ?: Int.MIN_VALUE)
+
+        return result
+    }
 
     /**
      * Renders the value back into the ISO 8601 form XMP uses, with absent calendar parts
-     * omitted. The time is rendered when any time part is set or when an offset is present,
-     * because an offset without a time would be meaningless.
+     * omitted. The time is rendered when any time part is set, when an offset is present,
+     * or when the parsed value carried a time separator - offset-less midnight is a
+     * complete time, and dropping its "T00:00:00" would silently turn a read-modify-write
+     * into a date-only literal.
      */
     @Suppress("MagicNumber")
     override fun toString(): String {
 
         val builder = StringBuilder(32)
 
-        builder.append(year.toString().padStart(4, '0'))
+        builder.append(yearText)
 
-        if (month > 0)
+        if (month > 0) {
+
             builder.append('-').append(month.toString().padStart(2, '0'))
 
-        if (day > 0)
-            builder.append('-').append(day.toString().padStart(2, '0'))
+            /* A day without its month would render malformed "-05" garbage. */
+            if (day > 0)
+                builder.append('-').append(day.toString().padStart(2, '0'))
+        }
 
         val hasTime = listOf(hour, minute, second, nanosecond).any { it != 0 } ||
-            utcOffsetMinutes != null
+            utcOffsetMinutes != null ||
+            timeWasPresent
 
         if (hasTime) {
 
@@ -175,7 +230,17 @@ public data class XmpDate(
             if (!isValid(year, month, day, hour, minute, second, nanosecond, utcOffsetMinutes))
                 return null
 
-            return XmpDate(year, month, day, hour, minute, second, nanosecond, utcOffsetMinutes)
+            return XmpDate(
+                year = year,
+                month = month,
+                day = day,
+                hour = hour,
+                minute = minute,
+                second = second,
+                nanosecond = nanosecond,
+                utcOffsetMinutes = utcOffsetMinutes,
+                timeWasPresent = timeSeparator != null && timeSeparator in TIME_SEPARATORS
+            )
         }
 
         /**
