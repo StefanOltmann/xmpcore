@@ -239,6 +239,58 @@ class XMPMetaConvenienceTest {
     }
 
     /**
+     * A GPS position never travels alone: external writers keep altitude,
+     * timestamps, track, satellite data and a free-text processing method
+     * that can name a place next to the coordinates. Deleting the GPS
+     * coordinates must remove every companion, or the deletion leaves the
+     * location's circumstances - a privacy leak - behind.
+     */
+    @Test
+    fun testDeleteGpsCoordinatesRemovesEveryCompanion() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        xmpMeta.setGpsCoordinates("53,13.1635N", "8,14.3797E")
+
+        for (propertyName in listOf(
+            "GPSLatitudeRef", "GPSLongitudeRef",
+            "GPSAltitude", "GPSAltitudeRef",
+            "GPSTimeStamp", "GPSDateStamp",
+            "GPSSatellites", "GPSStatus", "GPSMeasureMode", "GPSDOP",
+            "GPSSpeed", "GPSSpeedRef", "GPSTrack", "GPSTrackRef",
+            "GPSImgDirection", "GPSImgDirectionRef", "GPSMapDatum",
+            "GPSDestLatitude", "GPSDestLatitudeRef",
+            "GPSDestLongitude", "GPSDestLongitudeRef",
+            "GPSDestBearing", "GPSDestBearingRef",
+            "GPSDestDistance", "GPSDestDistanceRef",
+            "GPSProcessingMethod", "GPSAreaInformation",
+            "GPSDifferential", "GPSHPositioningError"
+        ))
+            xmpMeta.setProperty(XMPConst.NS_EXIF, propertyName, "companion")
+
+        xmpMeta.deleteGpsCoordinates()
+
+        for (propertyName in listOf(
+            "GPSLatitudeRef", "GPSLongitudeRef",
+            "GPSAltitude", "GPSAltitudeRef",
+            "GPSTimeStamp", "GPSDateStamp",
+            "GPSSatellites", "GPSStatus", "GPSMeasureMode", "GPSDOP",
+            "GPSSpeed", "GPSSpeedRef", "GPSTrack", "GPSTrackRef",
+            "GPSImgDirection", "GPSImgDirectionRef", "GPSMapDatum",
+            "GPSDestLatitude", "GPSDestLatitudeRef",
+            "GPSDestLongitude", "GPSDestLongitudeRef",
+            "GPSDestBearing", "GPSDestBearingRef",
+            "GPSDestDistance", "GPSDestDistanceRef",
+            "GPSProcessingMethod", "GPSAreaInformation",
+            "GPSDifferential", "GPSHPositioningError"
+        ))
+            assertNull(
+                xmpMeta.getPropertyString(XMPConst.NS_EXIF, propertyName),
+                "Property $propertyName survived the GPS deletion"
+            )
+    }
+
+    /**
      * Setting the flagged state writes all known flag schemas.
      */
     @Test

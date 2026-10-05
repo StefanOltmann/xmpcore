@@ -1711,14 +1711,15 @@ public class XMPMeta internal constructor() {
     }
 
     /**
-     * Deletes the GPS coordinates and the accompanying GPSVersionID.
-     * It is not an error if the properties do not exist.
+     * Deletes the GPS coordinates and every accompanying exif:GPS property -
+     * altitude, timestamps, track, satellite data and the free-text
+     * processing method that can name a place. It is not an error if the
+     * properties do not exist.
      */
     public fun deleteGpsCoordinates() {
 
-        deleteProperty(XMPConst.NS_EXIF, "GPSVersionID")
-        deleteProperty(XMPConst.NS_EXIF, "GPSLatitude")
-        deleteProperty(XMPConst.NS_EXIF, "GPSLongitude")
+        for (propertyName in GPS_COMPANION_PROPERTIES)
+            deleteProperty(XMPConst.NS_EXIF, propertyName)
     }
 
     /**
@@ -2599,6 +2600,46 @@ public class XMPMeta internal constructor() {
         deleteProperty(XMPConst.NS_XMP_NOTE, XMPConst.XMP_NOTE_HAS_EXTENDED_XMP)
 
     public companion object {
+
+        /**
+         * Every exif:GPS property external writers place next to the position.
+         * Deleting the GPS coordinates removes them all, so the circumstances
+         * of the old position never outlive the position itself.
+         */
+        private val GPS_COMPANION_PROPERTIES = listOf(
+            "GPSVersionID",
+            "GPSLatitude",
+            "GPSLatitudeRef",
+            "GPSLongitude",
+            "GPSLongitudeRef",
+            "GPSAltitude",
+            "GPSAltitudeRef",
+            "GPSTimeStamp",
+            "GPSDateStamp",
+            "GPSSatellites",
+            "GPSStatus",
+            "GPSMeasureMode",
+            "GPSDOP",
+            "GPSSpeed",
+            "GPSSpeedRef",
+            "GPSTrack",
+            "GPSTrackRef",
+            "GPSImgDirection",
+            "GPSImgDirectionRef",
+            "GPSMapDatum",
+            "GPSDestLatitude",
+            "GPSDestLatitudeRef",
+            "GPSDestLongitude",
+            "GPSDestLongitudeRef",
+            "GPSDestBearing",
+            "GPSDestBearingRef",
+            "GPSDestDistance",
+            "GPSDestDistanceRef",
+            "GPSProcessingMethod",
+            "GPSAreaInformation",
+            "GPSDifferential",
+            "GPSHPositioningError"
+        )
 
         /**
          * Maximum number of namespaces a single document may register automatically while
