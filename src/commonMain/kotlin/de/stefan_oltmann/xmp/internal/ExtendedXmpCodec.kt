@@ -42,13 +42,6 @@ internal object ExtendedXmpCodec {
     private const val DESCRIPTION_OPEN_TAG = "<rdf:Description"
 
     /**
-     * A stale `xmpNote:HasExtendedXMP` reference from a previous write must not survive:
-     * the reference is regenerated whenever extended data is written, like ExifTool does it,
-     * which deletes the tag because "we create it as needed".
-     */
-    private const val STALE_REFERENCE_MARKER = "xmpNote:HasExtendedXMP"
-
-    /**
      * Minimal self-contained wrapper for the extended data. The moved `rdf:Description`
      * blocks declare their own namespaces, so no further declarations are required here.
      */
@@ -221,8 +214,14 @@ internal object ExtendedXmpCodec {
                 XMPErrorConst.BADXMP
             )
 
+        /*
+         * The stale-reference pass above already removed the references this
+         * library writes (attribute form inside start tags, element form with
+         * a GUID value), context-checked. A blanket filter for the marker text
+         * here would delete whole descriptions whose user data merely contains
+         * the marker string, so the blocks pass through as they are.
+         */
         val blocks = splitDescriptions(content)
-            .filter { block -> !block.contains(STALE_REFERENCE_MARKER) }
 
         val (keptBlocks, movedBlocks) = selectBlocks(
             blocks,
