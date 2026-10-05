@@ -102,8 +102,9 @@ This port aims to behave like the Adobe original. A few deliberate deviations re
   Wasm where the JVM writes "5.0E-4", so written files would otherwise depend on the platform
   that ran the write. An integral `Double` passed through the untyped `setProperty` cannot be
   told apart from an `Int` on JS and Wasm and keeps the integer spelling; fractional `Float`
-  values keep platform-dependent spelling there as well - pass strings for byte-stable
-  output.
+  values and subnormal `Double` magnitudes (below roughly 1.0E-308, where the platforms'
+  shortest-digit rules genuinely differ) keep platform-dependent spelling there as well -
+  pass strings for byte-stable output.
 
 Beyond these, the port fixes defects that the Java 5.1.3 original carries and that behave like
 the Adobe C++ original here:
