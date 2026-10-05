@@ -220,6 +220,13 @@ class XMPNodeUtilsFeaturesTest {
         assertEquals("42", XMPNodeUtils.serializeNodeValue(42))
         assertEquals("42", XMPNodeUtils.serializeNodeValue(42L))
         assertEquals("3.5", XMPNodeUtils.serializeNodeValue(3.5))
+
+        /*
+         * Values below the plain-notation range must carry the JVM's spelling,
+         * because the node value is written into files: plain Double.toString
+         * renders 5.0E-4 on the JVM but 0.0005 on JS and Wasm.
+         */
+        assertEquals("5.0E-4", XMPNodeUtils.serializeNodeValue(5.0E-4))
         assertEquals("AQID", XMPNodeUtils.serializeNodeValue(byteArrayOf(1, 2, 3)))
         assertEquals("text", XMPNodeUtils.serializeNodeValue("text"))
         assertNull(XMPNodeUtils.serializeNodeValue(null))

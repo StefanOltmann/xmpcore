@@ -19,6 +19,7 @@ import de.stefan_oltmann.xmp.internal.Utils.splitNameAndValue
 import de.stefan_oltmann.xmp.internal.XMPUtils.encodeBase64
 import de.stefan_oltmann.xmp.options.AliasOptions
 import de.stefan_oltmann.xmp.options.PropertyOptions
+import de.stefan_oltmann.xmp.toInvariantString
 
 /**
  * Utilities for `XMPNode`.
@@ -326,11 +327,23 @@ internal object XMPNodeUtils {
         if (value == null)
             return null
 
+        /*
+         * Kotlin/JS and Kotlin/Wasm erase the number types: every number answers
+         * `is Int` with true there, so a fractional Double never reaches the
+         * Double branch. The Int branch therefore discriminates by value shape -
+         * a fractional value is invariant-rendered like the Double it is. An
+         * integral Double cannot be told apart from an Int on those platforms,
+         * so it keeps the integer spelling.
+         */
         val strValue: String = when (value) {
             is Boolean -> if (value) XMPConst.TRUE_STRING else XMPConst.FALSE_STRING
-            is Int -> value.toString()
+            is Int ->
+                if (value.toDouble() % 1.0 != 0.0)
+                    value.toDouble().toInvariantString()
+                else
+                    value.toString()
             is Long -> value.toString()
-            is Double -> value.toString()
+            is Double -> value.toInvariantString()
             is ByteArray -> encodeBase64(value)
             else -> value.toString()
         }

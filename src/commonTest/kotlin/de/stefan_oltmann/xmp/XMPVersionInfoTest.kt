@@ -15,6 +15,6 @@ class XMPVersionInfoTest {
     @Test
     fun testVersionMessage() {
 
-        assertEquals("XMP Core for KMP 2.0.0", XMPVersionInfo.VERSION_MESSAGE)
+        assertEquals("XMP Core for KMP 2.0.1", XMPVersionInfo.VERSION_MESSAGE)
     }
 }

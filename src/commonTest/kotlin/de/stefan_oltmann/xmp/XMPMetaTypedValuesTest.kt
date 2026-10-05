@@ -160,6 +160,14 @@ class XMPMetaTypedValuesTest {
 
         assertEquals(3.5, xmpMeta.getPropertyDouble(XMPConst.NS_XMP, "value"))
         assertEquals("3.5", xmpMeta.getPropertyString(XMPConst.NS_XMP, "value"))
+
+        /*
+         * The serialized spelling is the JVM's on every platform, so written
+         * files do not depend on the platform that ran the write.
+         */
+        xmpMeta.setPropertyDouble(XMPConst.NS_XMP, "small", 5.0E-4)
+
+        assertEquals("5.0E-4", xmpMeta.getPropertyString(XMPConst.NS_XMP, "small"))
     }
 
     /**
