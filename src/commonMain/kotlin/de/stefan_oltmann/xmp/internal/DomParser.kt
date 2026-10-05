@@ -119,14 +119,26 @@ internal object DomParser {
              */
             val rdfStartPos = input.indexOf("<rdf:RDF")
 
+            /*
+             * A stray end tag of a previous packet may sit before the real
+             * start tag; the first global end anchor would then sit behind
+             * the start and corrupt the slice. The island's own end tag -
+             * the first one behind the start - is the correct anchor, and a
+             * start behind every end tag leaves nothing to salvage.
+             */
             if (rdfStartPos >= 0) {
 
-                val trimmedDocument = parseDocumentOrNull(
-                    input.substring(rdfStartPos until rdfEndPos + RDF_RDF_END.length)
-                )
+                val islandEndPos = input.indexOf(RDF_RDF_END, rdfStartPos)
 
-                if (trimmedDocument != null)
-                    return trimmedDocument
+                if (islandEndPos >= 0) {
+
+                    val trimmedDocument = parseDocumentOrNull(
+                        input.substring(rdfStartPos until islandEndPos + RDF_RDF_END.length)
+                    )
+
+                    if (trimmedDocument != null)
+                        return trimmedDocument
+                }
             }
         }
 

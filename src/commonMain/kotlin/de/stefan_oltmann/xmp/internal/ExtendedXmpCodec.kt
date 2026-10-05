@@ -42,13 +42,6 @@ internal object ExtendedXmpCodec {
     private const val DESCRIPTION_OPEN_TAG = "<rdf:Description"
 
     /**
-     * A stale `xmpNote:HasExtendedXMP` reference from a previous write must not survive:
-     * the reference is regenerated whenever extended data is written, like ExifTool does it,
-     * which deletes the tag because "we create it as needed".
-     */
-    private const val STALE_REFERENCE_MARKER = "xmpNote:HasExtendedXMP"
-
-    /**
      * Minimal self-contained wrapper for the extended data. The moved `rdf:Description`
      * blocks declare their own namespaces, so no further declarations are required here.
      */
@@ -97,9 +90,22 @@ internal object ExtendedXmpCodec {
         maxExtendedChunkBytes: Int
     ): XmpPacketPartition {
 
-        require(maxMainPacketBytes > 0) { "Max main packet bytes must be positive: $maxMainPacketBytes" }
+        /*
+         * Checked as XMPException, not require(): the public entry point
+         * promises that only XMPException escapes, and callers dispatch on
+         * the error code.
+         */
+        if (maxMainPacketBytes <= 0)
+            throw XMPException(
+                "Max main packet bytes must be positive: $maxMainPacketBytes",
+                XMPErrorConst.BADPARAM
+            )
 
-        require(maxExtendedChunkBytes > 0) { "Max extended chunk bytes must be positive: $maxExtendedChunkBytes" }
+        if (maxExtendedChunkBytes <= 0)
+            throw XMPException(
+                "Max extended chunk bytes must be positive: $maxExtendedChunkBytes",
+                XMPErrorConst.BADPARAM
+            )
 
         val withoutStaleReference = removeStaleExtendedXmpReference(packet)
 
@@ -208,8 +214,14 @@ internal object ExtendedXmpCodec {
                 XMPErrorConst.BADXMP
             )
 
+        /*
+         * The stale-reference pass above already removed the references this
+         * library writes (attribute form inside start tags, element form with
+         * a GUID value), context-checked. A blanket filter for the marker text
+         * here would delete whole descriptions whose user data merely contains
+         * the marker string, so the blocks pass through as they are.
+         */
         val blocks = splitDescriptions(content)
-            .filter { block -> !block.contains(STALE_REFERENCE_MARKER) }
 
         val (keptBlocks, movedBlocks) = selectBlocks(
             blocks,
@@ -396,6 +408,18 @@ internal object ExtendedXmpCodec {
 
             expectedOffset += fragment.data.size
         }
+
+        /*
+         * The chunks may be internally consistent yet collectively shorter
+         * or longer than the declared total - accepting such an assembly
+         * would pass truncated data off as a complete extended packet.
+         */
+        if (expectedOffset != declaredLength)
+            throw XMPException(
+                "The extended XMP chunks assemble to $expectedOffset bytes, " +
+                    "but the declared total length is $declaredLength.",
+                XMPErrorConst.BADXMP
+            )
 
         val extendedBytes = ByteArray(expectedOffset)
 

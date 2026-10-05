@@ -410,7 +410,10 @@ public object XMPSchemaRegistry {
      * to map a simple alias to an item in an array. This can either be to the
      * first item in the array, or to the 'x-default' item in an alt-text array.
      * Multiple alias names may map to the same actual, as long as the forms
-     * match. It is a no-op to reregister an alias in an identical fashion.
+     * match. Reregistering an alias that already exists throws
+     * [XMPException], even when the mapping is identical - like the Adobe
+     * original, whose documentation promises a no-op the code does not
+     * implement.
      * Note: This method is only called by [registerStandardAliases] during
      * initialisation and by clients registering custom aliases.
      *

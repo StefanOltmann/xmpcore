@@ -713,6 +713,18 @@ internal class XMPRDFWriter(private val options: SerializeOptions) {
             /* Add colon for lookup */
             actualNamespace = XMPSchemaRegistry.getNamespaceURI("$actualPrefix:")
 
+            /*
+             * A property whose prefix was deleted from the registry cannot be
+             * serialized: the namespace declaration is mandatory XML, and an
+             * undeclared prefix would produce invalid RDF.
+             */
+            if (actualNamespace == null)
+                throw XMPException(
+                    "The namespace prefix '$actualPrefix:' is not registered; " +
+                        "the property cannot be serialized.",
+                    XMPErrorConst.BADSCHEMA
+                )
+
             /* Prefix w/o colon */
             declareNamespace(sb, actualPrefix, actualNamespace, usedPrefixes, indentLevel)
         }

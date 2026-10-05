@@ -65,7 +65,7 @@ class RewriteXmpTest {
 
                     writeDiffArtifact("sample_${index}_formatted_canonical.xmp", actualCanonicalXmp)
 
-                    // fail("XMP for sample $index looks different after rewrite.")
+                    fail("XMP for sample $index looks different after rewrite.")
                 }
 
             } catch (ex: Exception) {

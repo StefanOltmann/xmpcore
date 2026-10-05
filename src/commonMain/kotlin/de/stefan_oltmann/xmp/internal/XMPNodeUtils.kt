@@ -342,6 +342,7 @@ internal object XMPNodeUtils {
                     value.toDouble().toInvariantString()
                 else
                     value.toString()
+
             is Long -> value.toString()
             is Double -> value.toInvariantString()
             is ByteArray -> encodeBase64(value)
