@@ -56,6 +56,32 @@ class XMPMetaFaceRegionsTest {
     }
 
     /**
+     * Area values below the plain-notation range must serialize with the JVM's
+     * double spelling on every platform. Plain Double.toString writes "5.0E-4"
+     * on the JVM but "0.0005" on JS and Wasm, so identical metadata produced
+     * byte-divergent files depending on the platform that ran the write.
+     */
+    @Test
+    fun testFaceAreaBelowPlainNotationRangeSerializesJvmStyle() {
+
+        val xmpMeta = XMPMetaFactory.create()
+
+        val regions = listOf(
+            XmpFaceRegion("Face A", XMPRegionArea(5.0E-4, 0.2, 0.3, 0.4))
+        )
+
+        xmpMeta.setFaceRegions(regions, widthPx = 1500, heightPx = 1000)
+
+        assertEquals(
+            "5.0E-4",
+            xmpMeta.getPropertyString(
+                XMPConst.NS_MWG_RS,
+                "Regions/mwg-rs:RegionList[1]/mwg-rs:Area/stArea:x"
+            )
+        )
+    }
+
+    /**
      * Two regions with the same name are both kept, because the region list is an array
      * and not keyed by name.
      */

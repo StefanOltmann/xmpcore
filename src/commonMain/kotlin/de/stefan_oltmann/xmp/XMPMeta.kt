@@ -2007,7 +2007,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "x",
-                    region.area.xPos.toString()
+                    region.area.xPos.toInvariantString()
                 )
 
                 setStructField(
@@ -2015,7 +2015,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "y",
-                    region.area.yPos.toString()
+                    region.area.yPos.toInvariantString()
                 )
 
                 setStructField(
@@ -2023,7 +2023,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "w",
-                    region.area.width.toString()
+                    region.area.width.toInvariantString()
                 )
 
                 setStructField(
@@ -2031,7 +2031,7 @@ public class XMPMeta internal constructor() {
                     structNameArea,
                     XMPConst.TYPE_AREA,
                     "h",
-                    region.area.height.toString()
+                    region.area.height.toInvariantString()
                 )
 
                 setStructField(
